@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61d99f5d642a9f6b68bf4d9f3473d672, type: 3}
+  m_Name: Weapon_RustedBlade
+  m_EditorClassIdentifier: Assembly-CSharp::DoomScroller.Inventory.ItemData
+  title: Rusted Blade
+  slotType: 0
+  statSummary: +8 Attack
+  itemColor: {r: 0.6, g: 0.6, b: 0.65, a: 1}
+  powerValue: 15
+  abilities:
+  - abilityName: Slash
+    description: A quick basic strike
+    powerBonus: 5
+  - abilityName: Guard Break
+    description: Bypasses enemy defense
+    powerBonus: 8
+  - abilityName: Bleed
+    description: Applies damage over time
+    powerBonus: 6
