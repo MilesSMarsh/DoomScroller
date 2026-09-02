@@ -19,3 +19,6 @@ MonoBehaviour:
   rewardSummary: 200 XP + Rare Gear
   baseXpReward: 200
   baseChallenge: 70
+  enemyHealth: 110
+  enemyAttackDamage: 12
+  enemyAttackSpeed: 0.9

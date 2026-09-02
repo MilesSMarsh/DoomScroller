@@ -19,6 +19,12 @@ namespace DoomScroller.Progression
 
         public bool IsDepleted => CurrentHealth <= 0;
 
+        // Set true by the encounter views for the duration of a live fight (Phase 8) so
+        // regen can't tick up the player's real HP mid-combat while damage is being
+        // applied beat-by-beat. The regen clock simply pauses while locked — combat
+        // duration neither costs nor grants regen progress.
+        public bool CombatLocked { get; set; }
+
         public PlayerHealth(int maxHealth, int regenPerInterval, float regenIntervalSeconds)
         {
             MaxHealth = maxHealth;
@@ -44,6 +50,11 @@ namespace DoomScroller.Progression
         // actively playing. Call before anything that reads CurrentHealth/IsDepleted.
         public void Regenerate()
         {
+            if (CombatLocked)
+            {
+                return;
+            }
+
             if (CurrentHealth >= MaxHealth)
             {
                 _lastRegenUtc = DateTime.UtcNow;

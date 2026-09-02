@@ -23,8 +23,12 @@ MonoBehaviour:
     description: Ranged burst damage
     isActive: 1
     powerBonus: 10
+    cooldownSeconds: 3
   - abilityName: Frost Nova
     description: Slows all nearby enemies
     isActive: 0
     powerBonus: 7
+    cooldownSeconds: 6
   isTwoHanded: 1
+  attackSpeed: 0.7
+  isRanged: 1

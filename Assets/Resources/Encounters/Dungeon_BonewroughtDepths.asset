@@ -19,3 +19,6 @@ MonoBehaviour:
   rewardSummary: Escalating XP + Gear, guaranteed Rare loot at the end
   baseXpReward: 60
   baseChallenge: 35
+  enemyHealth: 60
+  enemyAttackDamage: 7
+  enemyAttackSpeed: 0.75

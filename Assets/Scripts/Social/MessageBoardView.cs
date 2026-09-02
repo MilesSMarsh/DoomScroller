@@ -77,8 +77,15 @@ namespace DoomScroller.Social
         // any reply left over from a previous encounter.
         public void Populate(EncounterData data, bool victory)
         {
+            PopulateWithEntries(MessageBoardGenerator.Generate(data, victory));
+        }
+
+        // Same as Populate, but takes already-generated entries directly — used by
+        // TavernView, whose chatter isn't tied to a specific encounter's win/loss.
+        public void PopulateWithEntries(IReadOnlyList<MessageBoardEntry> entries)
+        {
             gameObject.SetActive(true);
-            _comments = new List<MessageBoardEntry>(MessageBoardGenerator.Generate(data, victory));
+            _comments = new List<MessageBoardEntry>(entries);
             RebuildCommentRows();
             _replyInput.text = "";
             ContentChanged?.Invoke();

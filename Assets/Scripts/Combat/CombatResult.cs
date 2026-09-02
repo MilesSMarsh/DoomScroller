@@ -5,23 +5,21 @@ namespace DoomScroller.Combat
     public readonly struct CombatResult
     {
         public bool IsVictory { get; }
-        public int PlayerPower { get; }
-        public int ChallengePower { get; }
-        public IReadOnlyList<string> SequenceLines { get; }
+        public IReadOnlyList<CombatBeat> Beats { get; }
 
-        // Health lost from this encounter: 0 for a clean win or Treasure, a small amount
-        // for a defeat, and a smaller "close call" amount for a win that barely cleared
-        // the win chance (see CombatResolver's CloseCallMargin).
+        // Total damage actually taken across the whole fight (0 for a flawless win or
+        // Treasure) — applied once by the caller via PlayerHealth.ApplyDamage, same as
+        // before.
         public int HealthDamage { get; }
+
+        // Victory, but the player ended the fight below CombatResolver.CloseCallHealthFraction
+        // of their max health — a post-fight read of how rough it was, not a pre-roll margin.
         public bool WasCloseCall { get; }
 
-        public CombatResult(bool isVictory, int playerPower, int challengePower, IReadOnlyList<string> sequenceLines,
-            int healthDamage = 0, bool wasCloseCall = false)
+        public CombatResult(bool isVictory, IReadOnlyList<CombatBeat> beats, int healthDamage, bool wasCloseCall)
         {
             IsVictory = isVictory;
-            PlayerPower = playerPower;
-            ChallengePower = challengePower;
-            SequenceLines = sequenceLines;
+            Beats = beats;
             HealthDamage = healthDamage;
             WasCloseCall = wasCloseCall;
         }

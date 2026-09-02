@@ -10,7 +10,7 @@ namespace DoomScroller.Inventory
     // for this slot (equipping itself happens there, via tap-to-equip — see that view).
     public class EquipSlotView : MonoBehaviour, IPointerClickHandler
     {
-        private const float IconSize = 90f;
+        private const float IconSize = 112f;
 
         private Image _background;
         private GearRowFactory.Row _row;
@@ -30,7 +30,7 @@ namespace DoomScroller.Inventory
             view._background = go.AddComponent<Image>();
             view._background.color = EmptyBackgroundColor;
 
-            view._row = GearRowFactory.Create(rect, IconSize, 18, 24, 20);
+            view._row = GearRowFactory.Create(rect, IconSize, 24, 32, 26);
             view._row.CaptionText.text = ItemCategoryInfo.SlotLabel(slotType);
 
             view.Refresh(null, null);

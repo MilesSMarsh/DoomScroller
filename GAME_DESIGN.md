@@ -70,9 +70,12 @@ fun and functional.
 **Goal:** Entering an encounter from the feed. Plain encounters resolve in one step;
 Dungeon-type encounters are a distinct, multi-step "dungeon door" card.
 **Acceptance criteria:**
-- Tapping/entering a feed card transitions into that encounter
-- Plain Enemy/Treasure cards preview the entrance, then resolve in a single step on
-  commit — no difficulty choice
+- Tapping a feed card (or its own action button — labeled for the action it takes:
+  "Fight" for Enemy, "Collect" for Treasure, "Enter" for Dungeon/Tavern) commits
+  straight into that encounter — no separate preview/confirm screen in between
+- Every card also shows a concrete, always-accurate reward expectation (XP + gear
+  rarity), not just hand-authored flavor text
+- Plain Enemy/Treasure cards resolve in a single step on commit — no difficulty choice
 - A Dungeon card commits into a horizontally-paged run: winning a step and swiping
   right presses one page deeper into a new (harder) enemy, ending in a guaranteed
   treasure room; swiping left revisits already-conquered pages without re-fighting
@@ -110,6 +113,60 @@ concept — not the full social system.
 - Completed encounters show a simple message board / comment list
 - Player can post a response after completing an encounter
 - Full threading, replies, and social features are explicitly deferred
+
+### Phase 8 — Simulated Combat & Visual Presentation
+**Goal:** Replace the single win/loss roll from Phase 5 with a real simulated fight —
+both sides attack automatically at their own attack speed and cast abilities off
+cooldown, and the outcome is whoever's HP hits zero first, not a coin flip. Pair this
+with a visual rework: sprites animate an attack, gear is visibly present, weapon
+abilities/ranged weapons throw a projectile VFX, damage numbers pop up, and the
+line-by-line text log goes away entirely. A character stats/level/class page is
+explicitly out of scope for this phase.
+
+**Design notes (decisions already locked in, kept here so they aren't re-litigated):**
+- The player's real, persistent health pool (the same one that regenerates and gates
+  entering encounters) is the live stake during the fight — no separate "combat HP."
+  Whatever HP is left after a win carries over and regenerates normally, same as today.
+- Enemy combat stats (HP, attack damage, attack speed) are authored explicitly per
+  encounter, not derived from the existing difficulty number. That existing number is
+  kept, unchanged, solely to drive the feed's win%/close-call% badge — the badge stays
+  exactly as it is today, decoupled from how the fight actually resolves; iterate on
+  what makes a good difficulty metric later.
+- The simulation is an event loop: each combatant's basic attack and each active
+  ability is its own timer (basic attacks fire every `1 / attackSpeed` seconds,
+  abilities every `cooldownSeconds`, starting off-cooldown so a fight's first ability
+  cast happens immediately). Whichever timer is soonest resolves next; that swing has a
+  small miss chance and damage variance (not a fully deterministic fight); repeat until
+  one side's HP reaches zero.
+- Player attack damage/speed come from equipped weapons; defense (damage reduction on
+  incoming hits) comes from every other equipped slot (armor/shield/talisman) — a new
+  role for the existing per-item power number. Enemies have no defense or abilities of
+  their own yet — flat basic attacks only; a natural follow-up once this base sim is
+  proven, not built this phase.
+- The fight is computed instantly in full, then replayed visually beat-by-beat at a
+  fixed pace — presentation pace is intentionally decoupled from the simulated attack
+  timing, which could otherwise be uncomfortably fast or slow to actually watch.
+- Projectile VFX and attack "wiggle" animations are plain UGUI (an `Image` tweened
+  along `anchoredPosition`, a coroutine scale/lunge tween) rather than a real Unity
+  `ParticleSystem`/`Animator` — this project's canvas is Screen Space - Overlay with no
+  world-space rendering anywhere, so real particle/animator tooling would need
+  disproportionate extra plumbing for a still-greybox pass.
+
+**Acceptance criteria:**
+- A fight plays out as a sequence of attack beats (basic attacks + ability casts, from
+  both sides) with no text-log narration; the enemy's HP and the player's real,
+  persistent health both visibly deplete across the sequence, and win/loss is decided
+  by whichever hits zero first
+- Attacking sprites visibly wiggle/lunge; a weapon ability or a ranged weapon's basic
+  attack fires a projectile between the two sprites; every hit pops a damage number
+  (or a miss indicator)
+- What's equipped is visually present during a fight (not just a hidden stat), and
+  changes what's on screen: a ranged weapon's basic attacks throw projectiles where a
+  melee weapon's lunge in; an equipped ability casts and hits on its own cooldown
+- The feed's win%/close-call% badge is unaffected by this rework — same inputs, same
+  behavior as before
+- All of the above plays out identically for a plain Enemy/Treasure encounter and for
+  each step of a Dungeon run
 
 ---
 

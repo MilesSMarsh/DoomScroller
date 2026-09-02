@@ -6,6 +6,7 @@ namespace DoomScroller.Feed
     {
         Treasure,
         Enemy,
-        Dungeon
+        Dungeon,
+        Tavern
     }
 }

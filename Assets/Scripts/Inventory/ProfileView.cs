@@ -63,15 +63,15 @@ namespace DoomScroller.Inventory
             // clipping. Close stays pinned below, outside the scroll area.
             var content = ScrollAreaFactory.Create(rect, new RectOffset(40, 40, 0, 40), 12);
 
-            CreateLabel(content, "Title", "Profile", 60, FontStyle.Bold);
+            CreateLabel(content, "Title", "Profile", 64, FontStyle.Bold);
             CreatePortrait(content, "PlayerPortrait", loadout.PlayerSprite, 220);
-            view._progressionText = CreateLabel(content, "Progression", "", 32, FontStyle.Italic);
-            view._healthText = CreateLabel(content, "Health", "", 32, FontStyle.Italic);
+            view._progressionText = CreateLabel(content, "Progression", "", 38, FontStyle.Italic);
+            view._healthText = CreateLabel(content, "Health", "", 38, FontStyle.Italic);
 
             view._equipCluster = EquipSlotClusterView.Create(content, loadout);
 
             CreateLabel(content, "AbilitiesHeader", "Weapon Abilities (tap to toggle, max " +
-                        PlayerLoadout.MaxActiveAbilities + ")", 28, FontStyle.Italic);
+                        PlayerLoadout.MaxActiveAbilities + ")", 32, FontStyle.Italic);
 
             var abilitiesGo = new GameObject("Abilities", typeof(RectTransform));
             view._abilitiesContainer = (RectTransform)abilitiesGo.transform;
@@ -147,14 +147,14 @@ namespace DoomScroller.Inventory
             var abilities = _loadout.GetEquippedWeaponAbilities().ToList();
             if (abilities.Count == 0)
             {
-                CreateLabel(_abilitiesContainer, "NoWeapon", "No weapon equipped", 28, FontStyle.Normal);
+                CreateLabel(_abilitiesContainer, "NoWeapon", "No weapon equipped", 32, FontStyle.Normal);
                 return;
             }
 
             foreach (var ability in abilities.Where(a => !a.isActive))
             {
                 var text = CreateLabel(_abilitiesContainer, $"Ability_{ability.abilityName}",
-                    $"(passive) {ability.abilityName} — {ability.description}", 26, FontStyle.Normal);
+                    $"(passive) {ability.abilityName} — {ability.description}", 30, FontStyle.Normal);
                 text.alignment = TextAnchor.MiddleLeft;
                 text.color = new Color(1f, 1f, 1f, 0.75f);
             }
@@ -166,7 +166,7 @@ namespace DoomScroller.Inventory
                 var text = CreateRow(_abilitiesContainer, $"Ability_{capturedName}",
                     () => _loadout.ToggleAbility(capturedName));
                 text.text = $"[{(isOn ? "x" : " ")}] {ability.abilityName} — {ability.description}";
-                text.fontSize = 28;
+                text.fontSize = 32;
             }
         }
 
@@ -181,7 +181,7 @@ namespace DoomScroller.Inventory
             var layoutElement = go.AddComponent<LayoutElement>();
             // Tall enough for two wrapped lines at this row's font size (ability
             // descriptions can run long) without clipping or spilling into neighbors.
-            layoutElement.preferredHeight = 108;
+            layoutElement.preferredHeight = 124;
 
             var button = go.AddComponent<Button>();
             button.onClick.AddListener(() => onClick());

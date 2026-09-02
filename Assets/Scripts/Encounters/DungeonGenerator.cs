@@ -12,7 +12,7 @@ namespace DoomScroller.Encounters
     public static class DungeonGenerator
     {
         private const int EnemyDepthCount = 3;
-        private const float ChallengeGrowthPerDepth = 0.75f;
+        private const float StatGrowthPerDepth = 0.75f;
         private const float XpGrowthPerDepth = 0.75f;
 
         private static readonly string[] GearRarities = { "Common", "Uncommon", "Rare" };
@@ -35,15 +35,22 @@ namespace DoomScroller.Encounters
 
             for (var i = 0; i < EnemyDepthCount; i++)
             {
-                var challenge = Mathf.RoundToInt(data.baseChallenge * (1f + i * ChallengeGrowthPerDepth));
+                var growth = 1f + i * StatGrowthPerDepth;
+                var enemyHealth = Mathf.RoundToInt(data.enemyHealth * growth);
+                var enemyAttackDamage = Mathf.RoundToInt(data.enemyAttackDamage * growth);
+                // Deeper enemies hit harder and have more HP, not faster — keeps fight
+                // pacing sane at depth.
+                var enemyAttackSpeed = data.enemyAttackSpeed;
                 var xp = Mathf.RoundToInt(data.baseXpReward * (1f + i * XpGrowthPerDepth));
                 var rewardSummary = $"{xp} XP + {GearRarities[i]} Gear";
-                steps.Add(new DungeonStep(i, $"Depth {i + 1}", rewardSummary, xp, challenge, false, DepthColors[i]));
+                steps.Add(new DungeonStep(i, $"Depth {i + 1}", rewardSummary, xp,
+                    enemyHealth, enemyAttackDamage, enemyAttackSpeed, false, DepthColors[i]));
             }
 
             var treasureXp = Mathf.RoundToInt(data.baseXpReward * (1f + EnemyDepthCount * XpGrowthPerDepth));
             var treasureReward = $"{treasureXp} XP + guaranteed Rare loot";
-            steps.Add(new DungeonStep(EnemyDepthCount, "Treasure Room", treasureReward, treasureXp, 0, true, TreasureColor));
+            steps.Add(new DungeonStep(EnemyDepthCount, "Treasure Room", treasureReward, treasureXp,
+                0, 0, 0f, true, TreasureColor));
 
             return steps;
         }

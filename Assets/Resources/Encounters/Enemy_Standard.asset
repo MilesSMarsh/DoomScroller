@@ -19,3 +19,6 @@ MonoBehaviour:
   rewardSummary: 50 XP + Common Gear
   baseXpReward: 50
   baseChallenge: 30
+  enemyHealth: 50
+  enemyAttackDamage: 6
+  enemyAttackSpeed: 0.7

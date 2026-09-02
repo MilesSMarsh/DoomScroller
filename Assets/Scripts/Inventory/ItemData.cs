@@ -26,6 +26,14 @@ namespace DoomScroller.Inventory
                   "unequipped again.")]
         public bool isTwoHanded;
 
+        [Tooltip("Only relevant when category is Weapon. Basic attacks per second in the " +
+                  "combat simulation (Phase 8).")]
+        public float attackSpeed = 1f;
+
+        [Tooltip("Only relevant when category is Weapon. This weapon's basic attack fires " +
+                  "a projectile at the target instead of a melee lunge (Phase 8).")]
+        public bool isRanged;
+
         // Not persisted — a display-only lookup so combat math never has to know
         // "defence" and "damage" are the same field under different labels.
         public string StatLabel => ItemCategoryInfo.Label(category);

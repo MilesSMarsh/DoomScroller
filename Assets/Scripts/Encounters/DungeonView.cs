@@ -116,7 +116,7 @@ namespace DoomScroller.Encounters
             var contentFitter = contentGo.AddComponent<ContentSizeFitter>();
             contentFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            CreateButton(rect, "ReturnButton", "Return to Feed", () => view.OnReturnButtonClicked());
+            CreateButton(rect, "ReturnButton", "Leave", () => view.OnReturnButtonClicked());
 
             // Created last so it renders on top of everything else in this view.
             view._leaveDialogGo = CreateLeaveDialog(rect, view);
@@ -170,7 +170,7 @@ namespace DoomScroller.Encounters
         {
             var page = _pages[index];
             page.Resolved += OnPageResolved;
-            page.Resolve(_steps[index], _data, _loadout, _progression, _health);
+            page.Resolve(_steps[index], _loadout, _progression, _health);
         }
 
         private void OnPageResolved(DungeonStep step, CombatResult result)

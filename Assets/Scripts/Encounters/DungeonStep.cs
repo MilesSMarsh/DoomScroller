@@ -12,21 +12,28 @@ namespace DoomScroller.Encounters
         public string Label { get; }
         public string RewardSummary { get; }
         public int XpReward { get; }
-        public int ChallengePower { get; }
         public bool IsTreasureRoom { get; }
+
+        // Enemy combat stats for the Phase 8 simulation — meaningless when
+        // IsTreasureRoom is true.
+        public int EnemyHealth { get; }
+        public int EnemyAttackDamage { get; }
+        public float EnemyAttackSpeed { get; }
 
         // Placeholder "art" for this page — a flat color distinct per depth, greybox
         // convention, same as every other fallback-color visual in this project.
         public Color StepColor { get; }
 
         public DungeonStep(int depthIndex, string label, string rewardSummary, int xpReward,
-            int challengePower, bool isTreasureRoom, Color stepColor)
+            int enemyHealth, int enemyAttackDamage, float enemyAttackSpeed, bool isTreasureRoom, Color stepColor)
         {
             DepthIndex = depthIndex;
             Label = label;
             RewardSummary = rewardSummary;
             XpReward = xpReward;
-            ChallengePower = challengePower;
+            EnemyHealth = enemyHealth;
+            EnemyAttackDamage = enemyAttackDamage;
+            EnemyAttackSpeed = enemyAttackSpeed;
             IsTreasureRoom = isTreasureRoom;
             StepColor = stepColor;
         }

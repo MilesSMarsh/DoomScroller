@@ -1,53 +1,75 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using DoomScroller.Encounters;
 using DoomScroller.Feed;
 using DoomScroller.Inventory;
+using DoomScroller.Progression;
+using UnityEngine;
 
 namespace DoomScroller.Combat
 {
-    // Plain C# so outcome math is testable without a running scene. Outcome is driven
-    // entirely by equipped stats/active abilities — no real-time player input (Phase 5).
+    // Plain C# so the fight simulation is testable without a running scene. Phase 8:
+    // outcome is no longer a single win-chance roll — both sides attack automatically at
+    // their own attack speed, abilities cast off cooldown, and whoever's HP hits zero
+    // first decides the fight. The player's real, persistent PlayerHealth pool is the
+    // live stake (see ResolveFight) — no separate "combat HP."
     public static class CombatResolver
     {
-        // A win whose roll landed within this margin of the loss boundary counts as a
-        // "close call" — you still won, but it cost you (see ResolveFight).
-        private const float CloseCallMargin = 0.15f;
-        private const int DefeatDamage = 20;
-        private const int CloseCallDamage = 8;
+        // Small per-swing randomness (Phase 8 design decision: not a fully deterministic
+        // sim) — a flat percentage damage variance and a flat miss chance, independent of
+        // stats. Both are early tuning knobs, easy to retune once the sim is played.
+        private const float DamageVariance = 0.15f;
+        private const float MissChance = 0.08f;
 
-        // Plain single-resolution encounters (Enemy/Treasure feed cards) — no
-        // difficulty choice any more, challenge comes straight from the asset.
-        public static CombatResult Resolve(PlayerLoadout loadout, EncounterData data, Random rng = null)
+        // A win that ended below this fraction of max health reads as a "close call" in
+        // the reveal UI — a post-fight read of how rough it was, not a pre-roll margin.
+        private const float CloseCallHealthFraction = 0.25f;
+
+        // Guards against a degenerate fight (e.g. authored 0-damage/0-speed content)
+        // looping forever — not a real design case, just a safety net. If neither side
+        // has died by this many beats, whoever has the healthier remaining fraction wins.
+        private const int MaxBeats = 200;
+
+        private const int UnarmedAttackDamage = 3;
+        private const float UnarmedAttackSpeed = 0.6f;
+        private const float MinIntervalSeconds = 0.05f;
+
+        // Plain single-resolution encounters (Enemy/Treasure feed cards) — enemy combat
+        // stats come straight from the authored asset.
+        public static CombatResult Resolve(PlayerLoadout loadout, EncounterData data, PlayerHealth health, System.Random rng = null)
         {
             if (data.type == EncounterType.Treasure)
             {
-                return ResolveTreasure(data);
+                return ResolveTreasure();
             }
 
-            return ResolveFight(loadout, data, data.baseChallenge, "", rng ?? new Random());
+            return ResolveFight(loadout, data.enemyHealth, data.enemyAttackDamage, data.enemyAttackSpeed,
+                health, rng ?? new System.Random());
         }
 
-        // One page of a dungeon run — challenge/label come from the generated step
-        // instead of the raw asset, and a treasure-room step resolves as guaranteed
-        // loot regardless of the underlying EncounterData's own type (it's still an
-        // Enemy-type asset; the *step* is what says this particular page is the prize).
-        public static CombatResult ResolveStep(PlayerLoadout loadout, EncounterData data, DungeonStep step, Random rng = null)
+        // One page of a dungeon run — enemy stats come from the generated step (scaled
+        // per depth by DungeonGenerator) instead of the raw asset. A treasure-room step
+        // resolves as guaranteed loot regardless of the underlying EncounterData's own
+        // type.
+        public static CombatResult ResolveStep(PlayerLoadout loadout, DungeonStep step, PlayerHealth health, System.Random rng = null)
         {
             if (step.IsTreasureRoom)
             {
-                return ResolveTreasure(data);
+                return ResolveTreasure();
             }
 
-            return ResolveFight(loadout, data, step.ChallengePower, step.Label, rng ?? new Random());
+            return ResolveFight(loadout, step.EnemyHealth, step.EnemyAttackDamage, step.EnemyAttackSpeed,
+                health, rng ?? new System.Random());
         }
 
-        // Same win-chance math as ResolveFight, without rolling — lets the feed show a
-        // predicted percent/color for the entry-level fight before entering (a dungeon's
-        // first depth uses the same baseChallenge as a plain encounter would).
+        // Unchanged from before Phase 8, per the "keep the indicator, iterate later on
+        // its metric" decision — a rough difficulty heuristic for the feed badge,
+        // completely decoupled from how ResolveFight actually plays out now.
         public static float PredictWinChance(PlayerLoadout loadout, EncounterData data)
         {
-            if (data.type == EncounterType.Treasure)
+            // Neither ever fights — Tavern is a non-combat social hub (see TavernView).
+            if (data.type == EncounterType.Treasure || data.type == EncounterType.Tavern)
             {
                 return 1f;
             }
@@ -56,89 +78,136 @@ namespace DoomScroller.Combat
             return ComputeWinChance(playerPower, data.baseChallenge);
         }
 
-        // Of that win chance, how much of it is a "close call" that still costs health
-        // (see CloseCallMargin/ResolveFight) — the feed shows this as a second, smaller
-        // percentage alongside the overall win chance. 0 for Treasure (never at risk).
         public static float PredictCloseCallChance(PlayerLoadout loadout, EncounterData data)
         {
-            if (data.type == EncounterType.Treasure)
+            if (data.type == EncounterType.Treasure || data.type == EncounterType.Tavern)
             {
                 return 0f;
             }
 
             var winChance = PredictWinChance(loadout, data);
-            return MathF.Min(CloseCallMargin, winChance);
+            return MathF.Min(0.15f, winChance);
         }
 
-        private static CombatResult ResolveTreasure(EncounterData data)
+        private static CombatResult ResolveTreasure()
         {
-            var lines = new List<string>
-            {
-                $"You approach the {data.title}.",
-                "No guardians, no traps — just guaranteed loot.",
-                "You claim it without a fight."
-            };
-            return new CombatResult(true, 0, 0, lines);
+            return new CombatResult(true, Array.Empty<CombatBeat>(), 0, false);
         }
 
-        private static CombatResult ResolveFight(PlayerLoadout loadout, EncounterData data, int challengePower, string label, Random rng)
+        private static CombatResult ResolveFight(PlayerLoadout loadout, int enemyMaxHealth, int enemyAttackDamage,
+            float enemyAttackSpeed, PlayerHealth health, System.Random rng)
         {
-            var lines = new List<string>
-            {
-                string.IsNullOrEmpty(label) ? $"You face {data.title}." : $"You face {data.title} ({label})."
-            };
-            var playerPower = ComputePlayerPower(loadout);
-
             var leftHand = loadout.GetEquipped(EquipmentSlotType.LeftHand);
             var rightHand = loadout.GetEquipped(EquipmentSlotType.RightHand);
-            var hasWeapon = leftHand?.category == ItemCategory.Weapon || rightHand?.category == ItemCategory.Weapon;
-            if (!hasWeapon)
-            {
-                lines.Add("You have no weapon equipped — this could go badly.");
-            }
-            else
-            {
-                if (leftHand?.category == ItemCategory.Weapon)
-                {
-                    lines.Add($"You ready your {leftHand.title}.");
-                }
+            var weapons = new List<ItemData>();
+            if (leftHand?.category == ItemCategory.Weapon) weapons.Add(leftHand);
+            if (rightHand?.category == ItemCategory.Weapon) weapons.Add(rightHand);
 
-                if (rightHand?.category == ItemCategory.Weapon)
+            var playerAttackDamage = weapons.Count > 0 ? weapons.Sum(w => w.powerValue) : UnarmedAttackDamage;
+            var playerAttackSpeed = weapons.Count > 0 ? weapons.Average(w => w.attackSpeed) : UnarmedAttackSpeed;
+            var playerIsRanged = weapons.Any(w => w.isRanged);
+
+            var playerDefense = 0;
+            foreach (EquipmentSlotType slot in Enum.GetValues(typeof(EquipmentSlotType)))
+            {
+                var item = loadout.GetEquipped(slot);
+                if (item != null && item.category != ItemCategory.Weapon)
                 {
-                    lines.Add($"You ready your {rightHand.title}.");
+                    playerDefense += item.powerValue;
                 }
             }
+
+            var timers = new List<AttackTimer>
+            {
+                new(CombatActor.Player, IntervalFor(playerAttackSpeed), playerAttackDamage, playerIsRanged, null),
+                new(CombatActor.Enemy, IntervalFor(enemyAttackSpeed), enemyAttackDamage, false, null)
+            };
 
             foreach (var ability in loadout.GetEquippedWeaponAbilities())
             {
                 if (ability.isActive && loadout.IsAbilityActive(ability.abilityName))
                 {
-                    lines.Add($"You unleash {ability.abilityName}!");
+                    // Abilities are timed by a flat cooldown in seconds (not a rate), so
+                    // it's already the interval the event loop needs — no conversion.
+                    timers.Add(new AttackTimer(CombatActor.Player, Mathf.Max(MinIntervalSeconds, ability.cooldownSeconds),
+                        ability.powerBonus, true, ability.abilityName));
                 }
             }
 
-            var winChance = ComputeWinChance(playerPower, challengePower);
-            var roll = rng.NextDouble();
-            var isVictory = roll < winChance;
+            var maxHealth = health.MaxHealth;
+            var playerHp = health.CurrentHealth;
+            var enemyHp = enemyMaxHealth;
+            var totalDamageTaken = 0;
+            var beats = new List<CombatBeat>();
 
-            // How close was the roll to the losing side of the threshold, regardless of
-            // outcome — a win that barely cleared it is a "close call"; a loss is always
-            // a loss (Treasure aside, there's no such thing as a "close call" defeat here).
-            var wasCloseCall = isVictory && roll >= winChance - CloseCallMargin;
-            var healthDamage = isVictory ? (wasCloseCall ? CloseCallDamage : 0) : DefeatDamage;
-
-            if (isVictory)
+            for (var i = 0; i < MaxBeats && playerHp > 0 && enemyHp > 0; i++)
             {
-                lines.Add(wasCloseCall
-                    ? $"The {data.title} falls, but not before landing a hit. A costly victory."
-                    : $"The {data.title} falls. Victory!");
+                var actor = timers[0];
+                foreach (var timer in timers)
+                {
+                    if (timer.NextFireTime < actor.NextFireTime)
+                    {
+                        actor = timer;
+                    }
+                }
+
+                if (rng.NextDouble() < MissChance)
+                {
+                    beats.Add(new CombatBeat(actor.Actor, actor.IsRanged, true, 0, actor.AbilityName));
+                }
+                else
+                {
+                    var variance = 1f + (float)(rng.NextDouble() * 2.0 - 1.0) * DamageVariance;
+                    var raw = Mathf.RoundToInt(actor.BaseDamage * variance);
+
+                    int applied;
+                    if (actor.Actor == CombatActor.Player)
+                    {
+                        applied = Mathf.Max(1, raw);
+                        enemyHp = Mathf.Max(0, enemyHp - applied);
+                    }
+                    else
+                    {
+                        applied = Mathf.Max(1, raw - playerDefense);
+                        playerHp = Mathf.Max(0, playerHp - applied);
+                        totalDamageTaken += applied;
+                    }
+
+                    beats.Add(new CombatBeat(actor.Actor, actor.IsRanged, false, applied, actor.AbilityName));
+                }
+
+                actor.NextFireTime += actor.IntervalSeconds;
+            }
+
+            bool isVictory;
+            if (enemyHp <= 0)
+            {
+                isVictory = true;
+            }
+            else if (playerHp <= 0)
+            {
+                isVictory = false;
             }
             else
             {
-                lines.Add($"You're overwhelmed by the {data.title}. Defeat.");
+                // Safety-cap fallback: neither side died within MaxBeats — decide by
+                // whoever's remaining health fraction is healthier.
+                var playerFraction = maxHealth > 0 ? (float)playerHp / maxHealth : 0f;
+                var enemyFraction = enemyMaxHealth > 0 ? (float)enemyHp / enemyMaxHealth : 0f;
+                isVictory = playerFraction >= enemyFraction;
             }
 
-            return new CombatResult(isVictory, playerPower, challengePower, lines, healthDamage, wasCloseCall);
+            var wasCloseCall = isVictory && maxHealth > 0 && (float)playerHp / maxHealth < CloseCallHealthFraction;
+
+            return new CombatResult(isVictory, beats, totalDamageTaken, wasCloseCall);
+        }
+
+        // Basic attacks are timed by attacks/sec; abilities are timed by a flat cooldown
+        // in seconds — both funnel into the same "seconds between fires" the event loop
+        // steps by.
+        private static float IntervalFor(float attacksPerSecond)
+        {
+            return 1f / Mathf.Max(MinIntervalSeconds, attacksPerSecond);
         }
 
         private static int ComputePlayerPower(PlayerLoadout loadout)
@@ -172,6 +241,26 @@ namespace DoomScroller.Combat
         private static float Clamp01(float value)
         {
             return value < 0.05f ? 0.05f : value > 0.95f ? 0.95f : value;
+        }
+
+        private sealed class AttackTimer
+        {
+            public readonly CombatActor Actor;
+            public readonly float IntervalSeconds;
+            public readonly int BaseDamage;
+            public readonly bool IsRanged;
+            public readonly string AbilityName;
+            public float NextFireTime;
+
+            public AttackTimer(CombatActor actor, float intervalSeconds, int baseDamage, bool isRanged, string abilityName)
+            {
+                Actor = actor;
+                IntervalSeconds = intervalSeconds;
+                BaseDamage = baseDamage;
+                IsRanged = isRanged;
+                AbilityName = abilityName;
+                NextFireTime = 0f;
+            }
         }
     }
 }

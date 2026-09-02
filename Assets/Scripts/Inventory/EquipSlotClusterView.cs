@@ -11,7 +11,7 @@ namespace DoomScroller.Inventory
     // between them (unlike the earlier 4-vs-3 layout).
     public class EquipSlotClusterView : MonoBehaviour
     {
-        private const float SlotHeight = 130f;
+        private const float SlotHeight = 156f;
         private const float ColumnSpacing = 12f;
         private const float ClusterHeight = 4 * SlotHeight + 3 * ColumnSpacing; // 556
 

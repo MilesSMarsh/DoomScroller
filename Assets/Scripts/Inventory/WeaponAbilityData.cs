@@ -16,8 +16,15 @@ namespace DoomScroller.Inventory
                   "PlayerLoadout.MaxActiveAbilities).")]
         public bool isActive = true;
 
-        [Tooltip("Combat power this ability contributes (Phase 5 resolution) — " +
-                  "unconditionally if passive, only while toggled on if active.")]
+        [Tooltip("Damage this ability deals when it casts in the combat simulation " +
+                  "(Phase 8) — unconditionally if passive, only while toggled on if " +
+                  "active. Also still feeds the feed badge's power heuristic " +
+                  "(CombatResolver.PredictWinChance).")]
         public int powerBonus = 5;
+
+        [Tooltip("Seconds between casts once this ability is active/equipped (Phase 8). " +
+                  "Every active ability starts off-cooldown, so it casts once immediately " +
+                  "when a fight begins.")]
+        public float cooldownSeconds = 4f;
     }
 }

@@ -14,7 +14,7 @@ namespace DoomScroller.Inventory
     // dialog before anything is actually removed).
     public class EquipSlotDetailView : MonoBehaviour
     {
-        private const float IconSize = 110f;
+        private const float IconSize = 130f;
 
         public event Action BackRequested;
 
@@ -61,13 +61,13 @@ namespace DoomScroller.Inventory
             // clipping. Back stays pinned below, outside the scroll area.
             var content = ScrollAreaFactory.Create(rect, new RectOffset(40, 40, 0, 40), 12);
 
-            view._titleText = CreateLabel(content, "Title", "", 56, FontStyle.Bold);
+            view._titleText = CreateLabel(content, "Title", "", 60, FontStyle.Bold);
 
-            CreateLabel(content, "EquippedHeader", "Equipped", 26, FontStyle.Italic);
+            CreateLabel(content, "EquippedHeader", "Equipped", 30, FontStyle.Italic);
 
             var equippedRowGo = new GameObject("EquippedRow", typeof(RectTransform));
             equippedRowGo.transform.SetParent(content, false);
-            SetFixedSize(equippedRowGo.AddComponent<LayoutElement>(), -1, 150);
+            SetFixedSize(equippedRowGo.AddComponent<LayoutElement>(), -1, 172);
             var equippedRowLayout = equippedRowGo.AddComponent<HorizontalLayoutGroup>();
             equippedRowLayout.spacing = 12;
             equippedRowLayout.childForceExpandWidth = false;
@@ -82,19 +82,19 @@ namespace DoomScroller.Inventory
             equippedContentLayout.minWidth = 0;
             equippedContentLayout.preferredWidth = 0;
             equippedContentLayout.flexibleWidth = 1;
-            equippedContentLayout.minHeight = 150;
-            equippedContentLayout.preferredHeight = 150;
+            equippedContentLayout.minHeight = 172;
+            equippedContentLayout.preferredHeight = 172;
             equippedContentLayout.flexibleHeight = 0;
-            view._equippedRow = GearRowFactory.Create(equippedContentGo.transform, IconSize, 20, 32, 26);
+            view._equippedRow = GearRowFactory.Create(equippedContentGo.transform, IconSize, 26, 40, 32);
 
-            view._unequipButton = CreateActionButton(equippedRowGo.transform, "UnequipButton", "Unequip", 180, 150,
+            view._unequipButton = CreateActionButton(equippedRowGo.transform, "UnequipButton", "Unequip", 200, 172,
                 new Color(0.5f, 0.2f, 0.2f, 0.5f), () =>
                 {
                     view._loadout.Unequip(view._slotType);
                     view.Refresh();
                 });
 
-            CreateLabel(content, "ListHeader", "Other Options", 26, FontStyle.Italic);
+            CreateLabel(content, "ListHeader", "Other Options", 30, FontStyle.Italic);
 
             var listGo = new GameObject("List", typeof(RectTransform));
             view._listContainer = (RectTransform)listGo.transform;
@@ -174,7 +174,7 @@ namespace DoomScroller.Inventory
             {
                 CreateLabel(_listContainer, "LockedMessage",
                     $"Unequip \"{lockedBy.title}\" to free this hand — it's a two-handed weapon.",
-                    24, FontStyle.Normal);
+                    28, FontStyle.Normal);
                 return;
             }
 
@@ -183,7 +183,7 @@ namespace DoomScroller.Inventory
             var options = _loadout.GetInventory(_slotType).Where(i => i != equipped).ToList();
             if (options.Count == 0)
             {
-                CreateLabel(_listContainer, "NoOptions", "No other items for this slot yet", 24, FontStyle.Normal);
+                CreateLabel(_listContainer, "NoOptions", "No other items for this slot yet", 28, FontStyle.Normal);
                 return;
             }
 
@@ -197,7 +197,7 @@ namespace DoomScroller.Inventory
         {
             var rowGo = new GameObject($"Option_{item.title}", typeof(RectTransform));
             rowGo.transform.SetParent(parent, false);
-            SetFixedSize(rowGo.AddComponent<LayoutElement>(), -1, 130);
+            SetFixedSize(rowGo.AddComponent<LayoutElement>(), -1, 150);
             var rowLayout = rowGo.AddComponent<HorizontalLayoutGroup>();
             rowLayout.spacing = 12;
             rowLayout.childForceExpandWidth = false;
@@ -214,8 +214,8 @@ namespace DoomScroller.Inventory
             equipAreaLayout.minWidth = 0;
             equipAreaLayout.preferredWidth = 0;
             equipAreaLayout.flexibleWidth = 1;
-            equipAreaLayout.minHeight = 130;
-            equipAreaLayout.preferredHeight = 130;
+            equipAreaLayout.minHeight = 150;
+            equipAreaLayout.preferredHeight = 150;
             equipAreaLayout.flexibleHeight = 0;
             var equipButton = equipAreaGo.AddComponent<Button>();
             equipButton.onClick.AddListener(() =>
@@ -226,7 +226,7 @@ namespace DoomScroller.Inventory
                 Refresh();
             });
 
-            var row = GearRowFactory.Create(equipAreaGo.transform, IconSize, 18, 26, 22);
+            var row = GearRowFactory.Create(equipAreaGo.transform, IconSize, 24, 32, 28);
             row.Icon.color = item.itemColor;
             row.CaptionText.text = ItemCategoryInfo.SlotLabel(item.slotType);
             row.TitleText.text = item.title;
@@ -234,7 +234,7 @@ namespace DoomScroller.Inventory
                 ? $"{item.StatLabel} {item.powerValue} (2H) — tap to equip"
                 : $"{item.StatLabel} {item.powerValue} — tap to equip";
 
-            CreateActionButton(rowGo.transform, "DeleteButton", "Delete", 140, 130,
+            CreateActionButton(rowGo.transform, "DeleteButton", "Delete", 160, 150,
                 new Color(0.5f, 0.15f, 0.15f, 0.6f), () => ShowDeleteConfirm(item));
         }
 
@@ -291,7 +291,7 @@ namespace DoomScroller.Inventory
             boxLayout.childControlWidth = true;
             boxLayout.childControlHeight = true;
 
-            view._confirmMessageText = CreateLabel(boxRect, "Message", "", 30, FontStyle.Normal);
+            view._confirmMessageText = CreateLabel(boxRect, "Message", "", 34, FontStyle.Normal);
             SetFixedSize(view._confirmMessageText.GetComponent<LayoutElement>(), -1, 120);
 
             var buttonRowGo = new GameObject("ButtonRow", typeof(RectTransform));
@@ -379,7 +379,7 @@ namespace DoomScroller.Inventory
 
             var labelText = labelGo.AddComponent<Text>();
             labelText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            labelText.fontSize = 26;
+            labelText.fontSize = 30;
             labelText.fontStyle = FontStyle.Bold;
             labelText.alignment = TextAnchor.MiddleCenter;
             labelText.color = Color.white;
