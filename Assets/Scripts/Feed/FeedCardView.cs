@@ -1,4 +1,5 @@
 using System;
+using DoomScroller.UI;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -15,12 +16,15 @@ namespace DoomScroller.Feed
         // at entry time (Phase 3 sideways swipe), not authored per-asset.
         private const string EntryDifficultyLabel = "Standard";
 
-        // A thin black strip along each card's own top edge, so consecutive cards read as
+        // A black strip along each card's own bottom edge, so consecutive cards read as
         // visually separated while scrolling. Drawn inside the card's own allotted page
         // height (not as extra spacing between cards) so it doesn't touch the scroll/snap
         // math in FeedController/FeedPager, which assumes each page is exactly one
-        // viewport height apart.
-        private const float BufferHeight = 24f;
+        // viewport height apart. Bottom (not top of the next card) so the page's own snap
+        // target sits at this buffer's bottom edge — any snap rounding slop on a given
+        // aspect ratio only ever reveals more black buffer, never the next card's actual
+        // artwork, and stays generously sized (not just cosmetic-thin) for that margin.
+        private const float BufferHeight = 48f;
 
         private Image _background;
         private Text _titleText;
@@ -69,7 +73,10 @@ namespace DoomScroller.Feed
             scrimRect.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
 
             var layoutGroup = go.AddComponent<VerticalLayoutGroup>();
-            layoutGroup.padding = new RectOffset(24, 24, 20, 20);
+            // Bottom padding clears the BottomBuffer strip (drawn on top, at the very
+            // bottom edge) plus the original 20px of breathing room, so the caption text
+            // doesn't render partly hidden behind it.
+            layoutGroup.padding = new RectOffset(24, 24, 20, 20 + (int)BufferHeight);
             layoutGroup.spacing = 8;
             // Caption sits at the bottom of the card so the artwork reads clearly above it.
             layoutGroup.childAlignment = TextAnchor.LowerLeft;
@@ -100,8 +107,10 @@ namespace DoomScroller.Feed
             badgeRect.anchorMin = new Vector2(1, 1);
             badgeRect.anchorMax = new Vector2(1, 1);
             badgeRect.pivot = new Vector2(1, 1);
-            // Y offset clears the top buffer strip plus a bit of extra breathing room.
-            badgeRect.anchoredPosition = new Vector2(-16, -16 - BufferHeight - 8);
+            // Cards render full-screen behind NavBar (it's a persistent, always-on-top
+            // overlay — see NavBarController), so the badge needs to clear its height,
+            // not just sit near the card's own top edge, or it renders hidden underneath.
+            badgeRect.anchoredPosition = new Vector2(-16, -16 - NavBarController.Height);
             badgeRect.sizeDelta = new Vector2(180, 108);
             badgeGo.AddComponent<LayoutElement>().ignoreLayout = true;
 
@@ -124,8 +133,8 @@ namespace DoomScroller.Feed
             view._riskText.color = new Color(1f, 0.85f, 0.4f);
 
             // Added last so it renders on top of the artwork/scrim/badge beneath it.
-            var bufferRect = CreateStretchChild(rect, "TopBuffer", new Vector2(0, 1), Vector2.one);
-            bufferRect.pivot = new Vector2(0.5f, 1f);
+            var bufferRect = CreateStretchChild(rect, "BottomBuffer", Vector2.zero, new Vector2(1, 0));
+            bufferRect.pivot = new Vector2(0.5f, 0f);
             bufferRect.sizeDelta = new Vector2(0, BufferHeight);
             bufferRect.gameObject.AddComponent<Image>().color = Color.black;
             bufferRect.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
@@ -144,8 +153,16 @@ namespace DoomScroller.Feed
             _background.color = data.artwork != null ? Color.white : data.cardColor;
 
             _titleText.text = data.title;
-            _badgeText.text = $"{data.type} · {EntryDifficultyLabel}";
+            _badgeText.text = BaseBadgeText(data);
             _rewardText.text = data.rewardSummary;
+        }
+
+        // Dungeon cards have no single upfront difficulty (they're a multi-step run —
+        // see DungeonView) so they read as "Dungeon Door" instead of "{type} · Standard".
+        // Shared by Bind and SetLocked so the two never drift out of sync.
+        private static string BaseBadgeText(EncounterData data)
+        {
+            return data.type == EncounterType.Dungeon ? "Dungeon Door" : $"{data.type} · {EntryDifficultyLabel}";
         }
 
         // Predicted odds for the entry-level variant against the player's current loadout
@@ -177,8 +194,8 @@ namespace DoomScroller.Feed
             _rewardText.color = new Color(1, 1, 1, textAlpha);
             _badgeText.color = new Color(1, 1, 1, textAlpha);
             _badgeText.text = locked
-                ? $"{_data.type} · {EntryDifficultyLabel} · {reasonLabel}"
-                : $"{_data.type} · {EntryDifficultyLabel}";
+                ? $"{BaseBadgeText(_data)} · {reasonLabel}"
+                : BaseBadgeText(_data);
             _chanceText.color = new Color(1, 1, 1, textAlpha);
             _riskText.color = new Color(1f, 0.85f, 0.4f, textAlpha);
             SetOdds(_winChance, _closeCallChance);

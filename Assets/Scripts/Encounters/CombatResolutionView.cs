@@ -33,6 +33,7 @@ namespace DoomScroller.Encounters
         private Coroutine _revealCoroutine;
         private EncounterData _data;
         private MessageBoardView _messageBoard;
+        private RectTransform _scrollContent;
 
         public static CombatResolutionView Create(Transform parent)
         {
@@ -48,8 +49,11 @@ namespace DoomScroller.Encounters
             background.color = new Color(0.05f, 0.05f, 0.06f, 1f);
 
             var layoutGroup = go.AddComponent<VerticalLayoutGroup>();
-            layoutGroup.padding = new RectOffset(48, 48, NavBarController.Height + 20, 40);
-            layoutGroup.spacing = 20;
+            // Left/right/bottom padding moves onto the scroll Content below — only the
+            // nav-bar clearance belongs on the root, since that's fixed regardless of
+            // scroll position.
+            layoutGroup.padding = new RectOffset(0, 0, NavBarController.Height, 0);
+            layoutGroup.spacing = 0;
             layoutGroup.childAlignment = TextAnchor.UpperCenter;
             layoutGroup.childForceExpandWidth = true;
             layoutGroup.childForceExpandHeight = false;
@@ -62,21 +66,27 @@ namespace DoomScroller.Encounters
 
             var view = go.AddComponent<CombatResolutionView>();
 
+            // Scrollable body: the battle row + sequence + reward + message board (whose
+            // comment list can grow indefinitely) can outgrow a short/narrow screen, so
+            // this panel scrolls instead of clipping. Return stays pinned below.
+            var content = ScrollAreaFactory.Create(rect, new RectOffset(48, 48, 0, 40), 20);
+            view._scrollContent = content;
+
             // Only shown for actual fights (Enemy type) — Treasure never fights, per
             // CombatResolver.ResolveTreasure's "no guardians, no traps" flavor.
-            view._battleRow = CreateBattleRow(rect, out view._playerPortrait, out view._enemyPortrait);
+            view._battleRow = CreateBattleRow(content, out view._playerPortrait, out view._enemyPortrait);
 
-            view._sequenceText = CreateLabel(rect, "Sequence", 34, FontStyle.Normal, 420);
+            view._sequenceText = CreateLabel(content, "Sequence", 34, FontStyle.Normal, 420);
             view._sequenceText.alignment = TextAnchor.UpperLeft;
-            view._outcomeText = CreateLabel(rect, "Outcome", 64, FontStyle.Bold, 90);
+            view._outcomeText = CreateLabel(content, "Outcome", 64, FontStyle.Bold, 90);
             // Tall enough for a 3-line reward string (reward + close-call damage note +
             // level-up), not just the visually-tighter single-line case.
-            view._rewardText = CreateLabel(rect, "Reward", 34, FontStyle.Italic, 150);
+            view._rewardText = CreateLabel(content, "Reward", 34, FontStyle.Italic, 150);
 
             // Phase 7 stub: a minimal comment list + reply field, shown once the outcome
             // is revealed. Full threading/replies/moderation are explicitly out of scope.
-            view._messageBoard = MessageBoardView.Create(rect);
-            view._messageBoard.ContentChanged += () => LayoutRebuilder.ForceRebuildLayoutImmediate(rect);
+            view._messageBoard = MessageBoardView.Create(content);
+            view._messageBoard.ContentChanged += () => LayoutRebuilder.ForceRebuildLayoutImmediate(view._scrollContent);
 
             CreateButton(rect, "ReturnButton", "Return to Feed", () => view.ReturnToFeedRequested?.Invoke());
 
@@ -84,7 +94,7 @@ namespace DoomScroller.Encounters
             return view;
         }
 
-        public void Show(EncounterData data, EncounterVariant variant, PlayerLoadout loadout, PlayerProgression progression, PlayerHealth health)
+        public void Show(EncounterData data, PlayerLoadout loadout, PlayerProgression progression, PlayerHealth health)
         {
             gameObject.SetActive(true);
             _data = data;
@@ -99,7 +109,7 @@ namespace DoomScroller.Encounters
                 _enemyPortrait.color = data.artwork != null ? Color.white : data.cardColor;
             }
 
-            var result = CombatResolver.Resolve(loadout, data, variant);
+            var result = CombatResolver.Resolve(loadout, data);
 
             _sequenceText.text = "";
             _outcomeText.text = "";
@@ -111,7 +121,7 @@ namespace DoomScroller.Encounters
                 StopCoroutine(_revealCoroutine);
             }
 
-            _revealCoroutine = StartCoroutine(RevealSequence(result, variant, loadout, progression, health));
+            _revealCoroutine = StartCoroutine(RevealSequence(result, data.baseXpReward, loadout, progression, health));
         }
 
         public void Hide()
@@ -125,7 +135,7 @@ namespace DoomScroller.Encounters
             gameObject.SetActive(false);
         }
 
-        private IEnumerator RevealSequence(CombatResult result, EncounterVariant variant, PlayerLoadout loadout,
+        private IEnumerator RevealSequence(CombatResult result, int xpReward, PlayerLoadout loadout,
             PlayerProgression progression, PlayerHealth health)
         {
             foreach (var line in result.SequenceLines)
@@ -142,12 +152,14 @@ namespace DoomScroller.Encounters
             if (result.IsVictory)
             {
                 var previousLevel = progression.Level;
-                progression.AddXp(variant.XpReward);
+                progression.AddXp(xpReward);
 
-                var item = RewardGenerator.GenerateItem(variant.TierIndex);
+                // No difficulty choice any more on a plain encounter — always the base
+                // (Common) reward tier; Dungeons are the vehicle for better loot now.
+                var item = RewardGenerator.GenerateItem(0);
                 loadout.AddToInventory(item);
 
-                var rewardLine = $"Reward: {variant.XpReward} XP + {item.title} (equip it from Profile)";
+                var rewardLine = $"Reward: {xpReward} XP + {item.title} (equip it from Profile)";
                 if (result.WasCloseCall)
                 {
                     rewardLine += $"\nClose call — you took {result.HealthDamage} damage " +

@@ -10,26 +10,41 @@ namespace DoomScroller.Combat
     // entirely by equipped stats/active abilities — no real-time player input (Phase 5).
     public static class CombatResolver
     {
-        private const float ChallengeGrowthPerTier = 0.75f;
-
         // A win whose roll landed within this margin of the loss boundary counts as a
         // "close call" — you still won, but it cost you (see ResolveFight).
         private const float CloseCallMargin = 0.15f;
         private const int DefeatDamage = 20;
         private const int CloseCallDamage = 8;
 
-        public static CombatResult Resolve(PlayerLoadout loadout, EncounterData data, EncounterVariant variant, Random rng = null)
+        // Plain single-resolution encounters (Enemy/Treasure feed cards) — no
+        // difficulty choice any more, challenge comes straight from the asset.
+        public static CombatResult Resolve(PlayerLoadout loadout, EncounterData data, Random rng = null)
         {
             if (data.type == EncounterType.Treasure)
             {
                 return ResolveTreasure(data);
             }
 
-            return ResolveFight(loadout, data, variant, rng ?? new Random());
+            return ResolveFight(loadout, data, data.baseChallenge, "", rng ?? new Random());
+        }
+
+        // One page of a dungeon run — challenge/label come from the generated step
+        // instead of the raw asset, and a treasure-room step resolves as guaranteed
+        // loot regardless of the underlying EncounterData's own type (it's still an
+        // Enemy-type asset; the *step* is what says this particular page is the prize).
+        public static CombatResult ResolveStep(PlayerLoadout loadout, EncounterData data, DungeonStep step, Random rng = null)
+        {
+            if (step.IsTreasureRoom)
+            {
+                return ResolveTreasure(data);
+            }
+
+            return ResolveFight(loadout, data, step.ChallengePower, step.Label, rng ?? new Random());
         }
 
         // Same win-chance math as ResolveFight, without rolling — lets the feed show a
-        // predicted percent/color for the entry-level (tier 0) variant before entering.
+        // predicted percent/color for the entry-level fight before entering (a dungeon's
+        // first depth uses the same baseChallenge as a plain encounter would).
         public static float PredictWinChance(PlayerLoadout loadout, EncounterData data)
         {
             if (data.type == EncounterType.Treasure)
@@ -38,8 +53,7 @@ namespace DoomScroller.Combat
             }
 
             var playerPower = ComputePlayerPower(loadout);
-            var challengePower = ComputeChallengePower(data.baseChallenge, 0);
-            return ComputeWinChance(playerPower, challengePower);
+            return ComputeWinChance(playerPower, data.baseChallenge);
         }
 
         // Of that win chance, how much of it is a "close call" that still costs health
@@ -67,9 +81,12 @@ namespace DoomScroller.Combat
             return new CombatResult(true, 0, 0, lines);
         }
 
-        private static CombatResult ResolveFight(PlayerLoadout loadout, EncounterData data, EncounterVariant variant, Random rng)
+        private static CombatResult ResolveFight(PlayerLoadout loadout, EncounterData data, int challengePower, string label, Random rng)
         {
-            var lines = new List<string> { $"You face {data.title} ({variant.DifficultyLabel})." };
+            var lines = new List<string>
+            {
+                string.IsNullOrEmpty(label) ? $"You face {data.title}." : $"You face {data.title} ({label})."
+            };
             var playerPower = ComputePlayerPower(loadout);
 
             var leftHand = loadout.GetEquipped(EquipmentSlotType.LeftHand);
@@ -99,8 +116,6 @@ namespace DoomScroller.Combat
                     lines.Add($"You unleash {ability.abilityName}!");
                 }
             }
-
-            var challengePower = ComputeChallengePower(data.baseChallenge, variant.TierIndex);
 
             var winChance = ComputeWinChance(playerPower, challengePower);
             var roll = rng.NextDouble();
@@ -147,11 +162,6 @@ namespace DoomScroller.Combat
             }
 
             return playerPower;
-        }
-
-        private static int ComputeChallengePower(int baseChallenge, int tierIndex)
-        {
-            return (int)MathF.Round(baseChallenge * (1f + tierIndex * ChallengeGrowthPerTier));
         }
 
         private static float ComputeWinChance(int playerPower, int challengePower)

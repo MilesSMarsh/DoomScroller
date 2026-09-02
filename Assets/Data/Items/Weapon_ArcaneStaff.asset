@@ -27,3 +27,4 @@ MonoBehaviour:
     description: Slows all nearby enemies
     isActive: 0
     powerBonus: 7
+  isTwoHanded: 1

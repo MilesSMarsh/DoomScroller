@@ -113,7 +113,7 @@ namespace DoomScroller.Inventory
         {
             foreach (var kvp in _slots)
             {
-                kvp.Value.Refresh(_loadout.GetEquipped(kvp.Key));
+                kvp.Value.Refresh(_loadout.GetEquipped(kvp.Key), _loadout.GetLockingTwoHandedWeapon(kvp.Key));
             }
         }
     }

@@ -40,7 +40,10 @@ namespace DoomScroller.Inventory
             background.color = new Color(0.08f, 0.08f, 0.1f, 1f);
 
             var layoutGroup = go.AddComponent<VerticalLayoutGroup>();
-            layoutGroup.padding = new RectOffset(40, 40, NavBarController.Height + 20, 40);
+            // Left/right/bottom padding moves onto the scroll Content below — only the
+            // nav-bar clearance belongs on the root, since that's fixed regardless of
+            // scroll position.
+            layoutGroup.padding = new RectOffset(0, 0, NavBarController.Height, 0);
             layoutGroup.spacing = 12;
             layoutGroup.childAlignment = TextAnchor.UpperCenter;
             layoutGroup.childForceExpandWidth = true;
@@ -55,19 +58,24 @@ namespace DoomScroller.Inventory
             view._health = health;
             view._root = rect;
 
-            CreateLabel(rect, "Title", "Profile", 60, FontStyle.Bold);
-            CreatePortrait(rect, "PlayerPortrait", loadout.PlayerSprite, 220);
-            view._progressionText = CreateLabel(rect, "Progression", "", 32, FontStyle.Italic);
-            view._healthText = CreateLabel(rect, "Health", "", 32, FontStyle.Italic);
+            // Scrollable body: equip cluster + abilities can outgrow a short/narrow
+            // screen (or just a long ability list), so this panel scrolls instead of
+            // clipping. Close stays pinned below, outside the scroll area.
+            var content = ScrollAreaFactory.Create(rect, new RectOffset(40, 40, 0, 40), 12);
 
-            view._equipCluster = EquipSlotClusterView.Create(rect, loadout);
+            CreateLabel(content, "Title", "Profile", 60, FontStyle.Bold);
+            CreatePortrait(content, "PlayerPortrait", loadout.PlayerSprite, 220);
+            view._progressionText = CreateLabel(content, "Progression", "", 32, FontStyle.Italic);
+            view._healthText = CreateLabel(content, "Health", "", 32, FontStyle.Italic);
 
-            CreateLabel(rect, "AbilitiesHeader", "Weapon Abilities (tap to toggle, max " +
+            view._equipCluster = EquipSlotClusterView.Create(content, loadout);
+
+            CreateLabel(content, "AbilitiesHeader", "Weapon Abilities (tap to toggle, max " +
                         PlayerLoadout.MaxActiveAbilities + ")", 28, FontStyle.Italic);
 
             var abilitiesGo = new GameObject("Abilities", typeof(RectTransform));
             view._abilitiesContainer = (RectTransform)abilitiesGo.transform;
-            view._abilitiesContainer.SetParent(rect, false);
+            view._abilitiesContainer.SetParent(content, false);
             var abilitiesLayout = abilitiesGo.AddComponent<VerticalLayoutGroup>();
             abilitiesLayout.spacing = 8;
             abilitiesLayout.childForceExpandWidth = true;

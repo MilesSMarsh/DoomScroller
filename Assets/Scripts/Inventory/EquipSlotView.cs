@@ -33,16 +33,27 @@ namespace DoomScroller.Inventory
             view._row = GearRowFactory.Create(rect, IconSize, 18, 24, 20);
             view._row.CaptionText.text = ItemCategoryInfo.SlotLabel(slotType);
 
-            view.Refresh(null);
+            view.Refresh(null, null);
             return view;
         }
 
         private static readonly Color EmptyBackgroundColor = new(1f, 1f, 1f, 0.08f);
         private static readonly Color EmptyIconColor = new(1f, 1f, 1f, 0.15f);
+        private static readonly Color LockedBackgroundColor = new(0f, 0f, 0f, 0.35f);
+        private static readonly Color LockedIconColor = new(1f, 1f, 1f, 0.06f);
 
-        public void Refresh(ItemData equipped)
+        // lockedBy is the two-handed weapon equipped in the OTHER hand, if any — non-null
+        // means this slot can't hold anything right now (see PlayerLoadout.GetLockingTwoHandedWeapon).
+        public void Refresh(ItemData equipped, ItemData lockedBy)
         {
-            if (equipped == null)
+            if (lockedBy != null)
+            {
+                _row.Icon.color = LockedIconColor;
+                _row.TitleText.text = "Locked";
+                _row.StatText.text = $"{lockedBy.title} (2H)";
+                _background.color = LockedBackgroundColor;
+            }
+            else if (equipped == null)
             {
                 _row.Icon.color = EmptyIconColor;
                 _row.TitleText.text = "Empty";
@@ -53,7 +64,9 @@ namespace DoomScroller.Inventory
             {
                 _row.Icon.color = equipped.itemColor;
                 _row.TitleText.text = equipped.title;
-                _row.StatText.text = $"{equipped.StatLabel} {equipped.powerValue}";
+                _row.StatText.text = equipped.isTwoHanded
+                    ? $"{equipped.StatLabel} {equipped.powerValue} (2H)"
+                    : $"{equipped.StatLabel} {equipped.powerValue}";
                 _background.color = new Color(equipped.itemColor.r, equipped.itemColor.g, equipped.itemColor.b, 0.25f);
             }
         }

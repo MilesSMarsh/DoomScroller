@@ -21,6 +21,11 @@ namespace DoomScroller.Inventory
         [Tooltip("Only relevant when category is Weapon.")]
         public WeaponAbilityData[] abilities;
 
+        [Tooltip("Only relevant when category is Weapon. Equipping a two-handed weapon " +
+                  "auto-unequips and locks the other hand slot until this weapon is " +
+                  "unequipped again.")]
+        public bool isTwoHanded;
+
         // Not persisted — a display-only lookup so combat math never has to know
         // "defence" and "damage" are the same field under different labels.
         public string StatLabel => ItemCategoryInfo.Label(category);

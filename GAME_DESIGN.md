@@ -66,14 +66,19 @@ fun and functional.
   added without new UI code
 - At least 3 cards render correctly: 1 treasure, 2 enemy (one harder than the other)
 
-### Phase 3 — Encounter Entry & Difficulty Swipe
-**Goal:** Entering an encounter from the feed, with the sideways-swipe-for-difficulty
-mechanic.
+### Phase 3 — Encounter Entry & Dungeons
+**Goal:** Entering an encounter from the feed. Plain encounters resolve in one step;
+Dungeon-type encounters are a distinct, multi-step "dungeon door" card.
 **Acceptance criteria:**
 - Tapping/entering a feed card transitions into that encounter
-- Within an encounter, swiping sideways surfaces a harder variant with better
-  stated rewards, before you commit
-- Committing to an encounter locks in the difficulty and starts resolution
+- Plain Enemy/Treasure cards preview the entrance, then resolve in a single step on
+  commit — no difficulty choice
+- A Dungeon card commits into a horizontally-paged run: winning a step and swiping
+  right presses one page deeper into a new (harder) enemy, ending in a guaranteed
+  treasure room; swiping left revisits already-conquered pages without re-fighting
+  them; a downward swipe prompts to leave
+- Leaving a dungeon early, dying at any depth, and clearing the treasure room all lock
+  the feed card so the run can't be freely re-entered
 
 ### Phase 4 — Character Profile Screen (Inventory/Equipment)
 **Goal:** A "bio page"-styled screen for managing the character.

@@ -11,9 +11,12 @@ namespace DoomScroller.UI
     public class NavBarController : MonoBehaviour
     {
         // Bumped from 120 for mobile legibility (bigger progression/health text needs more
-        // vertical room) — every other screen reads this constant for its own top padding,
-        // so they all pick up the extra room automatically.
-        public const int Height = 148;
+        // vertical room), then from 148 to fold in the 20px of top-padding every screen
+        // used to add beyond this — that gap exposed a sliver of each screen's own
+        // background color as a visibly separate, slightly-lighter grey band under the
+        // bar instead of reading as one solid nav bar. Every other screen reads this
+        // constant for its own top padding, so they all pick up the room automatically.
+        public const int Height = 168;
 
         [SerializeField] private ProfileController profileController;
 

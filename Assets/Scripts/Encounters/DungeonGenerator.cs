@@ -1,0 +1,51 @@
+using System.Collections.Generic;
+using DoomScroller.Feed;
+using UnityEngine;
+
+namespace DoomScroller.Encounters
+{
+    // Plain C# so dungeon scaling is testable without a running scene.
+    // Builds one dungeon run's fixed step sequence: escalating enemy depths, always
+    // capped by a guaranteed treasure room. Reward rarity per step is just its
+    // DepthIndex, fed straight into RewardGenerator.GenerateItem — the treasure room's
+    // DepthIndex (3) is one past the 0-2 rarity range and clamps to the best tier there.
+    public static class DungeonGenerator
+    {
+        private const int EnemyDepthCount = 3;
+        private const float ChallengeGrowthPerDepth = 0.75f;
+        private const float XpGrowthPerDepth = 0.75f;
+
+        private static readonly string[] GearRarities = { "Common", "Uncommon", "Rare" };
+
+        // One flat placeholder color per depth, deepening/reddening as the dungeon gets
+        // harder — greybox "art," same convention as every other fallback-color visual
+        // in this project.
+        private static readonly Color[] DepthColors =
+        {
+            new(0.55f, 0.25f, 0.2f, 1f),
+            new(0.5f, 0.2f, 0.35f, 1f),
+            new(0.35f, 0.15f, 0.45f, 1f)
+        };
+
+        private static readonly Color TreasureColor = new(0.85f, 0.7f, 0.2f, 1f);
+
+        public static IReadOnlyList<DungeonStep> Generate(EncounterData data)
+        {
+            var steps = new List<DungeonStep>(EnemyDepthCount + 1);
+
+            for (var i = 0; i < EnemyDepthCount; i++)
+            {
+                var challenge = Mathf.RoundToInt(data.baseChallenge * (1f + i * ChallengeGrowthPerDepth));
+                var xp = Mathf.RoundToInt(data.baseXpReward * (1f + i * XpGrowthPerDepth));
+                var rewardSummary = $"{xp} XP + {GearRarities[i]} Gear";
+                steps.Add(new DungeonStep(i, $"Depth {i + 1}", rewardSummary, xp, challenge, false, DepthColors[i]));
+            }
+
+            var treasureXp = Mathf.RoundToInt(data.baseXpReward * (1f + EnemyDepthCount * XpGrowthPerDepth));
+            var treasureReward = $"{treasureXp} XP + guaranteed Rare loot";
+            steps.Add(new DungeonStep(EnemyDepthCount, "Treasure Room", treasureReward, treasureXp, 0, true, TreasureColor));
+
+            return steps;
+        }
+    }
+}

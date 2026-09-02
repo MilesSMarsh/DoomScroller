@@ -33,6 +33,7 @@ namespace DoomScroller.Feed
         private EncounterData[] _pool;
         private FeedCardView _activeCard;
 
+        private RectTransform _viewport;
         private RectTransform _content;
         private FeedPager _pager;
         private float _pageHeight;
@@ -91,6 +92,7 @@ namespace DoomScroller.Feed
             scrollRect.scrollSensitivity = 20f;
 
             var viewport = CreateStretchChild(rect, "Viewport");
+            _viewport = viewport;
             var viewportImage = viewport.gameObject.AddComponent<Image>();
             viewportImage.color = Color.clear;
             viewport.gameObject.AddComponent<RectMask2D>();
@@ -140,6 +142,48 @@ namespace DoomScroller.Feed
             // force it to resolve now so ScrollRect sees the true scrollable range from frame one.
             Canvas.ForceUpdateCanvases();
 
+            _pager.Configure(_pageHeight, Mathf.Max(_windowEndIndex - _windowStartIndex, 1));
+        }
+
+        // Recomputes every card's height whenever the actual on-screen viewport size
+        // changes — switching device presets in the Editor Simulator without restarting
+        // Play Mode, an aspect ratio the game wasn't tested at, or a real device
+        // rotation. _pageHeight was otherwise only ever measured once in Start(), so on
+        // a viewport taller than whatever was active then, every card stayed sized to
+        // the smaller stale height and the next card peeked out from under the buffer at
+        // the bottom of the screen — this keeps "one page" matching the real screen
+        // instead of a gap sized to whichever device the feed happened to build under.
+        private void OnRectTransformDimensionsChange()
+        {
+            // Fires for this GameObject's own rect only, but guard anyway: Awake/Start
+            // ordering means this can fire before BuildFeed has finished (or ever run).
+            if (_pager == null || _viewport == null)
+            {
+                return;
+            }
+
+            var newHeight = _viewport.rect.height;
+            if (newHeight <= 0f || Mathf.Approximately(newHeight, _pageHeight))
+            {
+                return;
+            }
+
+            // Content's anchoredPosition.y increases as you swipe up toward later pages
+            // (see FeedPager) — recover which page that corresponds to before rescaling,
+            // then re-place content at the same logical page under the new height so the
+            // resize doesn't yank the player mid-page.
+            var currentPage = _pageHeight > 0f ? Mathf.RoundToInt(_content.anchoredPosition.y / _pageHeight) : 0;
+            _pageHeight = newHeight;
+
+            foreach (var card in _liveCards)
+            {
+                var layoutElement = card.GetComponent<LayoutElement>();
+                layoutElement.preferredHeight = _pageHeight;
+                layoutElement.minHeight = _pageHeight;
+            }
+
+            Canvas.ForceUpdateCanvases();
+            _content.anchoredPosition = new Vector2(_content.anchoredPosition.x, currentPage * _pageHeight);
             _pager.Configure(_pageHeight, Mathf.Max(_windowEndIndex - _windowStartIndex, 1));
         }
 
@@ -232,6 +276,14 @@ namespace DoomScroller.Feed
         public void MarkLost(EncounterData data)
         {
             _activeCard?.SetLocked(true, "Failed");
+        }
+
+        // A dungeon left voluntarily before its treasure room (see DungeonView) still
+        // locks the card — otherwise the same run could be re-entered for free, easy
+        // rewards from whatever depth was already cleared.
+        public void MarkAbandoned(EncounterData data)
+        {
+            _activeCard?.SetLocked(true, "Abandoned");
         }
 
         // Invoked by FeedPager with the drag's raw destination page (local to the

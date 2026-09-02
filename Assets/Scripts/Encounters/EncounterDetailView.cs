@@ -1,20 +1,17 @@
 using System;
-using System.Collections.Generic;
 using DoomScroller.Feed;
 using DoomScroller.UI;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace DoomScroller.Encounters
 {
-    // Full-screen "you're entering this encounter" panel. Sideways swipe cycles through
-    // progressively harder/better-reward variants before the player commits.
-    public class EncounterDetailView : MonoBehaviour, IBeginDragHandler, IEndDragHandler
+    // Full-screen "you're entering this encounter" panel — a static preview with a
+    // single Commit. No difficulty choice any more (that's retired); a Dungeon-type
+    // card's actual depth progression happens in DungeonView after committing here.
+    public class EncounterDetailView : MonoBehaviour
     {
-        private const float SwipeThreshold = 80f;
-
-        public event Action<EncounterData, EncounterVariant> Committed;
+        public event Action<EncounterData> Committed;
         public event Action BackRequested;
 
         private Image _background;
@@ -24,9 +21,6 @@ namespace DoomScroller.Encounters
         private Text _hintText;
 
         private EncounterData _data;
-        private IReadOnlyList<EncounterVariant> _variants;
-        private int _variantIndex;
-        private Vector2 _dragStart;
 
         public static EncounterDetailView Create(Transform parent)
         {
@@ -42,7 +36,7 @@ namespace DoomScroller.Encounters
             background.color = new Color(0.1f, 0.1f, 0.12f, 1f);
 
             var layoutGroup = go.AddComponent<VerticalLayoutGroup>();
-            layoutGroup.padding = new RectOffset(48, 48, NavBarController.Height + 20, 0);
+            layoutGroup.padding = new RectOffset(48, 48, NavBarController.Height, 0);
             layoutGroup.spacing = 16;
             layoutGroup.childAlignment = TextAnchor.MiddleCenter;
             layoutGroup.childForceExpandWidth = true;
@@ -61,8 +55,7 @@ namespace DoomScroller.Encounters
             view._hintText.color = new Color(1, 1, 1, 0.6f);
 
             CreateButton(rect, "BackButton", "Back", () => view.BackRequested?.Invoke());
-            CreateButton(rect, "CommitButton", "Commit", () =>
-                view.Committed?.Invoke(view._data, view._variants[view._variantIndex]));
+            CreateButton(rect, "CommitButton", "Commit", () => view.Committed?.Invoke(view._data));
 
             go.SetActive(false);
             return view;
@@ -71,48 +64,21 @@ namespace DoomScroller.Encounters
         public void Show(EncounterData data)
         {
             _data = data;
-            _variants = EncounterVariantGenerator.Generate(data);
-            _variantIndex = 0;
             _background.color = data.cardColor * 0.5f + new Color(0, 0, 0, 0.5f);
-            RefreshLabels();
+
+            _titleText.text = data.title;
+            _difficultyText.text = data.type == EncounterType.Dungeon ? "Dungeon Door" : $"{data.type}";
+            _rewardText.text = data.rewardSummary;
+            _hintText.text = data.type == EncounterType.Dungeon
+                ? "Enemies get harder as you go deeper — ends in a guaranteed treasure room."
+                : "";
+
             gameObject.SetActive(true);
         }
 
         public void Hide()
         {
             gameObject.SetActive(false);
-        }
-
-        public void OnBeginDrag(PointerEventData eventData)
-        {
-            _dragStart = eventData.position;
-        }
-
-        public void OnEndDrag(PointerEventData eventData)
-        {
-            var deltaX = eventData.position.x - _dragStart.x;
-            if (Mathf.Abs(deltaX) < SwipeThreshold)
-            {
-                return;
-            }
-
-            // Swipe left (deltaX < 0) steps to a harder variant; swipe right steps back down.
-            var step = deltaX < 0 ? 1 : -1;
-            _variantIndex = Mathf.Clamp(_variantIndex + step, 0, _variants.Count - 1);
-            RefreshLabels();
-        }
-
-        private void RefreshLabels()
-        {
-            var variant = _variants[_variantIndex];
-            var hasDifficultyChoice = _variants.Count > 1;
-
-            _titleText.text = _data.title;
-            _difficultyText.text = hasDifficultyChoice
-                ? $"{_data.type} · {variant.DifficultyLabel}"
-                : $"{_data.type}";
-            _rewardText.text = variant.RewardSummary;
-            _hintText.text = hasDifficultyChoice ? "Swipe left/right to change difficulty" : "";
         }
 
         private static Text CreateLabel(Transform parent, string name, int fontSize, FontStyle style, TextAnchor alignment)

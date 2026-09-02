@@ -61,6 +61,26 @@ namespace DoomScroller.Inventory
             return _equipped.TryGetValue(slot, out var item) ? item : null;
         }
 
+        // Permanently removes an item from the inventory. Refuses anything currently
+        // equipped in any slot — the UI only ever offers deletion for unequipped items,
+        // but this keeps that an invariant of the class itself rather than trusting
+        // every caller to check first.
+        public bool RemoveFromInventory(ItemData item)
+        {
+            if (item == null || _equipped.Values.Contains(item))
+            {
+                return false;
+            }
+
+            var removed = _inventory.Remove(item);
+            if (removed)
+            {
+                Changed?.Invoke();
+            }
+
+            return removed;
+        }
+
         public void Equip(ItemData item)
         {
             if (item == null || !_inventory.Contains(item))
@@ -68,13 +88,43 @@ namespace DoomScroller.Inventory
                 return;
             }
 
+            // A two-handed weapon in the other hand locks this slot — refuse the equip
+            // rather than letting it silently coexist with a weapon that's supposed to
+            // occupy both hands.
+            if (GetLockingTwoHandedWeapon(item.slotType) != null)
+            {
+                return;
+            }
+
             _equipped[item.slotType] = item;
             if (IsHandSlot(item.slotType))
             {
+                if (IsTwoHanded(item))
+                {
+                    // Equipping a two-hander clears whatever was in the other hand —
+                    // it can't coexist with anything else.
+                    _equipped.Remove(OtherHandSlot(item.slotType));
+                }
+
                 PruneActiveAbilitiesToEquippedWeapons();
             }
 
             Changed?.Invoke();
+        }
+
+        // Non-null (and equal to the blocking weapon) when `slot` is a hand slot whose
+        // opposite hand holds a two-handed weapon — meaning `slot` is locked: nothing can
+        // be equipped into it, and the UI should render it as disabled. Null for
+        // non-hand slots and whenever the opposite hand doesn't hold a two-hander.
+        public ItemData GetLockingTwoHandedWeapon(EquipmentSlotType slot)
+        {
+            if (!IsHandSlot(slot))
+            {
+                return null;
+            }
+
+            var otherItem = GetEquipped(OtherHandSlot(slot));
+            return IsTwoHanded(otherItem) ? otherItem : null;
         }
 
         public void Unequip(EquipmentSlotType slot)
@@ -149,6 +199,16 @@ namespace DoomScroller.Inventory
         private static bool IsHandSlot(EquipmentSlotType slot)
         {
             return slot == EquipmentSlotType.LeftHand || slot == EquipmentSlotType.RightHand;
+        }
+
+        private static EquipmentSlotType OtherHandSlot(EquipmentSlotType slot)
+        {
+            return slot == EquipmentSlotType.LeftHand ? EquipmentSlotType.RightHand : EquipmentSlotType.LeftHand;
+        }
+
+        private static bool IsTwoHanded(ItemData item)
+        {
+            return item != null && item.category == ItemCategory.Weapon && item.isTwoHanded;
         }
 
         private void PruneActiveAbilitiesToEquippedWeapons()
