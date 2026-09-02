@@ -13,8 +13,9 @@ MonoBehaviour:
   m_Name: Accessory_LuckyCharm
   m_EditorClassIdentifier: Assembly-CSharp::DoomScroller.Inventory.ItemData
   title: Lucky Charm
-  slotType: 2
-  statSummary: +10% Crit Chance
+  slotType: 6
+  category: 3
+  statSummary: +5 Power
   itemColor: {r: 0.85, g: 0.75, b: 0.2, a: 1}
   powerValue: 5
   abilities: []

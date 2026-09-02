@@ -9,13 +9,20 @@ namespace DoomScroller.Inventory
     {
         public string title;
         public EquipmentSlotType slotType;
+        public ItemCategory category;
         public string statSummary;
         public Color itemColor = Color.gray;
 
-        [Tooltip("Combat power this item contributes while equipped (Phase 5 resolution).")]
+        [Tooltip("Combat power this item contributes while equipped (Phase 5 resolution). " +
+                  "Defence, damage, etc. are all the same underlying number for now — " +
+                  "StatLabel is purely which word to show next to it.")]
         public int powerValue = 10;
 
-        [Tooltip("Only relevant when slotType is Weapon.")]
+        [Tooltip("Only relevant when category is Weapon.")]
         public WeaponAbilityData[] abilities;
+
+        // Not persisted — a display-only lookup so combat math never has to know
+        // "defence" and "damage" are the same field under different labels.
+        public string StatLabel => ItemCategoryInfo.Label(category);
     }
 }

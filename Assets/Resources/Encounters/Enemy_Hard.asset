@@ -10,13 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9a8294fed99c4ae1880d2e20e4ba7a0b, type: 3}
-  m_Name: Treasure_GlitteringChest
+  m_Name: Enemy_Hard
   m_EditorClassIdentifier: 
-  title: Glittering Chest
-  type: 0
-  difficultyTier: 1
-  difficultyLabel: Standard
-  rewardSummary: 'Guaranteed loot: no combat required'
-  cardColor: {r: 0.85, g: 0.7, b: 0.2, a: 1}
-  baseXpReward: 80
-  baseChallenge: 0
+  title: Bonewrought Sentinel
+  type: 1
+  artwork: {fileID: 21300000, guid: f911d6c54aef7449eb2bf44d3489cc69, type: 3}
+  cardColor: {r: 0.35, g: 0.08, b: 0.08, a: 1}
+  rewardSummary: 200 XP + Rare Gear
+  baseXpReward: 200
+  baseChallenge: 70

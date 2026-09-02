@@ -4,6 +4,7 @@ using DoomScroller.Combat;
 using DoomScroller.Feed;
 using DoomScroller.Inventory;
 using DoomScroller.Progression;
+using DoomScroller.Social;
 using DoomScroller.UI;
 using UnityEngine;
 using UnityEngine.UI;
@@ -15,14 +16,23 @@ namespace DoomScroller.Encounters
     // real-time input here (Phase 5).
     public class CombatResolutionView : MonoBehaviour
     {
-        private const float SecondsPerLine = 0.7f;
+        private const float SecondsPerLine = 0.2f;
 
         public event Action ReturnToFeedRequested;
+        public event Action<EncounterData> EncounterWon;
+        public event Action<EncounterData> EncounterLost;
 
+        private const float PortraitSize = 220f;
+
+        private GameObject _battleRow;
+        private Image _playerPortrait;
+        private Image _enemyPortrait;
         private Text _sequenceText;
         private Text _outcomeText;
         private Text _rewardText;
         private Coroutine _revealCoroutine;
+        private EncounterData _data;
+        private MessageBoardView _messageBoard;
 
         public static CombatResolutionView Create(Transform parent)
         {
@@ -44,13 +54,29 @@ namespace DoomScroller.Encounters
             layoutGroup.childForceExpandWidth = true;
             layoutGroup.childForceExpandHeight = false;
             layoutGroup.childControlWidth = true;
-            layoutGroup.childControlHeight = false;
+            // Must be true: with this false, sibling positioning (e.g. the message board
+            // below Reward, and ReturnButton below that) doesn't track each child's real
+            // preferred/content-driven height — verified live via RectTransform dumps,
+            // same root cause as the FeedController card-height fix.
+            layoutGroup.childControlHeight = true;
 
             var view = go.AddComponent<CombatResolutionView>();
-            view._sequenceText = CreateLabel(rect, "Sequence", 30, FontStyle.Normal, 400);
+
+            // Only shown for actual fights (Enemy type) — Treasure never fights, per
+            // CombatResolver.ResolveTreasure's "no guardians, no traps" flavor.
+            view._battleRow = CreateBattleRow(rect, out view._playerPortrait, out view._enemyPortrait);
+
+            view._sequenceText = CreateLabel(rect, "Sequence", 34, FontStyle.Normal, 420);
             view._sequenceText.alignment = TextAnchor.UpperLeft;
-            view._outcomeText = CreateLabel(rect, "Outcome", 56, FontStyle.Bold, 80);
-            view._rewardText = CreateLabel(rect, "Reward", 30, FontStyle.Italic, 60);
+            view._outcomeText = CreateLabel(rect, "Outcome", 64, FontStyle.Bold, 90);
+            // Tall enough for a 3-line reward string (reward + close-call damage note +
+            // level-up), not just the visually-tighter single-line case.
+            view._rewardText = CreateLabel(rect, "Reward", 34, FontStyle.Italic, 150);
+
+            // Phase 7 stub: a minimal comment list + reply field, shown once the outcome
+            // is revealed. Full threading/replies/moderation are explicitly out of scope.
+            view._messageBoard = MessageBoardView.Create(rect);
+            view._messageBoard.ContentChanged += () => LayoutRebuilder.ForceRebuildLayoutImmediate(rect);
 
             CreateButton(rect, "ReturnButton", "Return to Feed", () => view.ReturnToFeedRequested?.Invoke());
 
@@ -58,22 +84,34 @@ namespace DoomScroller.Encounters
             return view;
         }
 
-        public void Show(EncounterData data, EncounterVariant variant, PlayerLoadout loadout, PlayerProgression progression)
+        public void Show(EncounterData data, EncounterVariant variant, PlayerLoadout loadout, PlayerProgression progression, PlayerHealth health)
         {
             gameObject.SetActive(true);
+            _data = data;
+
+            var isFight = data.type == EncounterType.Enemy;
+            _battleRow.SetActive(isFight);
+            _playerPortrait.sprite = loadout.PlayerSprite;
+            _playerPortrait.color = loadout.PlayerSprite != null ? Color.white : new Color(1f, 1f, 1f, 0.15f);
+            if (isFight)
+            {
+                _enemyPortrait.sprite = data.artwork;
+                _enemyPortrait.color = data.artwork != null ? Color.white : data.cardColor;
+            }
 
             var result = CombatResolver.Resolve(loadout, data, variant);
 
             _sequenceText.text = "";
             _outcomeText.text = "";
             _rewardText.text = "";
+            _messageBoard.Hide();
 
             if (_revealCoroutine != null)
             {
                 StopCoroutine(_revealCoroutine);
             }
 
-            _revealCoroutine = StartCoroutine(RevealSequence(result, variant, loadout, progression));
+            _revealCoroutine = StartCoroutine(RevealSequence(result, variant, loadout, progression, health));
         }
 
         public void Hide()
@@ -88,7 +126,7 @@ namespace DoomScroller.Encounters
         }
 
         private IEnumerator RevealSequence(CombatResult result, EncounterVariant variant, PlayerLoadout loadout,
-            PlayerProgression progression)
+            PlayerProgression progression, PlayerHealth health)
         {
             foreach (var line in result.SequenceLines)
             {
@@ -99,6 +137,8 @@ namespace DoomScroller.Encounters
             _outcomeText.text = result.IsVictory ? "VICTORY" : "DEFEAT";
             _outcomeText.color = result.IsVictory ? new Color(0.4f, 0.9f, 0.4f) : new Color(0.9f, 0.4f, 0.4f);
 
+            health.ApplyDamage(result.HealthDamage);
+
             if (result.IsVictory)
             {
                 var previousLevel = progression.Level;
@@ -108,16 +148,79 @@ namespace DoomScroller.Encounters
                 loadout.AddToInventory(item);
 
                 var rewardLine = $"Reward: {variant.XpReward} XP + {item.title} (equip it from Profile)";
+                if (result.WasCloseCall)
+                {
+                    rewardLine += $"\nClose call — you took {result.HealthDamage} damage " +
+                        $"({health.CurrentHealth}/{health.MaxHealth} HP).";
+                }
+
                 _rewardText.text = progression.Level > previousLevel
                     ? $"{rewardLine}\nLevel up! You're now level {progression.Level}."
                     : rewardLine;
+
+                EncounterWon?.Invoke(_data);
             }
             else
             {
-                _rewardText.text = "No reward this time — your gear held you back. Try a different loadout.";
+                _rewardText.text = $"No reward this time — your gear held you back. You took " +
+                    $"{result.HealthDamage} damage ({health.CurrentHealth}/{health.MaxHealth} HP). " +
+                    "This one's lost for good; gear up and look for the next one.";
+                EncounterLost?.Invoke(_data);
             }
 
+            _messageBoard.Populate(_data, result.IsVictory);
+
             _revealCoroutine = null;
+        }
+
+        private static GameObject CreateBattleRow(Transform parent, out Image playerPortrait, out Image enemyPortrait)
+        {
+            var rowGo = new GameObject("BattleRow", typeof(RectTransform));
+            rowGo.transform.SetParent(parent, false);
+            rowGo.AddComponent<LayoutElement>().preferredHeight = PortraitSize;
+
+            var rowLayout = rowGo.AddComponent<HorizontalLayoutGroup>();
+            rowLayout.spacing = 24;
+            rowLayout.childAlignment = TextAnchor.MiddleCenter;
+            rowLayout.childForceExpandWidth = false;
+            rowLayout.childForceExpandHeight = false;
+            // Must be true, same reason as MessageBoardView's reply row: without it, this
+            // row won't actually write each portrait's fixed preferred size.
+            rowLayout.childControlWidth = true;
+            rowLayout.childControlHeight = true;
+
+            playerPortrait = CreatePortraitBox(rowGo.transform, "PlayerPortrait");
+
+            var vsGo = new GameObject("VsLabel", typeof(RectTransform));
+            vsGo.transform.SetParent(rowGo.transform, false);
+            vsGo.AddComponent<LayoutElement>().preferredWidth = 70;
+            var vsText = vsGo.AddComponent<Text>();
+            vsText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            vsText.fontSize = 32;
+            vsText.fontStyle = FontStyle.Bold;
+            vsText.alignment = TextAnchor.MiddleCenter;
+            vsText.color = new Color(1f, 1f, 1f, 0.6f);
+            vsText.text = "VS";
+
+            enemyPortrait = CreatePortraitBox(rowGo.transform, "EnemyPortrait");
+
+            return rowGo;
+        }
+
+        private static Image CreatePortraitBox(Transform parent, string name)
+        {
+            var go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+
+            var layoutElement = go.AddComponent<LayoutElement>();
+            layoutElement.preferredWidth = PortraitSize;
+            layoutElement.preferredHeight = PortraitSize;
+
+            var image = go.AddComponent<Image>();
+            image.preserveAspect = true;
+            image.color = new Color(1f, 1f, 1f, 0.12f);
+
+            return image;
         }
 
         private static Text CreateLabel(Transform parent, string name, int fontSize, FontStyle style, float preferredHeight)
@@ -149,7 +252,7 @@ namespace DoomScroller.Encounters
             image.color = new Color(1, 1, 1, 0.15f);
 
             var layoutElement = go.AddComponent<LayoutElement>();
-            layoutElement.preferredHeight = 96;
+            layoutElement.preferredHeight = 120;
 
             var button = go.AddComponent<Button>();
             button.onClick.AddListener(() => onClick());
@@ -164,7 +267,7 @@ namespace DoomScroller.Encounters
 
             var labelText = labelGo.AddComponent<Text>();
             labelText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            labelText.fontSize = 32;
+            labelText.fontSize = 40;
             labelText.fontStyle = FontStyle.Bold;
             labelText.alignment = TextAnchor.MiddleCenter;
             labelText.color = Color.white;

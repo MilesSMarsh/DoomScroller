@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DoomScroller.Inventory.ItemData
   title: Leather Vest
   slotType: 1
-  statSummary: +5 Defense
+  category: 0
+  statSummary: +10 Defence
   itemColor: {r: 0.5, g: 0.35, b: 0.2, a: 1}
   powerValue: 10
   abilities: []

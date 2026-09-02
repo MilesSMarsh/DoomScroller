@@ -21,6 +21,9 @@ namespace DoomScroller.Input
 
         private void OnEnable()
         {
+            // A script-recompile domain reload during Play Mode wipes non-serialized
+            // fields but doesn't re-run Awake() on existing objects, so this can be null.
+            _gestureService ??= new TouchGestureService(swipeMinDistance, tapMaxDuration);
             _gestureService.Tapped += HandleTap;
             _gestureService.Swiped += HandleSwipe;
         }

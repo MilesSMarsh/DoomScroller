@@ -10,11 +10,15 @@ namespace DoomScroller.UI
     // on top and always visible, including while scrolling the feed.
     public class NavBarController : MonoBehaviour
     {
-        public const int Height = 120;
+        // Bumped from 120 for mobile legibility (bigger progression/health text needs more
+        // vertical room) — every other screen reads this constant for its own top padding,
+        // so they all pick up the extra room automatically.
+        public const int Height = 148;
 
         [SerializeField] private ProfileController profileController;
 
         private Text _progressionText;
+        private Text _healthText;
 
         private void Awake()
         {
@@ -28,8 +32,12 @@ namespace DoomScroller.UI
             var background = gameObject.AddComponent<Image>();
             background.color = new Color(0.05f, 0.05f, 0.07f, 0.95f);
 
-            _progressionText = CreateLabel(rect, "Progression", "", TextAnchor.MiddleLeft, new Vector2(0, 0),
+            _progressionText = CreateLabel(rect, "Progression", "", TextAnchor.MiddleLeft, new Vector2(0, 0.5f),
                 new Vector2(0.6f, 1), new Vector2(32, 0), Vector2.zero);
+
+            _healthText = CreateLabel(rect, "Health", "", TextAnchor.MiddleLeft, new Vector2(0, 0),
+                new Vector2(0.6f, 0.5f), new Vector2(32, 0), Vector2.zero);
+            _healthText.fontSize = 30;
 
             CreateButton(rect, "ProfileButton", "Profile", () => profileController.Open());
 
@@ -45,13 +53,39 @@ namespace DoomScroller.UI
             // ProfileController.Awake() has created it. Start() is guaranteed to run only after
             // every component's Awake() in the scene has completed.
             profileController.Progression.Changed += RefreshProgressionText;
+            profileController.Health.Changed += RefreshHealthText;
             RefreshProgressionText();
+            RefreshHealthText();
+        }
+
+        private void Update()
+        {
+            // Health regenerates purely from real time (ProfileController.Update() drives
+            // the actual tick); keep the always-visible countdown live without needing an
+            // explicit event for every passing second.
+            RefreshHealthText();
         }
 
         private void RefreshProgressionText()
         {
             var progression = profileController.Progression;
             _progressionText.text = $"Lv.{progression.Level} · {progression.CurrentXp}/{progression.XpToNextLevel} XP";
+        }
+
+        private void RefreshHealthText()
+        {
+            var health = profileController.Health;
+            if (health.IsDepleted)
+            {
+                var seconds = Mathf.CeilToInt(health.SecondsUntilNextTick());
+                _healthText.text = $"HP {health.CurrentHealth}/{health.MaxHealth} · next in {seconds / 60}:{seconds % 60:D2}";
+                _healthText.color = new Color(0.95f, 0.4f, 0.35f);
+            }
+            else
+            {
+                _healthText.text = $"HP {health.CurrentHealth}/{health.MaxHealth}";
+                _healthText.color = Color.white;
+            }
         }
 
         private static Text CreateLabel(Transform parent, string name, string content, TextAnchor alignment,
@@ -67,7 +101,7 @@ namespace DoomScroller.UI
 
             var text = go.AddComponent<Text>();
             text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            text.fontSize = 34;
+            text.fontSize = 36;
             text.fontStyle = FontStyle.Bold;
             text.alignment = alignment;
             text.color = Color.white;
@@ -84,7 +118,7 @@ namespace DoomScroller.UI
             rect.anchorMax = new Vector2(1, 0.5f);
             rect.pivot = new Vector2(1, 0.5f);
             rect.anchoredPosition = new Vector2(-24, 0);
-            rect.sizeDelta = new Vector2(180, 84);
+            rect.sizeDelta = new Vector2(200, 104);
 
             var image = go.AddComponent<Image>();
             image.color = new Color(1, 1, 1, 0.15f);
@@ -102,7 +136,7 @@ namespace DoomScroller.UI
 
             var labelText = labelGo.AddComponent<Text>();
             labelText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            labelText.fontSize = 28;
+            labelText.fontSize = 34;
             labelText.fontStyle = FontStyle.Bold;
             labelText.alignment = TextAnchor.MiddleCenter;
             labelText.color = Color.white;

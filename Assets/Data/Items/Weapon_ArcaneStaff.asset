@@ -13,14 +13,17 @@ MonoBehaviour:
   m_Name: Weapon_ArcaneStaff
   m_EditorClassIdentifier: Assembly-CSharp::DoomScroller.Inventory.ItemData
   title: Arcane Staff
-  slotType: 0
+  slotType: 4
+  category: 1
   statSummary: +14 Magic Attack
   itemColor: {r: 0.3, g: 0.5, b: 0.9, a: 1}
   powerValue: 20
   abilities:
   - abilityName: Fireball
     description: Ranged burst damage
+    isActive: 1
     powerBonus: 10
   - abilityName: Frost Nova
     description: Slows all nearby enemies
+    isActive: 0
     powerBonus: 7

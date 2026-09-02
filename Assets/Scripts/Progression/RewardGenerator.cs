@@ -21,19 +21,23 @@ namespace DoomScroller.Progression
             rng ??= new System.Random();
             rarityTierIndex = Mathf.Clamp(rarityTierIndex, 0, RarityNames.Length - 1);
 
-            var slots = new[] { EquipmentSlotType.Weapon, EquipmentSlotType.Armor, EquipmentSlotType.Accessory };
+            var categories = (ItemCategory[])System.Enum.GetValues(typeof(ItemCategory));
+            var category = categories[rng.Next(categories.Length)];
+            var slots = ItemCategoryInfo.SlotsFor(category);
             var slot = slots[rng.Next(slots.Length)];
+
             var rarityName = RarityNames[rarityTierIndex];
             var power = RarityPower[rarityTierIndex];
 
             var item = ScriptableObject.CreateInstance<ItemData>();
             item.title = $"{rarityName} {slot}";
             item.slotType = slot;
-            item.statSummary = $"+{power} Power";
+            item.category = category;
+            item.statSummary = $"+{power} {ItemCategoryInfo.Label(category)}";
             item.powerValue = power;
             item.itemColor = RarityColors[rarityTierIndex];
 
-            if (slot == EquipmentSlotType.Weapon)
+            if (category == ItemCategory.Weapon)
             {
                 item.abilities = new[]
                 {
@@ -41,7 +45,15 @@ namespace DoomScroller.Progression
                     {
                         abilityName = "Strike",
                         description = "A reliable basic attack",
+                        isActive = true,
                         powerBonus = power / 2
+                    },
+                    new WeaponAbilityData
+                    {
+                        abilityName = "Honed Edge",
+                        description = "A quiet, always-on edge to your attacks",
+                        isActive = false,
+                        powerBonus = power / 4
                     }
                 };
             }

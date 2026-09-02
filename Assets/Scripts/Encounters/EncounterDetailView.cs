@@ -48,14 +48,16 @@ namespace DoomScroller.Encounters
             layoutGroup.childForceExpandWidth = true;
             layoutGroup.childForceExpandHeight = false;
             layoutGroup.childControlWidth = true;
-            layoutGroup.childControlHeight = false;
+            // Must be true: with this false, sibling positions don't track each label's
+            // real declared height (see ProfileView/CombatResolutionView's identical fix).
+            layoutGroup.childControlHeight = true;
 
             var view = go.AddComponent<EncounterDetailView>();
             view._background = background;
-            view._titleText = CreateLabel(rect, "Title", 48, FontStyle.Bold, TextAnchor.MiddleCenter);
-            view._difficultyText = CreateLabel(rect, "Difficulty", 32, FontStyle.Italic, TextAnchor.MiddleCenter);
-            view._rewardText = CreateLabel(rect, "Reward", 32, FontStyle.Normal, TextAnchor.MiddleCenter);
-            view._hintText = CreateLabel(rect, "Hint", 22, FontStyle.Normal, TextAnchor.MiddleCenter);
+            view._titleText = CreateLabel(rect, "Title", 60, FontStyle.Bold, TextAnchor.MiddleCenter);
+            view._difficultyText = CreateLabel(rect, "Difficulty", 36, FontStyle.Italic, TextAnchor.MiddleCenter);
+            view._rewardText = CreateLabel(rect, "Reward", 36, FontStyle.Normal, TextAnchor.MiddleCenter);
+            view._hintText = CreateLabel(rect, "Hint", 26, FontStyle.Normal, TextAnchor.MiddleCenter);
             view._hintText.color = new Color(1, 1, 1, 0.6f);
 
             CreateButton(rect, "BackButton", "Back", () => view.BackRequested?.Invoke());
@@ -128,7 +130,7 @@ namespace DoomScroller.Encounters
             text.verticalOverflow = VerticalWrapMode.Truncate;
 
             var layoutElement = go.AddComponent<LayoutElement>();
-            layoutElement.preferredHeight = fontSize + 14;
+            layoutElement.preferredHeight = fontSize + 24;
 
             return text;
         }
@@ -142,12 +144,12 @@ namespace DoomScroller.Encounters
             image.color = new Color(1, 1, 1, 0.15f);
 
             var layoutElement = go.AddComponent<LayoutElement>();
-            layoutElement.preferredHeight = 96;
+            layoutElement.preferredHeight = 120;
 
             var button = go.AddComponent<Button>();
             button.onClick.AddListener(() => onClick());
 
-            var labelText = CreateLabel(go.transform, "Label", 32, FontStyle.Bold, TextAnchor.MiddleCenter);
+            var labelText = CreateLabel(go.transform, "Label", 40, FontStyle.Bold, TextAnchor.MiddleCenter);
             var labelRect = (RectTransform)labelText.transform;
             labelRect.anchorMin = Vector2.zero;
             labelRect.anchorMax = Vector2.one;

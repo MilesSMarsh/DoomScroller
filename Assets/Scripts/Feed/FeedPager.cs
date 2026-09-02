@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -18,11 +19,20 @@ namespace DoomScroller.Feed
         private int _pageCount;
         private float _targetY;
         private bool _isSnapping;
+        private Func<int, int> _onPageRequested;
 
         public void Configure(float pageHeight, int pageCount)
         {
             _pageHeight = pageHeight;
             _pageCount = Mathf.Max(pageCount, 1);
+        }
+
+        // Called with the drag's raw destination page before it's committed to, so the
+        // feed can generate ahead / trim behind (and shift content to compensate) first.
+        // Returns the (possibly re-based) local page index to actually snap to.
+        public void SetPageRequestHandler(Func<int, int> handler)
+        {
+            _onPageRequested = handler;
         }
 
         private void Awake()
@@ -59,6 +69,13 @@ namespace DoomScroller.Feed
             else
             {
                 page = Mathf.RoundToInt(rawPage);
+            }
+
+            page = Mathf.Max(page, 0);
+
+            if (_onPageRequested != null)
+            {
+                page = _onPageRequested(page);
             }
 
             page = Mathf.Clamp(page, 0, _pageCount - 1);

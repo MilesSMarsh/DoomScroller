@@ -25,6 +25,8 @@ namespace DoomScroller.Encounters
             _detailView.BackRequested += OnBackToFeed;
             _detailView.Committed += OnCommitted;
             _resolutionView.ReturnToFeedRequested += OnBackToFeed;
+            _resolutionView.EncounterWon += feedController.MarkWon;
+            _resolutionView.EncounterLost += feedController.MarkLost;
         }
 
         private void OnEncounterSelected(EncounterData data)
@@ -36,7 +38,7 @@ namespace DoomScroller.Encounters
         private void OnCommitted(EncounterData data, EncounterVariant variant)
         {
             _detailView.Hide();
-            _resolutionView.Show(data, variant, profileController.Loadout, profileController.Progression);
+            _resolutionView.Show(data, variant, profileController.Loadout, profileController.Progression, profileController.Health);
         }
 
         private void OnBackToFeed()

@@ -773,10 +773,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 259f6d4f4b18420bb47d2f261b4d7ddb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  encounters:
-  - {fileID: 11400000, guid: 7b1b2fe62f2741049f366491d1864b4a, type: 2}
-  - {fileID: 11400000, guid: 8be2bb5911ac42e19cb34e8748102e74, type: 2}
-  - {fileID: 11400000, guid: 62f0ddde53814707a67df18b9aaf254b, type: 2}
+  profileController: {fileID: 2145891040}
 --- !u!1 &934582020
 GameObject:
   m_ObjectHideFlags: 0
@@ -880,6 +877,21 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 14a90f560c1ce3d7390df67182ad683d, type: 2}
   - {fileID: 11400000, guid: 70aff4cbad047229c85318c87933356c, type: 2}
   - {fileID: 11400000, guid: b85f228f60b510ff9b283ac39e58d255, type: 2}
+  - {fileID: 11400000, guid: 1c6e40f4fb14f12738f900a291a18f0e, type: 2}
+  - {fileID: 11400000, guid: 83a6590aaf20b37d7b6be8a58fd24a8c, type: 2}
+  - {fileID: 11400000, guid: 99deaef57cedfa88787a97197497b3ac, type: 2}
+  - {fileID: 11400000, guid: 1f37acea092e36d88b4c22f53034e51f, type: 2}
+  - {fileID: 11400000, guid: b8efc3d4da446f9a39565bb06147afca, type: 2}
+  - {fileID: 11400000, guid: c587909294854462581c1764cbd8b459, type: 2}
+  - {fileID: 11400000, guid: 36c5c1cf03eeda7deb62ce7e38f67f61, type: 2}
+  - {fileID: 11400000, guid: fc56f8a804b9cc5ea87a97a580f802e7, type: 2}
+  - {fileID: 11400000, guid: 52b00262aaa1c9802a36dfec50c1ae18, type: 2}
+  - {fileID: 11400000, guid: 3148b1eff7b1cb098ad88184c40df124, type: 2}
+  - {fileID: 11400000, guid: 02777713a5477314ab2f9c3bd68020c3, type: 2}
+  playerSprite: {fileID: 21300000, guid: c670095de6b4303678d8ef6ce7c98106, type: 3}
+  maxHealth: 100
+  regenPerInterval: 10
+  regenIntervalSeconds: 30
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

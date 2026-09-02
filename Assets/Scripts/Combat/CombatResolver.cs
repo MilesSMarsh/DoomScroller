@@ -12,6 +12,12 @@ namespace DoomScroller.Combat
     {
         private const float ChallengeGrowthPerTier = 0.75f;
 
+        // A win whose roll landed within this margin of the loss boundary counts as a
+        // "close call" — you still won, but it cost you (see ResolveFight).
+        private const float CloseCallMargin = 0.15f;
+        private const int DefeatDamage = 20;
+        private const int CloseCallDamage = 8;
+
         public static CombatResult Resolve(PlayerLoadout loadout, EncounterData data, EncounterVariant variant, Random rng = null)
         {
             if (data.type == EncounterType.Treasure)
@@ -20,6 +26,34 @@ namespace DoomScroller.Combat
             }
 
             return ResolveFight(loadout, data, variant, rng ?? new Random());
+        }
+
+        // Same win-chance math as ResolveFight, without rolling — lets the feed show a
+        // predicted percent/color for the entry-level (tier 0) variant before entering.
+        public static float PredictWinChance(PlayerLoadout loadout, EncounterData data)
+        {
+            if (data.type == EncounterType.Treasure)
+            {
+                return 1f;
+            }
+
+            var playerPower = ComputePlayerPower(loadout);
+            var challengePower = ComputeChallengePower(data.baseChallenge, 0);
+            return ComputeWinChance(playerPower, challengePower);
+        }
+
+        // Of that win chance, how much of it is a "close call" that still costs health
+        // (see CloseCallMargin/ResolveFight) — the feed shows this as a second, smaller
+        // percentage alongside the overall win chance. 0 for Treasure (never at risk).
+        public static float PredictCloseCallChance(PlayerLoadout loadout, EncounterData data)
+        {
+            if (data.type == EncounterType.Treasure)
+            {
+                return 0f;
+            }
+
+            var winChance = PredictWinChance(loadout, data);
+            return MathF.Min(CloseCallMargin, winChance);
         }
 
         private static CombatResult ResolveTreasure(EncounterData data)
@@ -36,52 +70,93 @@ namespace DoomScroller.Combat
         private static CombatResult ResolveFight(PlayerLoadout loadout, EncounterData data, EncounterVariant variant, Random rng)
         {
             var lines = new List<string> { $"You face {data.title} ({variant.DifficultyLabel})." };
+            var playerPower = ComputePlayerPower(loadout);
 
-            var playerPower = 0;
-            foreach (EquipmentSlotType slot in Enum.GetValues(typeof(EquipmentSlotType)))
-            {
-                var item = loadout.GetEquipped(slot);
-                if (item == null)
-                {
-                    continue;
-                }
-
-                playerPower += item.powerValue;
-                if (slot == EquipmentSlotType.Weapon)
-                {
-                    lines.Add($"You ready your {item.title}.");
-                }
-            }
-
-            var weapon = loadout.GetEquipped(EquipmentSlotType.Weapon);
-            if (weapon == null)
+            var leftHand = loadout.GetEquipped(EquipmentSlotType.LeftHand);
+            var rightHand = loadout.GetEquipped(EquipmentSlotType.RightHand);
+            var hasWeapon = leftHand?.category == ItemCategory.Weapon || rightHand?.category == ItemCategory.Weapon;
+            if (!hasWeapon)
             {
                 lines.Add("You have no weapon equipped — this could go badly.");
             }
-            else if (weapon.abilities != null)
+            else
             {
-                foreach (var ability in weapon.abilities)
+                if (leftHand?.category == ItemCategory.Weapon)
                 {
-                    if (!loadout.IsAbilityActive(ability.abilityName))
-                    {
-                        continue;
-                    }
+                    lines.Add($"You ready your {leftHand.title}.");
+                }
 
-                    playerPower += ability.powerBonus;
+                if (rightHand?.category == ItemCategory.Weapon)
+                {
+                    lines.Add($"You ready your {rightHand.title}.");
+                }
+            }
+
+            foreach (var ability in loadout.GetEquippedWeaponAbilities())
+            {
+                if (ability.isActive && loadout.IsAbilityActive(ability.abilityName))
+                {
                     lines.Add($"You unleash {ability.abilityName}!");
                 }
             }
 
-            var challengePower = (int)MathF.Round(data.baseChallenge * (1f + variant.TierIndex * ChallengeGrowthPerTier));
+            var challengePower = ComputeChallengePower(data.baseChallenge, variant.TierIndex);
 
-            var winChance = Clamp01(0.5f + (playerPower - challengePower) / (2f * MathF.Max(challengePower, 1)));
-            var isVictory = rng.NextDouble() < winChance;
+            var winChance = ComputeWinChance(playerPower, challengePower);
+            var roll = rng.NextDouble();
+            var isVictory = roll < winChance;
 
-            lines.Add(isVictory
-                ? $"The {data.title} falls. Victory!"
-                : $"You're overwhelmed by the {data.title}. Defeat.");
+            // How close was the roll to the losing side of the threshold, regardless of
+            // outcome — a win that barely cleared it is a "close call"; a loss is always
+            // a loss (Treasure aside, there's no such thing as a "close call" defeat here).
+            var wasCloseCall = isVictory && roll >= winChance - CloseCallMargin;
+            var healthDamage = isVictory ? (wasCloseCall ? CloseCallDamage : 0) : DefeatDamage;
 
-            return new CombatResult(isVictory, playerPower, challengePower, lines);
+            if (isVictory)
+            {
+                lines.Add(wasCloseCall
+                    ? $"The {data.title} falls, but not before landing a hit. A costly victory."
+                    : $"The {data.title} falls. Victory!");
+            }
+            else
+            {
+                lines.Add($"You're overwhelmed by the {data.title}. Defeat.");
+            }
+
+            return new CombatResult(isVictory, playerPower, challengePower, lines, healthDamage, wasCloseCall);
+        }
+
+        private static int ComputePlayerPower(PlayerLoadout loadout)
+        {
+            var playerPower = 0;
+            foreach (EquipmentSlotType slot in Enum.GetValues(typeof(EquipmentSlotType)))
+            {
+                var item = loadout.GetEquipped(slot);
+                if (item != null)
+                {
+                    playerPower += item.powerValue;
+                }
+            }
+
+            foreach (var ability in loadout.GetEquippedWeaponAbilities())
+            {
+                if (loadout.IsAbilityEffective(ability))
+                {
+                    playerPower += ability.powerBonus;
+                }
+            }
+
+            return playerPower;
+        }
+
+        private static int ComputeChallengePower(int baseChallenge, int tierIndex)
+        {
+            return (int)MathF.Round(baseChallenge * (1f + tierIndex * ChallengeGrowthPerTier));
+        }
+
+        private static float ComputeWinChance(int playerPower, int challengePower)
+        {
+            return Clamp01(0.5f + (playerPower - challengePower) / (2f * MathF.Max(challengePower, 1)));
         }
 
         private static float Clamp01(float value)

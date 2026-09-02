@@ -1,5 +1,5 @@
 using System;
-using System.Collections.Generic;
+using System.Linq;
 using DoomScroller.Progression;
 using DoomScroller.UI;
 using UnityEngine;
@@ -12,14 +12,21 @@ namespace DoomScroller.Inventory
     {
         public event Action CloseRequested;
 
+        // Bubbled up from EquipSlotClusterView — ProfileController owns navigating to
+        // EquipSlotDetailView, matching how EncounterFlowController coordinates its own
+        // sibling screens rather than views reaching into each other directly.
+        public event Action<EquipmentSlotType> SlotTapped;
+
         private PlayerLoadout _loadout;
         private PlayerProgression _progression;
+        private PlayerHealth _health;
         private RectTransform _root;
         private RectTransform _abilitiesContainer;
         private Text _progressionText;
-        private readonly Dictionary<EquipmentSlotType, Text> _slotTexts = new();
+        private Text _healthText;
+        private EquipSlotClusterView _equipCluster;
 
-        public static ProfileView Create(Transform parent, PlayerLoadout loadout, PlayerProgression progression)
+        public static ProfileView Create(Transform parent, PlayerLoadout loadout, PlayerProgression progression, PlayerHealth health)
         {
             var go = new GameObject("Profile", typeof(RectTransform));
             var rect = (RectTransform)go.transform;
@@ -39,24 +46,24 @@ namespace DoomScroller.Inventory
             layoutGroup.childForceExpandWidth = true;
             layoutGroup.childForceExpandHeight = false;
             layoutGroup.childControlWidth = true;
-            layoutGroup.childControlHeight = false;
+            // Must be true — see EquipSlotClusterView/CombatResolutionView for why.
+            layoutGroup.childControlHeight = true;
 
             var view = go.AddComponent<ProfileView>();
             view._loadout = loadout;
             view._progression = progression;
+            view._health = health;
             view._root = rect;
 
-            CreateLabel(rect, "Title", "Profile", 44, FontStyle.Bold);
-            view._progressionText = CreateLabel(rect, "Progression", "", 26, FontStyle.Italic);
+            CreateLabel(rect, "Title", "Profile", 60, FontStyle.Bold);
+            CreatePortrait(rect, "PlayerPortrait", loadout.PlayerSprite, 220);
+            view._progressionText = CreateLabel(rect, "Progression", "", 32, FontStyle.Italic);
+            view._healthText = CreateLabel(rect, "Health", "", 32, FontStyle.Italic);
 
-            foreach (EquipmentSlotType slot in Enum.GetValues(typeof(EquipmentSlotType)))
-            {
-                var capturedSlot = slot;
-                view._slotTexts[slot] = CreateRow(rect, $"Slot_{slot}", () => loadout.CycleEquipped(capturedSlot));
-            }
+            view._equipCluster = EquipSlotClusterView.Create(rect, loadout);
 
             CreateLabel(rect, "AbilitiesHeader", "Weapon Abilities (tap to toggle, max " +
-                        PlayerLoadout.MaxActiveAbilities + ")", 24, FontStyle.Italic);
+                        PlayerLoadout.MaxActiveAbilities + ")", 28, FontStyle.Italic);
 
             var abilitiesGo = new GameObject("Abilities", typeof(RectTransform));
             view._abilitiesContainer = (RectTransform)abilitiesGo.transform;
@@ -66,14 +73,15 @@ namespace DoomScroller.Inventory
             abilitiesLayout.childForceExpandWidth = true;
             abilitiesLayout.childForceExpandHeight = false;
             abilitiesLayout.childControlWidth = true;
-            abilitiesLayout.childControlHeight = false;
-            var abilitiesFitter = abilitiesGo.AddComponent<ContentSizeFitter>();
-            abilitiesFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            abilitiesLayout.childControlHeight = true;
 
             CreateButton(rect, "CloseButton", "Close", () => view.CloseRequested?.Invoke());
 
+            view._equipCluster.SlotTapped += slot => view.SlotTapped?.Invoke(slot);
+
             loadout.Changed += view.Refresh;
             progression.Changed += view.Refresh;
+            health.Changed += view.RefreshHealthText;
 
             go.SetActive(false);
             return view;
@@ -90,18 +98,34 @@ namespace DoomScroller.Inventory
             gameObject.SetActive(false);
         }
 
+        private void Update()
+        {
+            // Health regenerates purely from real time passing, so keep its line live
+            // while the player is sitting on this screen, not just on Loadout/Progression
+            // events (ProfileController.Update() drives the actual regen tick; this just
+            // keeps the label in sync with it).
+            RefreshHealthText();
+        }
+
+        private void RefreshHealthText()
+        {
+            if (_health.IsDepleted)
+            {
+                var seconds = Mathf.CeilToInt(_health.SecondsUntilNextTick());
+                _healthText.text = $"HP {_health.CurrentHealth}/{_health.MaxHealth} — " +
+                    $"out of energy, next in {seconds / 60}:{seconds % 60:D2}";
+            }
+            else
+            {
+                _healthText.text = $"HP {_health.CurrentHealth}/{_health.MaxHealth}";
+            }
+        }
+
         private void Refresh()
         {
             _progressionText.text = $"Level {_progression.Level} — {_progression.CurrentXp}/{_progression.XpToNextLevel} XP";
-
-            foreach (var kvp in _slotTexts)
-            {
-                var item = _loadout.GetEquipped(kvp.Key);
-                kvp.Value.text = item == null
-                    ? $"{kvp.Key}: None (tap to equip)"
-                    : $"{kvp.Key}: {item.title} ({item.statSummary}) — tap to change";
-            }
-
+            RefreshHealthText();
+            _equipCluster.Refresh();
             RefreshAbilities();
         }
 
@@ -112,21 +136,29 @@ namespace DoomScroller.Inventory
                 Destroy(_abilitiesContainer.GetChild(i).gameObject);
             }
 
-            var weapon = _loadout.GetEquipped(EquipmentSlotType.Weapon);
-            if (weapon == null || weapon.abilities == null || weapon.abilities.Length == 0)
+            var abilities = _loadout.GetEquippedWeaponAbilities().ToList();
+            if (abilities.Count == 0)
             {
-                CreateLabel(_abilitiesContainer, "NoWeapon", "No weapon equipped", 22, FontStyle.Normal);
+                CreateLabel(_abilitiesContainer, "NoWeapon", "No weapon equipped", 28, FontStyle.Normal);
                 return;
             }
 
-            foreach (var ability in weapon.abilities)
+            foreach (var ability in abilities.Where(a => !a.isActive))
+            {
+                var text = CreateLabel(_abilitiesContainer, $"Ability_{ability.abilityName}",
+                    $"(passive) {ability.abilityName} — {ability.description}", 26, FontStyle.Normal);
+                text.alignment = TextAnchor.MiddleLeft;
+                text.color = new Color(1f, 1f, 1f, 0.75f);
+            }
+
+            foreach (var ability in abilities.Where(a => a.isActive))
             {
                 var capturedName = ability.abilityName;
-                var isActive = _loadout.IsAbilityActive(capturedName);
+                var isOn = _loadout.IsAbilityActive(capturedName);
                 var text = CreateRow(_abilitiesContainer, $"Ability_{capturedName}",
                     () => _loadout.ToggleAbility(capturedName));
-                text.text = $"[{(isActive ? "x" : " ")}] {ability.abilityName} — {ability.description}";
-                text.fontSize = 24;
+                text.text = $"[{(isOn ? "x" : " ")}] {ability.abilityName} — {ability.description}";
+                text.fontSize = 28;
             }
         }
 
@@ -139,7 +171,9 @@ namespace DoomScroller.Inventory
             image.color = new Color(1, 1, 1, 0.08f);
 
             var layoutElement = go.AddComponent<LayoutElement>();
-            layoutElement.preferredHeight = 72;
+            // Tall enough for two wrapped lines at this row's font size (ability
+            // descriptions can run long) without clipping or spilling into neighbors.
+            layoutElement.preferredHeight = 108;
 
             var button = go.AddComponent<Button>();
             button.onClick.AddListener(() => onClick());
@@ -152,17 +186,41 @@ namespace DoomScroller.Inventory
             var textRect = (RectTransform)textGo.transform;
             textRect.anchorMin = Vector2.zero;
             textRect.anchorMax = Vector2.one;
-            textRect.offsetMin = new Vector2(16, 0);
-            textRect.offsetMax = new Vector2(-16, 0);
+            textRect.offsetMin = new Vector2(20, 0);
+            textRect.offsetMax = new Vector2(-20, 0);
 
             var text = textGo.AddComponent<Text>();
             text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            text.fontSize = 26;
+            text.fontSize = 32;
             text.alignment = TextAnchor.MiddleLeft;
             text.color = Color.white;
             text.horizontalOverflow = HorizontalWrapMode.Wrap;
+            text.verticalOverflow = VerticalWrapMode.Overflow;
 
             return text;
+        }
+
+        // A fixed-size square portrait, centered — not full-width like the rest of this
+        // panel's rows, so it gets its own plain (non-layout-driven) child rather than
+        // fighting the parent VerticalLayoutGroup's childForceExpandWidth.
+        private static void CreatePortrait(Transform parent, string name, Sprite sprite, float size)
+        {
+            var rowGo = new GameObject(name, typeof(RectTransform));
+            rowGo.transform.SetParent(parent, false);
+            rowGo.AddComponent<LayoutElement>().preferredHeight = size;
+
+            var imageGo = new GameObject("Portrait", typeof(RectTransform));
+            var imageRect = (RectTransform)imageGo.transform;
+            imageRect.SetParent(rowGo.transform, false);
+            imageRect.anchorMin = new Vector2(0.5f, 0.5f);
+            imageRect.anchorMax = new Vector2(0.5f, 0.5f);
+            imageRect.pivot = new Vector2(0.5f, 0.5f);
+            imageRect.sizeDelta = new Vector2(size, size);
+
+            var image = imageGo.AddComponent<Image>();
+            image.sprite = sprite;
+            image.color = sprite != null ? Color.white : new Color(1f, 1f, 1f, 0.15f);
+            image.preserveAspect = true;
         }
 
         private static Text CreateLabel(Transform parent, string name, string content, int fontSize, FontStyle style)
@@ -180,7 +238,7 @@ namespace DoomScroller.Inventory
             text.horizontalOverflow = HorizontalWrapMode.Wrap;
 
             var layoutElement = go.AddComponent<LayoutElement>();
-            layoutElement.preferredHeight = fontSize + 14;
+            layoutElement.preferredHeight = fontSize + 24;
 
             return text;
         }
@@ -194,7 +252,7 @@ namespace DoomScroller.Inventory
             image.color = new Color(1, 1, 1, 0.15f);
 
             var layoutElement = go.AddComponent<LayoutElement>();
-            layoutElement.preferredHeight = 96;
+            layoutElement.preferredHeight = 120;
 
             var button = go.AddComponent<Button>();
             button.onClick.AddListener(() => onClick());
@@ -209,7 +267,7 @@ namespace DoomScroller.Inventory
 
             var labelText = labelGo.AddComponent<Text>();
             labelText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            labelText.fontSize = 32;
+            labelText.fontSize = 40;
             labelText.fontStyle = FontStyle.Bold;
             labelText.alignment = TextAnchor.MiddleCenter;
             labelText.color = Color.white;

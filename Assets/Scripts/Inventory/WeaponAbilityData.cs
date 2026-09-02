@@ -11,7 +11,13 @@ namespace DoomScroller.Inventory
         public string abilityName;
         public string description;
 
-        [Tooltip("Combat power this ability contributes while active (Phase 5 resolution).")]
+        [Tooltip("Passive abilities always contribute powerBonus. Active abilities only " +
+                  "contribute it while toggled on from Profile (capped at " +
+                  "PlayerLoadout.MaxActiveAbilities).")]
+        public bool isActive = true;
+
+        [Tooltip("Combat power this ability contributes (Phase 5 resolution) — " +
+                  "unconditionally if passive, only while toggled on if active.")]
         public int powerBonus = 5;
     }
 }

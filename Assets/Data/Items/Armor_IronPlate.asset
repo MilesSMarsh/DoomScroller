@@ -13,8 +13,9 @@ MonoBehaviour:
   m_Name: Armor_IronPlate
   m_EditorClassIdentifier: Assembly-CSharp::DoomScroller.Inventory.ItemData
   title: Iron Plate
-  slotType: 1
-  statSummary: +12 Defense
+  slotType: 2
+  category: 0
+  statSummary: +18 Defence
   itemColor: {r: 0.55, g: 0.55, b: 0.58, a: 1}
   powerValue: 18
   abilities: []
