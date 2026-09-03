@@ -11,11 +11,6 @@ namespace DoomScroller.Inventory
         public string abilityName;
         public string description;
 
-        [Tooltip("Passive abilities always contribute powerBonus. Active abilities only " +
-                  "contribute it while toggled on from Profile (capped at " +
-                  "PlayerLoadout.MaxActiveAbilities).")]
-        public bool isActive = true;
-
         [Tooltip("Greybox placeholder identity for this ability — same convention as " +
                   "ItemData.itemColor (a plain colored square, no sprite art yet). Shown " +
                   "on its Profile row and on its cooldown-bar widget in the combat sim.")]
@@ -24,9 +19,10 @@ namespace DoomScroller.Inventory
         [Tooltip("Added on top of the owning weapon's own scaled basic-attack damage " +
                   "(powerValue + stat scaling) when this ability casts — not the whole " +
                   "hit by itself, so a skill always hits harder than a basic swing while " +
-                  "scaling identically off whatever stat(s) the weapon scales off. " +
-                  "Unconditional if passive, only while toggled on if active. Also still " +
-                  "feeds the feed badge's power heuristic (CombatResolver.PredictWinChance).")]
+                  "scaling identically off whatever stat(s) the weapon scales off. Every " +
+                  "ability on an equipped weapon casts unconditionally — no toggle, no " +
+                  "cap. Also still feeds the feed badge's power heuristic " +
+                  "(CombatResolver.PredictWinChance).")]
         public int powerBonus = 5;
 
         [Tooltip("Seconds between casts once this ability is active/equipped. Every " +
@@ -35,5 +31,10 @@ namespace DoomScroller.Inventory
                   "auto-cast). In manual mode (GameSettings.ManualAbilityCasting) this is " +
                   "instead how long the button takes to become tappable.")]
         public float cooldownSeconds = 4f;
+
+        [Tooltip("Buffs/debuffs applied on top of this ability's direct hit every time it " +
+                  "casts, e.g. a bleed DoT or a brief attack-speed boost. Optional — plenty " +
+                  "of abilities are pure damage and leave this empty.")]
+        public StatusEffectData[] onCastEffects;
     }
 }

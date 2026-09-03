@@ -27,11 +27,6 @@ namespace DoomScroller.Feed
                   "variants (Phase 3 sideways swipe) scale up from this.")]
         public int baseXpReward = 50;
 
-        [Tooltip("Difficulty rating that drives only the feed's predicted win%/close-call% " +
-                  "badge (CombatResolver.PredictWinChance) — the actual fight (Phase 8) is " +
-                  "simulated from the enemy stats below instead. Ignored for Treasure.")]
-        public int baseChallenge = 40;
-
         [Header("Combat Simulation (Phase 8)")]
         [Tooltip("Enemy HP for the live combat simulation. Ignored for Treasure.")]
         public int enemyHealth = 80;

@@ -32,6 +32,12 @@ namespace DoomScroller.Combat
         private const float ProjectileDuration = 0.2f;
         private const float ProjectileSize = 34f;
         private const float AbilityProjectileSize = 60f;
+        private const float DotProjectileSize = 20f;
+
+        // Sickly green — the common "poison/bleed" read — so a DoT tick's projectile
+        // and damage number both visually say "ongoing effect chipping away," distinct
+        // from either a real swing or a fresh ability cast.
+        private static readonly Color DotTickColor = new(0.55f, 0.85f, 0.35f, 1f);
         private const float FlashDuration = 0.15f;
         private const float DamageNumberDuration = 0.6f;
         private const float DamageNumberRise = 90f;
@@ -370,7 +376,8 @@ namespace DoomScroller.Combat
                     var abilityColor = isAbility && _abilityWidgets.TryGetValue(beat.AbilityName, out var castWidget)
                         ? castWidget.Icon.color
                         : Color.white;
-                    yield return StartCoroutine(FireProjectile(attackerAnchor, defenderAnchor, isPlayer, isAbility, abilityColor));
+                    yield return StartCoroutine(FireProjectile(attackerAnchor, defenderAnchor, isPlayer, isAbility,
+                        beat.IsDotTick, abilityColor));
                 }
 
                 if (!beat.WasMiss)
@@ -444,7 +451,8 @@ namespace DoomScroller.Combat
             portrait.anchoredPosition = start;
         }
 
-        private IEnumerator FireProjectile(RectTransform from, RectTransform to, bool isPlayerCast, bool isAbility, Color abilityColor)
+        private IEnumerator FireProjectile(RectTransform from, RectTransform to, bool isPlayerCast, bool isAbility,
+            bool isDotTick, Color abilityColor)
         {
             var projectileGo = new GameObject("Projectile", typeof(RectTransform));
             var projectileRect = (RectTransform)projectileGo.transform;
@@ -452,14 +460,18 @@ namespace DoomScroller.Combat
             projectileRect.anchorMin = new Vector2(0.5f, 0.5f);
             projectileRect.anchorMax = new Vector2(0.5f, 0.5f);
             projectileRect.pivot = new Vector2(0.5f, 0.5f);
-            var size = isAbility ? AbilityProjectileSize : ProjectileSize;
+            var size = isAbility ? AbilityProjectileSize : (isDotTick ? DotProjectileSize : ProjectileSize);
             projectileRect.sizeDelta = new Vector2(size, size);
 
             var image = projectileGo.AddComponent<Image>();
             // A skill's projectile takes on its own icon color so the payoff visually
-            // ties back to which ability fired; a plain ranged basic attack keeps the
-            // generic side-colored bolt.
-            image.color = isAbility ? abilityColor : (isPlayerCast ? new Color(0.4f, 0.8f, 1f, 1f) : new Color(1f, 0.4f, 0.3f, 1f));
+            // ties back to which ability fired; a DoT tick gets its own small
+            // sickly-green bolt so it doesn't read as a fresh attack landing; a plain
+            // ranged basic attack keeps the generic side-colored bolt.
+            image.color = isAbility ? abilityColor
+                : isDotTick ? DotTickColor
+                : isPlayerCast ? new Color(0.4f, 0.8f, 1f, 1f)
+                : new Color(1f, 0.4f, 0.3f, 1f);
 
             var fromPoint = LocalPointIn(_effectsLayer, from);
             var toPoint = LocalPointIn(_effectsLayer, to);
@@ -485,6 +497,15 @@ namespace DoomScroller.Combat
             }
 
             StartCoroutine(Flash(defenderImage));
+
+            if (beat.IsDotTick)
+            {
+                // Smaller and tinted green — reads as chip damage from an ongoing
+                // effect rather than a real hit landing, same distinction the
+                // projectile above already makes.
+                SpawnPopup(defenderAnchor, beat.DisplayDamage.ToString(), DotTickColor, 32);
+                return;
+            }
 
             var color = isPlayerAttacker ? Color.white : new Color(1f, 0.35f, 0.3f);
             SpawnPopup(defenderAnchor, beat.DisplayDamage.ToString(), color, 50);
@@ -600,8 +621,8 @@ namespace DoomScroller.Combat
 
             foreach (var (_, ability) in loadout.GetEquippedWeaponAbilityPairs())
             {
-                if (!ability.isActive || !loadout.IsAbilityActive(ability.abilityName) ||
-                    _abilityWidgets.ContainsKey(ability.abilityName))
+                // Every ability on an equipped weapon gets a widget — no toggle, no cap.
+                if (_abilityWidgets.ContainsKey(ability.abilityName))
                 {
                     continue;
                 }

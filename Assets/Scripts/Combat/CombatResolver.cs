@@ -42,10 +42,17 @@ namespace DoomScroller.Combat
                 step.EnemyAttackDamage, step.EnemyAttackSpeed, rng ?? new Random());
         }
 
-        // A rough difficulty heuristic for the feed badge — completely decoupled from
-        // how CombatSimulator actually plays out. Kept exactly as it was pre-Phase-8;
-        // iterate on it separately if it ever needs to.
-        public static float PredictWinChance(PlayerLoadout loadout, EncounterData data)
+        // Time-to-kill race: how long the player would take to kill the enemy versus how
+        // long the enemy would take to kill the player, both as steady-state DPS with
+        // variance/misses ignored ("perfect rng" — CombatSimulator.EstimatePlayerDps is
+        // the exact same math a real fight seeds its timers from, so this can never
+        // silently drift out of sync with how a fight actually plays out). A large
+        // discrepancy either direction reads as clearly easy or hard; a close one reads
+        // as an even fight, regardless of how big or small the raw numbers involved are.
+        private const float WinChanceSteepness = 2f;
+        private const float MinDps = 0.01f;
+
+        public static float PredictWinChance(PlayerLoadout loadout, PlayerStats stats, PlayerHealth health, EncounterData data)
         {
             // Neither ever fights — Tavern is a non-combat social hub (see TavernView).
             if (data.type == EncounterType.Treasure || data.type == EncounterType.Tavern)
@@ -53,47 +60,40 @@ namespace DoomScroller.Combat
                 return 1f;
             }
 
-            var playerPower = ComputePlayerPower(loadout);
-            return ComputeWinChance(playerPower, data.baseChallenge);
+            return ComputeWinChance(loadout, stats, health.CurrentMaxHealth, data.enemyHealth, data.enemyAttackDamage,
+                data.enemyAttackSpeed);
         }
 
-        public static float PredictCloseCallChance(PlayerLoadout loadout, EncounterData data)
+        public static float PredictCloseCallChance(PlayerLoadout loadout, PlayerStats stats, PlayerHealth health, EncounterData data)
         {
             if (data.type == EncounterType.Treasure || data.type == EncounterType.Tavern)
             {
                 return 0f;
             }
 
-            var winChance = PredictWinChance(loadout, data);
-            return MathF.Min(0.15f, winChance);
+            var winChance = PredictWinChance(loadout, stats, health, data);
+            // Peaks at an even (50/50) fight and fades out toward either lopsided edge —
+            // an early tuning knob, same as CombatSimulator's own DamageVariance/MissChance.
+            return MathF.Max(0f, 0.3f - MathF.Abs(winChance - 0.5f) * 1.2f);
         }
 
-        private static int ComputePlayerPower(PlayerLoadout loadout)
+        private static float ComputeWinChance(PlayerLoadout loadout, PlayerStats stats, int playerHealth,
+            int enemyHealth, int enemyAttackDamage, float enemyAttackSpeed)
         {
-            var playerPower = 0;
-            foreach (EquipmentSlotType slot in Enum.GetValues(typeof(EquipmentSlotType)))
-            {
-                var item = loadout.GetEquipped(slot);
-                if (item != null)
-                {
-                    playerPower += item.powerValue;
-                }
-            }
+            var playerDps = MathF.Max(MinDps, CombatSimulator.EstimatePlayerDps(loadout, stats));
+            var playerDefense = CombatSimulator.EstimatePlayerDefense(loadout);
+            // Passive WeakenDamage/SlowAttackSpeed weapons lower the enemy's own stats
+            // here too — same multipliers the real fight applies in CombatSimulator's
+            // constructor, so the badge can't drift from what the fight actually does.
+            var effectiveEnemyDamage = enemyAttackDamage * CombatSimulator.EstimateEnemyDamageMultiplier(loadout);
+            var effectiveEnemySpeed = enemyAttackSpeed * CombatSimulator.EstimateEnemySpeedMultiplier(loadout);
+            var enemyDps = MathF.Max(1, effectiveEnemyDamage - playerDefense) * MathF.Max(MinDps, effectiveEnemySpeed);
 
-            foreach (var ability in loadout.GetEquippedWeaponAbilities())
-            {
-                if (loadout.IsAbilityEffective(ability))
-                {
-                    playerPower += ability.powerBonus;
-                }
-            }
+            var playerTimeToKill = enemyHealth / playerDps;
+            var enemyTimeToKill = MathF.Max(1, playerHealth) / enemyDps;
 
-            return playerPower;
-        }
-
-        private static float ComputeWinChance(int playerPower, int challengePower)
-        {
-            return Clamp01(0.5f + (playerPower - challengePower) / (2f * MathF.Max(challengePower, 1)));
+            var logRatio = MathF.Log(enemyTimeToKill / playerTimeToKill);
+            return Clamp01(1f / (1f + MathF.Exp(-WinChanceSteepness * logRatio)));
         }
 
         private static float Clamp01(float value)

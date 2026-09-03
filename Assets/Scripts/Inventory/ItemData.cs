@@ -21,6 +21,10 @@ namespace DoomScroller.Inventory
         [Tooltip("Only relevant when category is Weapon.")]
         public WeaponAbilityData[] abilities;
 
+        [Tooltip("Only relevant when category is Weapon. Always active for the whole fight " +
+                  "while this weapon is equipped — no cast or cooldown needed, unlike abilities.")]
+        public StatusEffectData[] passiveEffects;
+
         [Tooltip("Only relevant when category is Weapon. Equipping a two-handed weapon " +
                   "auto-unequips and locks the other hand slot until this weapon is " +
                   "unequipped again.")]

@@ -29,8 +29,10 @@ namespace DoomScroller.Inventory
         private EquipSlotClusterView _equipCluster;
 
         private GameObject _inventoryPanelGo;
+        private GameObject _abilitiesPanelGo;
         private GameObject _statsPanelGo;
         private Image _inventoryTabImage;
+        private Image _abilitiesTabImage;
         private Image _statsTabImage;
 
         public static ProfileView Create(Transform parent, PlayerLoadout loadout, PlayerProgression progression,
@@ -77,10 +79,12 @@ namespace DoomScroller.Inventory
             view._progressionText = CreateLabel(content, "Progression", "", 38, FontStyle.Italic);
             view._healthText = CreateLabel(content, "Health", "", 38, FontStyle.Italic);
 
-            // Two tabs sharing everything above (title/portrait/progression/health):
-            // Inventory (today's equip cluster + abilities, unchanged) and the new Stats
-            // allocator. Only one panel is active at a time; switching tabs doesn't
-            // rebuild either, so neither loses scroll-independent state.
+            // Three tabs sharing everything above (title/portrait/progression/health):
+            // Inventory (equip cluster), Abilities (its own tab now — the equip cluster
+            // plus manual-casting toggle plus a growing ability list no longer all fit
+            // on one screen together) and Stats. Only one panel is active at a time;
+            // switching tabs doesn't rebuild any of them, so none loses scroll-independent
+            // state.
             var tabRowGo = new GameObject("TabRow", typeof(RectTransform));
             tabRowGo.transform.SetParent(content, false);
             tabRowGo.AddComponent<LayoutElement>().preferredHeight = 96;
@@ -91,8 +95,9 @@ namespace DoomScroller.Inventory
             tabRowLayout.childControlWidth = true;
             tabRowLayout.childControlHeight = true;
 
-            CreateTabButton(tabRowGo.transform, "InventoryTab", "Inventory", () => view.SelectTab(true), out view._inventoryTabImage);
-            CreateTabButton(tabRowGo.transform, "StatsTab", "Stats", () => view.SelectTab(false), out view._statsTabImage);
+            CreateTabButton(tabRowGo.transform, "InventoryTab", "Inventory", () => view.SelectTab(0), out view._inventoryTabImage);
+            CreateTabButton(tabRowGo.transform, "AbilitiesTab", "Abilities", () => view.SelectTab(1), out view._abilitiesTabImage);
+            CreateTabButton(tabRowGo.transform, "StatsTab", "Stats", () => view.SelectTab(2), out view._statsTabImage);
 
             var inventoryPanelGo = new GameObject("InventoryPanel", typeof(RectTransform));
             view._inventoryPanelGo = inventoryPanelGo;
@@ -106,11 +111,21 @@ namespace DoomScroller.Inventory
 
             view._equipCluster = EquipSlotClusterView.Create(inventoryPanelGo.transform, loadout);
 
+            var abilitiesPanelGo = new GameObject("AbilitiesPanel", typeof(RectTransform));
+            view._abilitiesPanelGo = abilitiesPanelGo;
+            abilitiesPanelGo.transform.SetParent(content, false);
+            var abilitiesPanelLayout = abilitiesPanelGo.AddComponent<VerticalLayoutGroup>();
+            abilitiesPanelLayout.spacing = 12;
+            abilitiesPanelLayout.childForceExpandWidth = true;
+            abilitiesPanelLayout.childForceExpandHeight = false;
+            abilitiesPanelLayout.childControlWidth = true;
+            abilitiesPanelLayout.childControlHeight = true;
+
             // Global on/off for every active ability at once — mirrors PotionInventoryView's
             // auto-consume-revive-potions settings row exactly (tap-to-flip button + a
             // label describing the current state).
             var manualCastingRowGo = new GameObject("ManualCastingRow", typeof(RectTransform));
-            manualCastingRowGo.transform.SetParent(inventoryPanelGo.transform, false);
+            manualCastingRowGo.transform.SetParent(abilitiesPanelGo.transform, false);
             manualCastingRowGo.AddComponent<LayoutElement>().preferredHeight = 96;
             manualCastingRowGo.AddComponent<Image>().color = new Color(1f, 1f, 1f, 0.08f);
             var manualCastingButton = manualCastingRowGo.AddComponent<Button>();
@@ -135,12 +150,13 @@ namespace DoomScroller.Inventory
             view._manualCastingToggleText.color = Color.white;
             view._manualCastingToggleText.horizontalOverflow = HorizontalWrapMode.Wrap;
 
-            CreateLabel(inventoryPanelGo.transform, "AbilitiesHeader", "Weapon Abilities (tap to toggle, max " +
-                        PlayerLoadout.MaxActiveAbilities + ")", 32, FontStyle.Italic);
+            CreateLabel(abilitiesPanelGo.transform, "AbilitiesHeader",
+                "Weapon Abilities (every ability on your equipped weapons fights alongside you)",
+                32, FontStyle.Italic);
 
             var abilitiesGo = new GameObject("Abilities", typeof(RectTransform));
             view._abilitiesContainer = (RectTransform)abilitiesGo.transform;
-            view._abilitiesContainer.SetParent(inventoryPanelGo.transform, false);
+            view._abilitiesContainer.SetParent(abilitiesPanelGo.transform, false);
             var abilitiesLayout = abilitiesGo.AddComponent<VerticalLayoutGroup>();
             abilitiesLayout.spacing = 8;
             abilitiesLayout.childForceExpandWidth = true;
@@ -159,23 +175,26 @@ namespace DoomScroller.Inventory
             health.Changed += view.RefreshHealthText;
             settings.Changed += view.RefreshManualCastingToggle;
 
-            view.SelectTab(true);
+            view.SelectTab(0);
 
             go.SetActive(false);
             return view;
         }
 
-        // No page-router/enum needed for just two tabs — a bool reads perfectly clearly
-        // at both call sites (SelectTab(true)/SelectTab(false)) without adding a type.
-        private void SelectTab(bool inventory)
+        // Three static tabs — an int index (matching the three CreateTabButton calls
+        // above in order) reads clearly enough at each call site without a dedicated
+        // enum/router type for something this small.
+        private void SelectTab(int index)
         {
-            _inventoryPanelGo.SetActive(inventory);
-            _statsPanelGo.SetActive(!inventory);
+            _inventoryPanelGo.SetActive(index == 0);
+            _abilitiesPanelGo.SetActive(index == 1);
+            _statsPanelGo.SetActive(index == 2);
 
             // Same "only tint the selected one" treatment as nothing else in this project
-            // does yet, but simple enough not to need a shared helper for two buttons.
-            _inventoryTabImage.color = inventory ? SelectedTabColor : UnselectedTabColor;
-            _statsTabImage.color = inventory ? UnselectedTabColor : SelectedTabColor;
+            // does yet, but simple enough not to need a shared helper for three buttons.
+            _inventoryTabImage.color = index == 0 ? SelectedTabColor : UnselectedTabColor;
+            _abilitiesTabImage.color = index == 1 ? SelectedTabColor : UnselectedTabColor;
+            _statsTabImage.color = index == 2 ? SelectedTabColor : UnselectedTabColor;
         }
 
         private static readonly Color SelectedTabColor = new(1f, 1f, 1f, 0.25f);
@@ -260,6 +279,8 @@ namespace DoomScroller.Inventory
                 : "Manual ability casting: OFF (tap to cast by hand instead)";
         }
 
+        private static readonly Color PassiveIconColor = new(0.5f, 0.55f, 0.6f, 1f);
+
         private void RefreshAbilities()
         {
             for (var i = _abilitiesContainer.childCount - 1; i >= 0; i--)
@@ -268,36 +289,41 @@ namespace DoomScroller.Inventory
             }
 
             var abilities = _loadout.GetEquippedWeaponAbilities().ToList();
-            if (abilities.Count == 0)
+            var passives = _loadout.GetEquippedPassiveWeaponEffects().ToList();
+            if (abilities.Count == 0 && passives.Count == 0)
             {
                 CreateLabel(_abilitiesContainer, "NoWeapon", "No weapon equipped", 32, FontStyle.Normal);
                 return;
             }
 
-            foreach (var ability in abilities.Where(a => !a.isActive))
+            // No toggle, no cap — every ability on an equipped weapon fights, so this is
+            // purely informational now. Any onCastEffects ride along in the same row so
+            // its buff/debuff is visible right next to the hit that triggers it.
+            foreach (var ability in abilities)
             {
-                CreateAbilityIconRow(_abilitiesContainer, ability, null,
-                    $"(passive) {ability.abilityName} — {ability.description}",
-                    new Color(1f, 1f, 1f, 0.75f));
+                var label = $"{ability.abilityName} — {ability.description}";
+                if (ability.onCastEffects is { Length: > 0 })
+                {
+                    label += " (" + string.Join(", ", ability.onCastEffects.Select(e => e.Describe())) + ")";
+                }
+
+                CreateAbilityIconRow(_abilitiesContainer, ability.iconColor, label);
             }
 
-            foreach (var ability in abilities.Where(a => a.isActive))
+            // Always-on weapon traits, listed separately since — unlike the abilities
+            // above — nothing needs to be cast for these to be in effect.
+            foreach (var passive in passives)
             {
-                var capturedName = ability.abilityName;
-                var isOn = _loadout.IsAbilityActive(capturedName);
-                CreateAbilityIconRow(_abilitiesContainer, ability, () => _loadout.ToggleAbility(capturedName),
-                    $"[{(isOn ? "x" : " ")}] {ability.abilityName} — {ability.description}", Color.white);
+                CreateAbilityIconRow(_abilitiesContainer, PassiveIconColor, $"Passive — {passive.DescribePassive()}");
             }
         }
 
-        // A small colored square (the ability's greybox icon identity) beside the
-        // existing text row — shared shape for both the passive (non-tappable) and
-        // active (tap-to-toggle) rows, since the only real difference between them is
-        // whether onClick is null.
-        private static void CreateAbilityIconRow(Transform parent, WeaponAbilityData ability, Action onClick,
-            string label, Color textColor)
+        // A small colored square beside a name/description — purely informational,
+        // since every ability on an equipped weapon (and every passive) is always in
+        // the fight, nothing here is toggleable.
+        private static void CreateAbilityIconRow(Transform parent, Color iconColor, string label)
         {
-            var go = new GameObject($"Ability_{ability.abilityName}", typeof(RectTransform));
+            var go = new GameObject("EffectRow", typeof(RectTransform));
             go.transform.SetParent(parent, false);
 
             var image = go.AddComponent<Image>();
@@ -317,12 +343,6 @@ namespace DoomScroller.Inventory
             rowLayout.childControlWidth = true;
             rowLayout.childControlHeight = true;
 
-            if (onClick != null)
-            {
-                var button = go.AddComponent<Button>();
-                button.onClick.AddListener(() => onClick());
-            }
-
             var iconGo = new GameObject("Icon", typeof(RectTransform));
             iconGo.transform.SetParent(go.transform, false);
             var iconLayout = iconGo.AddComponent<LayoutElement>();
@@ -331,7 +351,7 @@ namespace DoomScroller.Inventory
             iconLayout.flexibleWidth = 0;
             iconLayout.flexibleHeight = 0;
             var icon = iconGo.AddComponent<Image>();
-            icon.color = ability.iconColor;
+            icon.color = iconColor;
             icon.raycastTarget = false;
 
             var textGo = new GameObject("Label", typeof(RectTransform));
@@ -345,7 +365,7 @@ namespace DoomScroller.Inventory
             text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             text.fontSize = 32;
             text.alignment = TextAnchor.MiddleLeft;
-            text.color = textColor;
+            text.color = Color.white;
             text.text = label;
             text.horizontalOverflow = HorizontalWrapMode.Wrap;
             text.verticalOverflow = VerticalWrapMode.Overflow;

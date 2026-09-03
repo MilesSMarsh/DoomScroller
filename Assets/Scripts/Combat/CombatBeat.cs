@@ -24,13 +24,22 @@ namespace DoomScroller.Combat
         // Null/empty for a basic attack.
         public string AbilityName { get; }
 
-        public CombatBeat(CombatActor actor, bool isRanged, bool wasMiss, int displayDamage, string abilityName = null)
+        // A damage-over-time tick (see CombatSimulator.ResolveDotTick) — always
+        // AbilityName == null (so it never collides with a real ability's cooldown-bar
+        // widget) but CombatPlaybackView still needs to tell it apart from a plain
+        // basic-attack beat so its projectile/damage number can read as "chip damage
+        // from an ongoing effect" rather than a real swing landing.
+        public bool IsDotTick { get; }
+
+        public CombatBeat(CombatActor actor, bool isRanged, bool wasMiss, int displayDamage, string abilityName = null,
+            bool isDotTick = false)
         {
             Actor = actor;
             IsRanged = isRanged;
             WasMiss = wasMiss;
             DisplayDamage = displayDamage;
             AbilityName = abilityName;
+            IsDotTick = isDotTick;
         }
     }
 }

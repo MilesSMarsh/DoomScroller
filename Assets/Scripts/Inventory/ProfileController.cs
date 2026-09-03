@@ -13,6 +13,13 @@ namespace DoomScroller.Inventory
         [SerializeField] private List<ItemData> startingInventory = new();
         [SerializeField] private Sprite playerSprite;
 
+        [Tooltip("The one item a new game starts equipped with. Explicit rather than " +
+                  "\"whichever weapon happens to be first in startingInventory\" — that was " +
+                  "fragile (adding/reordering inventory content could silently swap in a far " +
+                  "stronger weapon) and every hand-authored weapon so far is really mid/late-" +
+                  "game power once its abilities are all counted, not a genuine starter.")]
+        [SerializeField] private ItemData starterWeapon;
+
         [Header("Health / Energy Gate")]
         [SerializeField] private int maxHealth = 100;
         [SerializeField] private int regenPerInterval = 10;
@@ -50,7 +57,7 @@ namespace DoomScroller.Inventory
             _health = new PlayerHealth(maxHealth, regenPerInterval, regenIntervalSeconds);
             _stats = new PlayerStats();
             _settings = new GameSettings();
-            EquipFirstOfEachSlot();
+            EquipStarterWeapon();
 
             // Vigor's effect on the health ceiling. Fires immediately once here too, but
             // at the default stat spread (nothing spent yet) that's a no-op — the
@@ -87,15 +94,15 @@ namespace DoomScroller.Inventory
             _health.SetTrueMaxHealth(baseline + _stats.Get(PlayerStat.Vigor) * vigorHealthPerPoint);
         }
 
-        private void EquipFirstOfEachSlot()
+        // Only the one designated starter weapon — armor/talisman slots start empty so a
+        // new game actually starts from nothing and gears up purely from fight rewards,
+        // instead of a free starting defense stat that outclasses early content before a
+        // single fight.
+        private void EquipStarterWeapon()
         {
-            foreach (EquipmentSlotType slot in System.Enum.GetValues(typeof(EquipmentSlotType)))
+            if (starterWeapon != null)
             {
-                var options = _loadout.GetInventory(slot);
-                if (options.Count > 0)
-                {
-                    _loadout.Equip(options[0]);
-                }
+                _loadout.Equip(starterWeapon);
             }
         }
 

@@ -247,8 +247,10 @@ namespace DoomScroller.Feed
             while (_windowEndIndex <= absoluteIndexInclusive)
             {
                 var encounter = DrawNext();
-                var winChance = CombatResolver.PredictWinChance(profileController.Loadout, encounter);
-                var closeCallChance = CombatResolver.PredictCloseCallChance(profileController.Loadout, encounter);
+                var winChance = CombatResolver.PredictWinChance(profileController.Loadout, profileController.Stats,
+                    profileController.Health, encounter);
+                var closeCallChance = CombatResolver.PredictCloseCallChance(profileController.Loadout,
+                    profileController.Stats, profileController.Health, encounter);
                 var card = FeedCardView.Create(_content, encounter, _pageHeight, winChance, closeCallChance, OnCardTapped);
                 _liveCards.Add(card);
                 _windowEndIndex++;
@@ -261,8 +263,10 @@ namespace DoomScroller.Feed
         {
             foreach (var card in _liveCards)
             {
-                var winChance = CombatResolver.PredictWinChance(profileController.Loadout, card.Data);
-                var closeCallChance = CombatResolver.PredictCloseCallChance(profileController.Loadout, card.Data);
+                var winChance = CombatResolver.PredictWinChance(profileController.Loadout, profileController.Stats,
+                    profileController.Health, card.Data);
+                var closeCallChance = CombatResolver.PredictCloseCallChance(profileController.Loadout,
+                    profileController.Stats, profileController.Health, card.Data);
                 card.SetOdds(winChance, closeCallChance);
             }
         }

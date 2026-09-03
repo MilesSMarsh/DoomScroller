@@ -6,11 +6,9 @@ using UnityEngine;
 
 namespace DoomScroller.Inventory
 {
-    // Plain C# so equip/unequip/ability-toggle logic is testable without a running scene.
+    // Plain C# so equip/unequip logic is testable without a running scene.
     public class PlayerLoadout
     {
-        public const int MaxActiveAbilities = 2;
-
         private static readonly EquipmentSlotType[] HandSlots =
         {
             EquipmentSlotType.LeftHand, EquipmentSlotType.RightHand
@@ -18,7 +16,6 @@ namespace DoomScroller.Inventory
 
         private readonly List<ItemData> _inventory;
         private readonly Dictionary<EquipmentSlotType, ItemData> _equipped = new();
-        private readonly HashSet<string> _activeAbilities = new();
 
         // The one revive potion "carried" into the next fight(s) — deliberately
         // simpler than the multi-slot active-ability system, since only one can ever
@@ -108,16 +105,11 @@ namespace DoomScroller.Inventory
             }
 
             _equipped[item.slotType] = item;
-            if (IsHandSlot(item.slotType))
+            if (IsHandSlot(item.slotType) && IsTwoHanded(item))
             {
-                if (IsTwoHanded(item))
-                {
-                    // Equipping a two-hander clears whatever was in the other hand —
-                    // it can't coexist with anything else.
-                    _equipped.Remove(OtherHandSlot(item.slotType));
-                }
-
-                PruneActiveAbilitiesToEquippedWeapons();
+                // Equipping a two-hander clears whatever was in the other hand — it
+                // can't coexist with anything else.
+                _equipped.Remove(OtherHandSlot(item.slotType));
             }
 
             Changed?.Invoke();
@@ -145,24 +137,7 @@ namespace DoomScroller.Inventory
                 return;
             }
 
-            if (IsHandSlot(slot))
-            {
-                PruneActiveAbilitiesToEquippedWeapons();
-            }
-
             Changed?.Invoke();
-        }
-
-        public bool IsAbilityActive(string abilityName)
-        {
-            return _activeAbilities.Contains(abilityName);
-        }
-
-        // Passive abilities are always effective; active ones only while toggled on.
-        // Shared by CombatResolver and the abilities UI so this branch lives in one place.
-        public bool IsAbilityEffective(WeaponAbilityData ability)
-        {
-            return !ability.isActive || IsAbilityActive(ability.abilityName);
         }
 
         // All abilities on any currently-equipped weapon, across both hands (dual-wielding
@@ -201,28 +176,22 @@ namespace DoomScroller.Inventory
             }
         }
 
-        public void ToggleAbility(string abilityName)
+        // Every passive effect on any currently-equipped weapon, across both hands — same
+        // pairing convention as GetEquippedWeaponAbilities(), just for the always-on
+        // (no cast required) side of a weapon's kit.
+        public IEnumerable<StatusEffectData> GetEquippedPassiveWeaponEffects()
         {
-            var ability = GetEquippedWeaponAbilities().FirstOrDefault(a => a.abilityName == abilityName);
-            if (ability == null || !ability.isActive)
+            foreach (var slot in HandSlots)
             {
-                return;
+                var item = GetEquipped(slot);
+                if (item != null && item.category == ItemCategory.Weapon && item.passiveEffects != null)
+                {
+                    foreach (var effect in item.passiveEffects)
+                    {
+                        yield return effect;
+                    }
+                }
             }
-
-            if (_activeAbilities.Contains(abilityName))
-            {
-                _activeAbilities.Remove(abilityName);
-            }
-            else if (_activeAbilities.Count < MaxActiveAbilities)
-            {
-                _activeAbilities.Add(abilityName);
-            }
-            else
-            {
-                return;
-            }
-
-            Changed?.Invoke();
         }
 
         public IEnumerable<ItemData> GetPotions()
@@ -295,12 +264,6 @@ namespace DoomScroller.Inventory
         private static bool IsTwoHanded(ItemData item)
         {
             return item != null && item.category == ItemCategory.Weapon && item.isTwoHanded;
-        }
-
-        private void PruneActiveAbilitiesToEquippedWeapons()
-        {
-            var validNames = GetEquippedWeaponAbilities().Select(a => a.abilityName).ToHashSet();
-            _activeAbilities.RemoveWhere(name => !validNames.Contains(name));
         }
     }
 }

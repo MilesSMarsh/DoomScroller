@@ -51,14 +51,12 @@ namespace DoomScroller.Progression
                     {
                         abilityName = "Strike",
                         description = "A reliable basic attack",
-                        isActive = true,
                         powerBonus = power / 2
                     },
                     new WeaponAbilityData
                     {
                         abilityName = "Honed Edge",
                         description = "A quiet, always-on edge to your attacks",
-                        isActive = false,
                         powerBonus = power / 4
                     }
                 };
