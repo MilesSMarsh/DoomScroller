@@ -1,3 +1,4 @@
+using System.Linq;
 using DoomScroller.Inventory;
 using UnityEngine;
 
@@ -21,7 +22,12 @@ namespace DoomScroller.Progression
             rng ??= new System.Random();
             rarityTierIndex = Mathf.Clamp(rarityTierIndex, 0, RarityNames.Length - 1);
 
-            var categories = (ItemCategory[])System.Enum.GetValues(typeof(ItemCategory));
+            // Potion is excluded — a randomly-generated "Common Potion" doesn't mean
+            // anything the way "Common Head" does; potions are hand-authored content
+            // only, for now.
+            var categories = ((ItemCategory[])System.Enum.GetValues(typeof(ItemCategory)))
+                .Where(c => c != ItemCategory.Potion)
+                .ToArray();
             var category = categories[rng.Next(categories.Length)];
             var slots = ItemCategoryInfo.SlotsFor(category);
             var slot = slots[rng.Next(slots.Length)];

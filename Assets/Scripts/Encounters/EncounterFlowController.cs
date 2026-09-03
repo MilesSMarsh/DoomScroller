@@ -49,10 +49,8 @@ namespace DoomScroller.Encounters
 
             if (data.type == EncounterType.Dungeon)
             {
-                // Locked for the whole run, not just one fight — cleared once back at
-                // the feed (see OnBackToFeed), regardless of how the run ended.
-                profileController.Health.CombatLocked = true;
-                _dungeonView.Show(data, profileController.Loadout, profileController.Progression, profileController.Health);
+                _dungeonView.Show(data, profileController.Loadout, profileController.Progression,
+                    profileController.Health, profileController.Stats, profileController.Settings);
             }
             else if (data.type == EncounterType.Tavern)
             {
@@ -60,8 +58,8 @@ namespace DoomScroller.Encounters
             }
             else
             {
-                profileController.Health.CombatLocked = true;
-                _resolutionView.Show(data, profileController.Loadout, profileController.Progression, profileController.Health);
+                _resolutionView.Show(data, profileController.Loadout, profileController.Progression,
+                    profileController.Health, profileController.Stats, profileController.Settings);
             }
         }
 
@@ -70,10 +68,6 @@ namespace DoomScroller.Encounters
             _resolutionView.Hide();
             _dungeonView.Hide();
             _tavernView.Hide();
-            // The single funnel every combat exit path (win, loss, abandon, or an
-            // abrupt Hide() mid-animation) passes through — guarantees regen never
-            // stays stuck locked regardless of how the fight ended.
-            profileController.Health.CombatLocked = false;
             feedController.gameObject.SetActive(true);
         }
     }

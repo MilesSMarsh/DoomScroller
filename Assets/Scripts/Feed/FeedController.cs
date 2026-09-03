@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using DoomScroller.Combat;
 using DoomScroller.Inventory;
@@ -37,10 +36,6 @@ namespace DoomScroller.Feed
         private RectTransform _content;
         private FeedPager _pager;
         private float _pageHeight;
-
-        private RectTransform _toastRect;
-        private Text _toastText;
-        private Coroutine _toastCoroutine;
 
         // Absolute, ever-increasing scroll-order indices. Only [_windowStartIndex, _windowEndIndex)
         // currently have live cards attached to Content.
@@ -131,8 +126,6 @@ namespace DoomScroller.Feed
             _pager = gameObject.AddComponent<FeedPager>();
             _pager.SetPageRequestHandler(OnPageRequested);
 
-            CreateToast(rect);
-
             if (_pool.Length > 0)
             {
                 EnsureFilledThrough(AheadBuffer);
@@ -196,70 +189,11 @@ namespace DoomScroller.Feed
                 return;
             }
 
-            // The energy gate: out of health blocks entering anything new until enough
-            // real time has passed to regenerate. Regenerate() first so a tap right at
-            // the regen boundary isn't blocked on a stale reading.
-            var health = profileController.Health;
-            health.Regenerate();
-            if (health.IsDepleted)
-            {
-                ShowOutOfEnergyToast();
-                return;
-            }
-
+            // No energy gate any more — you can always enter a fight, however low your
+            // current max HP has dropped (see PlayerHealth). A weakened ceiling is
+            // already the consequence.
             _activeCard = card;
             EncounterSelected?.Invoke(card.Data);
-        }
-
-        private void ShowOutOfEnergyToast()
-        {
-            var seconds = Mathf.CeilToInt(profileController.Health.SecondsUntilNextTick());
-            _toastText.text = $"Out of energy — regenerates in {seconds / 60}:{seconds % 60:D2}";
-            _toastRect.gameObject.SetActive(true);
-
-            if (_toastCoroutine != null)
-            {
-                StopCoroutine(_toastCoroutine);
-            }
-
-            _toastCoroutine = StartCoroutine(HideToastAfterDelay());
-        }
-
-        private IEnumerator HideToastAfterDelay()
-        {
-            yield return new WaitForSeconds(2.5f);
-            _toastRect.gameObject.SetActive(false);
-            _toastCoroutine = null;
-        }
-
-        private void CreateToast(RectTransform parent)
-        {
-            var go = new GameObject("Toast", typeof(RectTransform));
-            var rect = (RectTransform)go.transform;
-            rect.SetParent(parent, false);
-            rect.anchorMin = new Vector2(0.5f, 0f);
-            rect.anchorMax = new Vector2(0.5f, 0f);
-            rect.pivot = new Vector2(0.5f, 0f);
-            rect.anchoredPosition = new Vector2(0, 180);
-            rect.sizeDelta = new Vector2(640, 110);
-            _toastRect = rect;
-
-            var image = go.AddComponent<Image>();
-            image.color = new Color(0f, 0f, 0f, 0.85f);
-
-            var textRect = CreateStretchChild(rect, "Text");
-            textRect.offsetMin = new Vector2(16, 8);
-            textRect.offsetMax = new Vector2(-16, -8);
-
-            _toastText = textRect.gameObject.AddComponent<Text>();
-            _toastText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            _toastText.fontSize = 32;
-            _toastText.fontStyle = FontStyle.Bold;
-            _toastText.alignment = TextAnchor.MiddleCenter;
-            _toastText.color = Color.white;
-            _toastText.horizontalOverflow = HorizontalWrapMode.Wrap;
-
-            go.SetActive(false);
         }
 
         // Locks the currently-entered encounter's card so it greys out and can no longer

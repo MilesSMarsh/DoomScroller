@@ -34,6 +34,20 @@ namespace DoomScroller.Inventory
                   "a projectile at the target instead of a melee lunge (Phase 8).")]
         public bool isRanged;
 
+        [Tooltip("Only relevant when category is Potion.")]
+        public PotionEffect potionEffect;
+
+        [Tooltip("Only relevant when category is Potion. MaxHealthRestore: how much " +
+                  "current max HP it restores. Revive: the HP the player is revived with.")]
+        public int potionAmount = 20;
+
+        [Tooltip("Only relevant when category is Weapon. Which player stat(s) this " +
+                  "weapon's basic attack scales off, and by how much per point — not " +
+                  "hardcoded to melee/Strength, so a magic sword can also scale off " +
+                  "Spirit, or a heavy bow off Strength. Different tiers of the same " +
+                  "weapon concept just author different coefficients.")]
+        public StatScaling[] statScalingEntries;
+
         // Not persisted — a display-only lookup so combat math never has to know
         // "defence" and "damage" are the same field under different labels.
         public string StatLabel => ItemCategoryInfo.Label(category);

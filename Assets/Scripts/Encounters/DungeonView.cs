@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using DoomScroller.Combat;
 using DoomScroller.Feed;
 using DoomScroller.Inventory;
 using DoomScroller.Progression;
@@ -41,6 +40,8 @@ namespace DoomScroller.Encounters
         private PlayerLoadout _loadout;
         private PlayerProgression _progression;
         private PlayerHealth _health;
+        private PlayerStats _stats;
+        private GameSettings _settings;
         private IReadOnlyList<DungeonStep> _steps;
 
         private int _frontierIndex;
@@ -125,12 +126,15 @@ namespace DoomScroller.Encounters
             return view;
         }
 
-        public void Show(EncounterData data, PlayerLoadout loadout, PlayerProgression progression, PlayerHealth health)
+        public void Show(EncounterData data, PlayerLoadout loadout, PlayerProgression progression, PlayerHealth health,
+            PlayerStats stats, GameSettings settings)
         {
             _data = data;
             _loadout = loadout;
             _progression = progression;
             _health = health;
+            _stats = stats;
+            _settings = settings;
 
             foreach (var page in _pages)
             {
@@ -170,14 +174,17 @@ namespace DoomScroller.Encounters
         {
             var page = _pages[index];
             page.Resolved += OnPageResolved;
-            page.Resolve(_steps[index], _loadout, _progression, _health);
+            page.Resolve(_steps[index], _loadout, _progression, _health, _stats, _settings);
         }
 
-        private void OnPageResolved(DungeonStep step, CombatResult result)
+        // Health's own defeat penalty is applied inside DungeonStepPageView itself (it
+        // has the fresh numbers to narrate immediately) — this just handles the run-level
+        // consequence of that same loss, or of clearing the treasure room.
+        private void OnPageResolved(DungeonStep step, bool wasVictory)
         {
             _pages[step.DepthIndex].Resolved -= OnPageResolved;
 
-            if (!result.IsVictory)
+            if (!wasVictory)
             {
                 _runOver = true;
                 EncounterLost?.Invoke(_data);
@@ -323,6 +330,9 @@ namespace DoomScroller.Encounters
         {
             HideLeaveDialog();
             _runOver = true;
+            // The one path DungeonStepPageView can't see or apply itself — walking away
+            // is a DungeonView-level gesture, not something any single page knows about.
+            _health.ApplyDefeatPenalty();
             EncounterAbandoned?.Invoke(_data);
             ReturnToFeedRequested?.Invoke();
         }

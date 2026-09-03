@@ -3,13 +3,22 @@ using UnityEngine;
 
 namespace DoomScroller.Progression
 {
-    // Plain C# so regen/damage math is testable without a running scene. Doubles as an
-    // "energy" gate: once depleted, FeedController blocks entering new encounters until
-    // enough real time has passed to regenerate (see FeedController.OnCardTapped).
+    // Plain C# so regen/penalty math is testable without a running scene. A fight no
+    // longer touches this object at all — it's a separate, ephemeral instance (see
+    // CombatSimulator) that always starts at CurrentMaxHealth. The only thing this
+    // object tracks is that ceiling itself: TrueMaxHealth is the real, undamaged max;
+    // CurrentMaxHealth is what you actually fight with, temporarily lowered by a
+    // defeat and regenerating back up over real time, the same way a depleting
+    // "current HP" used to.
     public class PlayerHealth
     {
-        public int MaxHealth { get; }
-        public int CurrentHealth { get; private set; }
+        // A defeat costs this fraction of TrueMaxHealth off CurrentMaxHealth, down to
+        // Floor — never lower, so repeated losses can't lock you out entirely.
+        private const float DefeatPenaltyFraction = 0.25f;
+        private const float FloorFraction = 0.2f;
+
+        public int TrueMaxHealth { get; private set; }
+        public int CurrentMaxHealth { get; private set; }
 
         private readonly int _regenPerInterval;
         private readonly float _regenIntervalSeconds;
@@ -17,45 +26,65 @@ namespace DoomScroller.Progression
 
         public event Action Changed;
 
-        public bool IsDepleted => CurrentHealth <= 0;
+        // Never lower than this, however many defeats in a row — rounded, floored at 1
+        // so a very low TrueMaxHealth can't compute a floor of 0.
+        public int Floor => Mathf.Max(1, Mathf.RoundToInt(TrueMaxHealth * FloorFraction));
 
-        // Set true by the encounter views for the duration of a live fight (Phase 8) so
-        // regen can't tick up the player's real HP mid-combat while damage is being
-        // applied beat-by-beat. The regen clock simply pauses while locked — combat
-        // duration neither costs nor grants regen progress.
-        public bool CombatLocked { get; set; }
-
-        public PlayerHealth(int maxHealth, int regenPerInterval, float regenIntervalSeconds)
+        public PlayerHealth(int trueMaxHealth, int regenPerInterval, float regenIntervalSeconds)
         {
-            MaxHealth = maxHealth;
-            CurrentHealth = maxHealth;
+            TrueMaxHealth = trueMaxHealth;
+            CurrentMaxHealth = trueMaxHealth;
             _regenPerInterval = regenPerInterval;
             _regenIntervalSeconds = regenIntervalSeconds;
             _lastRegenUtc = DateTime.UtcNow;
         }
 
-        public void ApplyDamage(int amount)
+        // Called once when a fight ends in defeat (including leaving one early).
+        public void ApplyDefeatPenalty()
         {
-            if (amount <= 0 || CurrentHealth <= 0)
-            {
-                return;
-            }
-
-            CurrentHealth = Mathf.Max(0, CurrentHealth - amount);
+            var penalty = Mathf.RoundToInt(TrueMaxHealth * DefeatPenaltyFraction);
+            CurrentMaxHealth = Mathf.Max(Floor, CurrentMaxHealth - penalty);
             Changed?.Invoke();
         }
 
-        // Folds in real-world wall-clock time elapsed since the last tick (not frame time),
-        // so regen keeps counting while the game is paused/backgrounded, not just while
-        // actively playing. Call before anything that reads CurrentHealth/IsDepleted.
-        public void Regenerate()
+        // Vigor's effect — ProfileController recomputes the intended true max whenever
+        // PlayerStats changes and pushes it here. Raising the ceiling raises
+        // CurrentMaxHealth by the same amount immediately (you don't have to regen into
+        // a stat point you just spent); lowering it (not currently possible — stats
+        // only ever go up) would shrink CurrentMaxHealth proportionally via the same
+        // delta, clamped to the floor.
+        public void SetTrueMaxHealth(int newTrueMax)
         {
-            if (CombatLocked)
+            var delta = newTrueMax - TrueMaxHealth;
+            if (delta == 0)
             {
                 return;
             }
 
-            if (CurrentHealth >= MaxHealth)
+            TrueMaxHealth = newTrueMax;
+            CurrentMaxHealth = Mathf.Clamp(CurrentMaxHealth + delta, Floor, TrueMaxHealth);
+            Changed?.Invoke();
+        }
+
+        // A max-health potion's effect — restores CurrentMaxHealth directly, capped at
+        // TrueMaxHealth.
+        public void RestoreMaxHealth(int amount)
+        {
+            if (amount <= 0 || CurrentMaxHealth >= TrueMaxHealth)
+            {
+                return;
+            }
+
+            CurrentMaxHealth = Mathf.Min(TrueMaxHealth, CurrentMaxHealth + amount);
+            Changed?.Invoke();
+        }
+
+        // Folds in real-world wall-clock time elapsed since the last tick (not frame
+        // time), so regen keeps counting while the game is paused/backgrounded, not
+        // just while actively playing. Call before anything that reads CurrentMaxHealth.
+        public void Regenerate()
+        {
+            if (CurrentMaxHealth >= TrueMaxHealth)
             {
                 _lastRegenUtc = DateTime.UtcNow;
                 return;
@@ -68,15 +97,16 @@ namespace DoomScroller.Progression
                 return;
             }
 
-            CurrentHealth = Mathf.Min(MaxHealth, CurrentHealth + ticks * _regenPerInterval);
+            CurrentMaxHealth = Mathf.Min(TrueMaxHealth, CurrentMaxHealth + ticks * _regenPerInterval);
             _lastRegenUtc += TimeSpan.FromSeconds(ticks * _regenIntervalSeconds);
             Changed?.Invoke();
         }
 
-        // Seconds until the next regen tick (0 once full) — for a "regenerates in X:XX" UI.
+        // Seconds until the next regen tick (0 once at TrueMaxHealth) — for a
+        // "back to full in X:XX" readout. No longer gates anything.
         public float SecondsUntilNextTick()
         {
-            if (CurrentHealth >= MaxHealth)
+            if (CurrentMaxHealth >= TrueMaxHealth)
             {
                 return 0f;
             }

@@ -18,21 +18,36 @@ MonoBehaviour:
   statSummary: +8 Attack
   itemColor: {r: 0.6, g: 0.6, b: 0.65, a: 1}
   powerValue: 15
-  attackSpeed: 1.1
-  isRanged: 0
   abilities:
   - abilityName: Slash
     description: A quick basic strike
     isActive: 1
+    iconColor: {r: 0.85, g: 0.75, b: 0.35, a: 1}
     powerBonus: 5
     cooldownSeconds: 2
   - abilityName: Guard Break
     description: Bypasses enemy defense
     isActive: 1
+    iconColor: {r: 0.85, g: 0.75, b: 0.35, a: 1}
     powerBonus: 8
     cooldownSeconds: 5
   - abilityName: Bleed
     description: Applies damage over time
     isActive: 0
+    iconColor: {r: 0.85, g: 0.75, b: 0.35, a: 1}
     powerBonus: 6
     cooldownSeconds: 4
+  - abilityName: Super Slash
+    description: A heavy overhead cut that hits far harder than a normal swing
+    isActive: 1
+    iconColor: {r: 1, g: 0.45, b: 0.15, a: 1}
+    powerBonus: 14
+    cooldownSeconds: 6
+  isTwoHanded: 0
+  attackSpeed: 1.1
+  isRanged: 0
+  potionEffect: 0
+  potionAmount: 20
+  statScalingEntries:
+  - stat: 2
+    coefficient: 0.8

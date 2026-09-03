@@ -13,12 +13,16 @@ namespace DoomScroller.Encounters
     // layout, minus its own Return button — leaving/advancing is a DungeonView-level
     // gesture, not a per-page control, so pages have no drag handling of their own).
     // Resolves itself once, the first time DungeonView reveals it; a revisit just leaves
-    // the already-computed result on screen, untouched.
+    // the already-computed result on screen, untouched. Like CombatResolutionView, the
+    // fight itself is a separate ephemeral instance — only a loss on this depth costs
+    // persistent max HP (PlayerHealth.ApplyDefeatPenalty, applied here since this is the
+    // one place that has the fresh numbers to narrate immediately; DungeonView applies
+    // the same penalty separately when the player leaves a run early instead).
     public class DungeonStepPageView : MonoBehaviour
     {
         // Fires once, when this page's own combat resolves — DungeonView listens to
         // know whether the frontier can advance.
-        public event Action<DungeonStep, CombatResult> Resolved;
+        public event Action<DungeonStep, bool> Resolved;
 
         private CombatPlaybackView _playback;
         private Text _depthLabelText;
@@ -27,11 +31,11 @@ namespace DoomScroller.Encounters
         private Text _advanceHintText;
 
         private DungeonStep _step;
-        private CombatResult _result;
+        private bool _lastResultWasVictory;
         private Coroutine _revealCoroutine;
 
         public bool IsResolved { get; private set; }
-        public bool LastResultWasVictory => IsResolved && _result.IsVictory;
+        public bool LastResultWasVictory => IsResolved && _lastResultWasVictory;
 
         public static DungeonStepPageView Create(Transform parent, float pageWidth)
         {
@@ -73,7 +77,9 @@ namespace DoomScroller.Encounters
 
             CreateSpacer(rect);
 
-            view._playback = CombatPlaybackView.Create(rect);
+            // The page root doubles as the revive dialog's screen anchor — a dungeon
+            // page already fills the whole screen (see pageLayout above).
+            view._playback = CombatPlaybackView.Create(rect, rect);
 
             CreateSpacer(rect);
 
@@ -92,7 +98,8 @@ namespace DoomScroller.Encounters
 
         // Resolves combat for this step and reveals it — DungeonView only ever calls
         // this once per page (guarded by IsResolved on its side).
-        public void Resolve(DungeonStep step, PlayerLoadout loadout, PlayerProgression progression, PlayerHealth health)
+        public void Resolve(DungeonStep step, PlayerLoadout loadout, PlayerProgression progression,
+            PlayerHealth health, PlayerStats stats, GameSettings settings)
         {
             _step = step;
             _depthLabelText.text = step.Label;
@@ -100,7 +107,9 @@ namespace DoomScroller.Encounters
             var isFight = !step.IsTreasureRoom;
             _playback.gameObject.SetActive(isFight);
 
-            var result = CombatResolver.ResolveStep(loadout, step, health);
+            // Always enter at full of whatever CurrentMaxHealth currently is — see
+            // CombatResolutionView.Show for the same reasoning.
+            var sim = CombatResolver.CreateSimulatorForStep(loadout, stats, settings, step, health.CurrentMaxHealth);
 
             _outcomeText.text = "";
             _rewardText.text = "";
@@ -111,18 +120,19 @@ namespace DoomScroller.Encounters
                 StopCoroutine(_revealCoroutine);
             }
 
-            _revealCoroutine = StartCoroutine(RevealSequence(result, loadout, progression, health));
+            _revealCoroutine = StartCoroutine(RevealSequence(sim, loadout, progression, health, settings));
         }
 
-        private IEnumerator RevealSequence(CombatResult result, PlayerLoadout loadout,
-            PlayerProgression progression, PlayerHealth health)
+        private IEnumerator RevealSequence(CombatSimulator sim, PlayerLoadout loadout,
+            PlayerProgression progression, PlayerHealth health, GameSettings settings)
         {
-            yield return StartCoroutine(_playback.Play(result, loadout, health, _step.EnemyHealth, null, _step.StepColor));
+            yield return StartCoroutine(_playback.Play(sim, loadout, settings, null, _step.StepColor));
 
-            _outcomeText.text = result.IsVictory ? "VICTORY" : "DEFEAT";
-            _outcomeText.color = result.IsVictory ? new Color(0.4f, 0.9f, 0.4f) : new Color(0.9f, 0.4f, 0.4f);
+            var isVictory = _playback.LastOutcomeWasVictory;
+            _outcomeText.text = isVictory ? "VICTORY" : "DEFEAT";
+            _outcomeText.color = isVictory ? new Color(0.4f, 0.9f, 0.4f) : new Color(0.9f, 0.4f, 0.4f);
 
-            if (result.IsVictory)
+            if (isVictory)
             {
                 var previousLevel = progression.Level;
                 progression.AddXp(_step.XpReward);
@@ -131,10 +141,9 @@ namespace DoomScroller.Encounters
                 loadout.AddToInventory(item);
 
                 var rewardLine = $"Reward: {_step.XpReward} XP + {item.title} (equip it from Profile)";
-                if (result.WasCloseCall)
+                if (_playback.WasCloseCall)
                 {
-                    rewardLine += $"\nClose call — you took {result.HealthDamage} damage " +
-                        $"({health.CurrentHealth}/{health.MaxHealth} HP).";
+                    rewardLine += "\nClose call — that one nearly had you.";
                 }
 
                 _rewardText.text = progression.Level > previousLevel
@@ -148,14 +157,15 @@ namespace DoomScroller.Encounters
             }
             else
             {
-                _rewardText.text = $"You took {result.HealthDamage} damage " +
-                    $"({health.CurrentHealth}/{health.MaxHealth} HP). The dungeon ends here.";
+                health.ApplyDefeatPenalty();
+                _rewardText.text = $"The dungeon ends here. Your max HP drops to " +
+                    $"{health.CurrentMaxHealth}/{health.TrueMaxHealth}, regenerating over time.";
             }
 
             IsResolved = true;
-            _result = result;
+            _lastResultWasVictory = isVictory;
             _revealCoroutine = null;
-            Resolved?.Invoke(_step, result);
+            Resolved?.Invoke(_step, isVictory);
         }
 
         private static Text CreateLabel(Transform parent, string name, int fontSize, FontStyle style, float preferredHeight)

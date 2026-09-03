@@ -42,7 +42,8 @@ namespace DoomScroller.UI
                 new Vector2(0.6f, 0.5f), new Vector2(32, 0), Vector2.zero);
             _healthText.fontSize = 30;
 
-            CreateButton(rect, "ProfileButton", "Profile", () => profileController.Open());
+            CreateButton(rect, "ProfileButton", "Profile", () => profileController.Open(), 0);
+            CreateButton(rect, "PotionsButton", "Potions", () => profileController.OpenPotions(), 1);
 
             // Guarantee top rendering regardless of what other controllers do in their own
             // Awake() (this is exactly the ordering bug that hid the old corner button).
@@ -77,16 +78,26 @@ namespace DoomScroller.UI
 
         private void RefreshHealthText()
         {
+            // This is the persistent max-HP ceiling only — never touched mid-fight
+            // (see CombatSimulator/CombatPlaybackView), so it only ever changes right
+            // after a fight ends (a defeat penalty or a max-health potion) or on its
+            // own regen tick, not live while one is playing out.
+            // A percent, not a fraction — this is what you'll actually walk into the
+            // next encounter with, relative to your true ceiling.
             var health = profileController.Health;
-            if (health.IsDepleted)
+            var percent = health.TrueMaxHealth > 0
+                ? Mathf.RoundToInt(100f * health.CurrentMaxHealth / health.TrueMaxHealth)
+                : 0;
+
+            if (health.CurrentMaxHealth < health.TrueMaxHealth)
             {
                 var seconds = Mathf.CeilToInt(health.SecondsUntilNextTick());
-                _healthText.text = $"HP {health.CurrentHealth}/{health.MaxHealth} · next in {seconds / 60}:{seconds % 60:D2}";
+                _healthText.text = $"HP {percent}% · full in {seconds / 60}:{seconds % 60:D2}";
                 _healthText.color = new Color(0.95f, 0.4f, 0.35f);
             }
             else
             {
-                _healthText.text = $"HP {health.CurrentHealth}/{health.MaxHealth}";
+                _healthText.text = $"HP {percent}%";
                 _healthText.color = Color.white;
             }
         }
@@ -112,16 +123,22 @@ namespace DoomScroller.UI
             return text;
         }
 
-        private static void CreateButton(Transform parent, string name, string label, System.Action onClick)
+        // index 0 sits flush against the right edge; each higher index sits one
+        // button-width-plus-gap further left, so buttons read left-to-right in call
+        // order without needing a layout group for just two fixed-size items.
+        private static void CreateButton(Transform parent, string name, string label, System.Action onClick, int index)
         {
+            const float width = 200f;
+            const float gap = 16f;
+
             var go = new GameObject(name, typeof(RectTransform));
             var rect = (RectTransform)go.transform;
             rect.SetParent(parent, false);
             rect.anchorMin = new Vector2(1, 0.5f);
             rect.anchorMax = new Vector2(1, 0.5f);
             rect.pivot = new Vector2(1, 0.5f);
-            rect.anchoredPosition = new Vector2(-24, 0);
-            rect.sizeDelta = new Vector2(200, 104);
+            rect.anchoredPosition = new Vector2(-24 - index * (width + gap), 0);
+            rect.sizeDelta = new Vector2(width, 104);
 
             var image = go.AddComponent<Image>();
             image.color = new Color(1, 1, 1, 0.15f);

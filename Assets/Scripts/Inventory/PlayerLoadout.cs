@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using DoomScroller.Progression;
 using UnityEngine;
 
 namespace DoomScroller.Inventory
@@ -18,6 +19,11 @@ namespace DoomScroller.Inventory
         private readonly List<ItemData> _inventory;
         private readonly Dictionary<EquipmentSlotType, ItemData> _equipped = new();
         private readonly HashSet<string> _activeAbilities = new();
+
+        // The one revive potion "carried" into the next fight(s) — deliberately
+        // simpler than the multi-slot active-ability system, since only one can ever
+        // matter within a single fight (see CombatPlaybackView.Play).
+        private ItemData _activeRevivePotion;
 
         public event Action Changed;
 
@@ -46,7 +52,10 @@ namespace DoomScroller.Inventory
 
         public IReadOnlyList<ItemData> GetInventory(EquipmentSlotType slot)
         {
-            return _inventory.Where(i => i.slotType == slot).ToList();
+            // Potions never have a meaningful slotType (they're never equipped to a
+            // body slot — see GetPotions) so they're excluded here regardless of
+            // whatever default value that field happens to carry.
+            return _inventory.Where(i => i.slotType == slot && i.category != ItemCategory.Potion).ToList();
         }
 
         // Unfiltered — the bottom-sheet inventory grid shows everything the player owns,
@@ -83,7 +92,9 @@ namespace DoomScroller.Inventory
 
         public void Equip(ItemData item)
         {
-            if (item == null || !_inventory.Contains(item))
+            // Potions are never equipped to a body slot — they're drunk (MaxHealthRestore)
+            // or carried into a fight (Revive, see ToggleRevivePotionActive).
+            if (item == null || item.category == ItemCategory.Potion || !_inventory.Contains(item))
             {
                 return;
             }
@@ -172,6 +183,24 @@ namespace DoomScroller.Inventory
             }
         }
 
+        // Same pairing as GetEquippedWeaponAbilities(), but keeps each ability's owning
+        // weapon alongside it — CombatSimulator needs the weapon to compute an ability's
+        // scaling bonus (the same stat(s)/coefficients its basic attack scales off).
+        public IEnumerable<(ItemData Weapon, WeaponAbilityData Ability)> GetEquippedWeaponAbilityPairs()
+        {
+            foreach (var slot in HandSlots)
+            {
+                var item = GetEquipped(slot);
+                if (item != null && item.category == ItemCategory.Weapon && item.abilities != null)
+                {
+                    foreach (var ability in item.abilities)
+                    {
+                        yield return (item, ability);
+                    }
+                }
+            }
+        }
+
         public void ToggleAbility(string abilityName)
         {
             var ability = GetEquippedWeaponAbilities().FirstOrDefault(a => a.abilityName == abilityName);
@@ -193,6 +222,63 @@ namespace DoomScroller.Inventory
                 return;
             }
 
+            Changed?.Invoke();
+        }
+
+        public IEnumerable<ItemData> GetPotions()
+        {
+            return _inventory.Where(i => i.category == ItemCategory.Potion);
+        }
+
+        public bool IsRevivePotionActive(ItemData potion)
+        {
+            return _activeRevivePotion == potion;
+        }
+
+        // Only one revive potion can be carried at a time — toggling a different one
+        // replaces whichever was active, toggling the active one off clears it.
+        public void ToggleRevivePotionActive(ItemData potion)
+        {
+            if (potion == null || potion.potionEffect != PotionEffect.Revive || !_inventory.Contains(potion))
+            {
+                return;
+            }
+
+            _activeRevivePotion = _activeRevivePotion == potion ? null : potion;
+            Changed?.Invoke();
+        }
+
+        // Null once consumed, unequipped from carry, or no longer in the inventory.
+        public ItemData GetActiveRevivePotion()
+        {
+            return _activeRevivePotion != null && _inventory.Contains(_activeRevivePotion) ? _activeRevivePotion : null;
+        }
+
+        // Spent by CombatPlaybackView when a carried revive potion actually saves the
+        // player — removed from the inventory and no longer carried.
+        public void ConsumeActiveRevivePotion()
+        {
+            if (_activeRevivePotion == null)
+            {
+                return;
+            }
+
+            _inventory.Remove(_activeRevivePotion);
+            _activeRevivePotion = null;
+            Changed?.Invoke();
+        }
+
+        // Instant-use from the Potions tab — restores current max health right away,
+        // rather than being carried into a fight like a revive potion.
+        public void ConsumeMaxHealthPotion(ItemData potion, PlayerHealth health)
+        {
+            if (potion == null || potion.potionEffect != PotionEffect.MaxHealthRestore || !_inventory.Contains(potion))
+            {
+                return;
+            }
+
+            health.RestoreMaxHealth(potion.potionAmount);
+            _inventory.Remove(potion);
             Changed?.Invoke();
         }
 

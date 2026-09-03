@@ -10,9 +10,10 @@ using UnityEngine.UI;
 
 namespace DoomScroller.Encounters
 {
-    // Reveals the resolved combat as an animated beat-by-beat fight (CombatPlaybackView),
-    // then a clear win/lose outcome. Outcome itself is computed by CombatResolver's
-    // attack/defend simulation, not real-time input here (Phase 8).
+    // Reveals a fight as an animated beat-by-beat sequence (CombatPlaybackView), then a
+    // clear win/lose outcome. The fight is its own ephemeral CombatSimulator instance —
+    // it never touches the persistent PlayerHealth; only a defeat (including leaving
+    // early) costs anything, via PlayerHealth.ApplyDefeatPenalty.
     public class CombatResolutionView : MonoBehaviour
     {
         public event Action ReturnToFeedRequested;
@@ -24,6 +25,7 @@ namespace DoomScroller.Encounters
         private Text _rewardText;
         private Coroutine _revealCoroutine;
         private EncounterData _data;
+        private PlayerHealth _health;
 
         public static CombatResolutionView Create(Transform parent)
         {
@@ -73,15 +75,15 @@ namespace DoomScroller.Encounters
             contentAreaGroup.childControlHeight = true;
 
             view._outcomeText = CreateLabel(contentAreaGo.transform, "Outcome", 64, FontStyle.Bold, 90);
-            // Tall enough for a 3-line reward string (reward + close-call damage note +
+            // Tall enough for a 3-line reward string (reward + close-call note +
             // level-up), not just the visually-tighter single-line case.
             view._rewardText = CreateLabel(contentAreaGo.transform, "Reward", 34, FontStyle.Italic, 150);
 
             CreateSpacer(contentAreaGo.transform);
 
             // Only shown for actual fights (Enemy type) — Treasure never fights, per
-            // CombatResolver.ResolveTreasure's guaranteed-loot, no-combat outcome.
-            view._playback = CombatPlaybackView.Create(contentAreaGo.transform);
+            // CombatResolver.CreateSimulator returning null for it.
+            view._playback = CombatPlaybackView.Create(contentAreaGo.transform, rect);
 
             CreateSpacer(contentAreaGo.transform);
 
@@ -91,15 +93,20 @@ namespace DoomScroller.Encounters
             return view;
         }
 
-        public void Show(EncounterData data, PlayerLoadout loadout, PlayerProgression progression, PlayerHealth health)
+        public void Show(EncounterData data, PlayerLoadout loadout, PlayerProgression progression, PlayerHealth health,
+            PlayerStats stats, GameSettings settings)
         {
             gameObject.SetActive(true);
             _data = data;
+            _health = health;
 
             var isFight = data.type == EncounterType.Enemy;
             _playback.gameObject.SetActive(isFight);
 
-            var result = CombatResolver.Resolve(loadout, data, health);
+            // Always enter at full of whatever CurrentMaxHealth currently is — the
+            // fight is a separate instance from here on; PlayerHealth isn't touched
+            // again until it's over (see RevealSequence/OnLeaveClicked).
+            var sim = CombatResolver.CreateSimulator(loadout, stats, settings, data, health.CurrentMaxHealth);
 
             _outcomeText.text = "";
             _rewardText.text = "";
@@ -109,7 +116,7 @@ namespace DoomScroller.Encounters
                 StopCoroutine(_revealCoroutine);
             }
 
-            _revealCoroutine = StartCoroutine(RevealSequence(result, data.baseXpReward, loadout, progression, health));
+            _revealCoroutine = StartCoroutine(RevealSequence(sim, data.baseXpReward, loadout, progression, settings));
         }
 
         public void Hide()
@@ -123,7 +130,7 @@ namespace DoomScroller.Encounters
             gameObject.SetActive(false);
         }
 
-        // Leaving before the fight has finished counts as a loss — same lock/consequence
+        // Leaving before the fight has finished counts as a loss — same max-HP penalty
         // as actually losing, not a free way to walk away from a bad matchup mid-fight.
         // _revealCoroutine is non-null for exactly that window (set in Show, cleared the
         // instant RevealSequence reaches its own Won/Lost below), so its presence alone
@@ -134,21 +141,23 @@ namespace DoomScroller.Encounters
             {
                 StopCoroutine(_revealCoroutine);
                 _revealCoroutine = null;
+                _health.ApplyDefeatPenalty();
                 EncounterLost?.Invoke(_data);
             }
 
             ReturnToFeedRequested?.Invoke();
         }
 
-        private IEnumerator RevealSequence(CombatResult result, int xpReward, PlayerLoadout loadout,
-            PlayerProgression progression, PlayerHealth health)
+        private IEnumerator RevealSequence(CombatSimulator sim, int xpReward, PlayerLoadout loadout,
+            PlayerProgression progression, GameSettings settings)
         {
-            yield return StartCoroutine(_playback.Play(result, loadout, health, _data.enemyHealth, _data.artwork, _data.cardColor));
+            yield return StartCoroutine(_playback.Play(sim, loadout, settings, _data.artwork, _data.cardColor));
 
-            _outcomeText.text = result.IsVictory ? "VICTORY" : "DEFEAT";
-            _outcomeText.color = result.IsVictory ? new Color(0.4f, 0.9f, 0.4f) : new Color(0.9f, 0.4f, 0.4f);
+            var isVictory = _playback.LastOutcomeWasVictory;
+            _outcomeText.text = isVictory ? "VICTORY" : "DEFEAT";
+            _outcomeText.color = isVictory ? new Color(0.4f, 0.9f, 0.4f) : new Color(0.9f, 0.4f, 0.4f);
 
-            if (result.IsVictory)
+            if (isVictory)
             {
                 var previousLevel = progression.Level;
                 progression.AddXp(xpReward);
@@ -159,10 +168,9 @@ namespace DoomScroller.Encounters
                 loadout.AddToInventory(item);
 
                 var rewardLine = $"Reward: {xpReward} XP + {item.title} (equip it from Profile)";
-                if (result.WasCloseCall)
+                if (_playback.WasCloseCall)
                 {
-                    rewardLine += $"\nClose call — you took {result.HealthDamage} damage " +
-                        $"({health.CurrentHealth}/{health.MaxHealth} HP).";
+                    rewardLine += "\nClose call — that one nearly had you.";
                 }
 
                 _rewardText.text = progression.Level > previousLevel
@@ -173,8 +181,9 @@ namespace DoomScroller.Encounters
             }
             else
             {
-                _rewardText.text = $"No reward this time — your gear held you back. You took " +
-                    $"{result.HealthDamage} damage ({health.CurrentHealth}/{health.MaxHealth} HP). " +
+                _health.ApplyDefeatPenalty();
+                _rewardText.text = $"No reward this time — your gear held you back. Your max HP drops to " +
+                    $"{_health.CurrentMaxHealth}/{_health.TrueMaxHealth}, regenerating over time. " +
                     "This one's lost for good; gear up and look for the next one.";
                 EncounterLost?.Invoke(_data);
             }

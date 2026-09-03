@@ -20,30 +20,57 @@ namespace DoomScroller.Inventory
                   "raise this for real energy-system pacing (e.g. 60-300s).")]
         [SerializeField] private float regenIntervalSeconds = 30f;
 
+        [Header("Stats")]
+        [Tooltip("How much TrueMaxHealth one Vigor point is worth — recomputed on every " +
+                  "PlayerStats change, calibrated so today's starting stat spread " +
+                  "reproduces maxHealth above exactly, and only grows from points spent " +
+                  "past that.")]
+        [SerializeField] private int vigorHealthPerPoint = 5;
+        [SerializeField] private int statPointsPerLevel = 3;
+
         private PlayerLoadout _loadout;
         private PlayerProgression _progression;
         private PlayerHealth _health;
+        private PlayerStats _stats;
+        private GameSettings _settings;
         private ProfileView _profileView;
         private EquipSlotDetailView _equipSlotDetailView;
+        private PotionInventoryView _potionInventoryView;
 
         public PlayerLoadout Loadout => _loadout;
         public PlayerProgression Progression => _progression;
         public PlayerHealth Health => _health;
+        public PlayerStats Stats => _stats;
+        public GameSettings Settings => _settings;
 
         private void Awake()
         {
             _loadout = new PlayerLoadout(startingInventory, playerSprite);
             _progression = new PlayerProgression();
             _health = new PlayerHealth(maxHealth, regenPerInterval, regenIntervalSeconds);
+            _stats = new PlayerStats();
+            _settings = new GameSettings();
             EquipFirstOfEachSlot();
 
+            // Vigor's effect on the health ceiling. Fires immediately once here too, but
+            // at the default stat spread (nothing spent yet) that's a no-op — the
+            // starting maxHealth above is already calibrated to match it exactly.
+            _stats.Changed += RecomputeTrueMaxHealth;
+            RecomputeTrueMaxHealth();
+
+            // 3 points per level, however many levels a single XP grant crosses.
+            _progression.LeveledUp += _ => _stats.GrantPoints(statPointsPerLevel);
+
             var rect = (RectTransform)transform;
-            _profileView = ProfileView.Create(rect, _loadout, _progression, _health);
+            _profileView = ProfileView.Create(rect, _loadout, _progression, _health, _stats, _settings);
             _profileView.CloseRequested += Close;
             _profileView.SlotTapped += OpenSlotDetail;
 
             _equipSlotDetailView = EquipSlotDetailView.Create(rect, _loadout);
             _equipSlotDetailView.BackRequested += CloseSlotDetail;
+
+            _potionInventoryView = PotionInventoryView.Create(rect, _loadout, _health, _settings);
+            _potionInventoryView.CloseRequested += ClosePotions;
         }
 
         private void Update()
@@ -52,6 +79,12 @@ namespace DoomScroller.Inventory
             // FeedController, ProfileView) so every reader sees the same up-to-date value
             // regardless of which of them happens to run first in a given frame.
             _health.Regenerate();
+        }
+
+        private void RecomputeTrueMaxHealth()
+        {
+            var baseline = maxHealth - PlayerStats.BaseValue * vigorHealthPerPoint;
+            _health.SetTrueMaxHealth(baseline + _stats.Get(PlayerStat.Vigor) * vigorHealthPerPoint);
         }
 
         private void EquipFirstOfEachSlot()
@@ -89,6 +122,16 @@ namespace DoomScroller.Inventory
         {
             _equipSlotDetailView.Hide();
             _profileView.Show();
+        }
+
+        public void OpenPotions()
+        {
+            _potionInventoryView.Show();
+        }
+
+        private void ClosePotions()
+        {
+            _potionInventoryView.Hide();
         }
     }
 }

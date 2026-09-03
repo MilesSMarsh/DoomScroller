@@ -937,10 +937,15 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 52b00262aaa1c9802a36dfec50c1ae18, type: 2}
   - {fileID: 11400000, guid: 3148b1eff7b1cb098ad88184c40df124, type: 2}
   - {fileID: 11400000, guid: 02777713a5477314ab2f9c3bd68020c3, type: 2}
+  - {fileID: 11400000, guid: 4dba6c22db99240a5869f7c3f5f14b9a, type: 2}
+  - {fileID: 11400000, guid: ade312a000f63ba88b8720f3c8b436ed, type: 2}
+  - {fileID: 11400000, guid: d72f19d8ee95fd2598a006010b99535c, type: 2}
   playerSprite: {fileID: 21300000, guid: c670095de6b4303678d8ef6ce7c98106, type: 3}
   maxHealth: 100
   regenPerInterval: 10
   regenIntervalSeconds: 30
+  vigorHealthPerPoint: 5
+  statPointsPerLevel: 3
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

@@ -20,13 +20,21 @@ namespace DoomScroller.Inventory
         private PlayerLoadout _loadout;
         private PlayerProgression _progression;
         private PlayerHealth _health;
+        private GameSettings _settings;
         private RectTransform _root;
         private RectTransform _abilitiesContainer;
         private Text _progressionText;
         private Text _healthText;
+        private Text _manualCastingToggleText;
         private EquipSlotClusterView _equipCluster;
 
-        public static ProfileView Create(Transform parent, PlayerLoadout loadout, PlayerProgression progression, PlayerHealth health)
+        private GameObject _inventoryPanelGo;
+        private GameObject _statsPanelGo;
+        private Image _inventoryTabImage;
+        private Image _statsTabImage;
+
+        public static ProfileView Create(Transform parent, PlayerLoadout loadout, PlayerProgression progression,
+            PlayerHealth health, PlayerStats stats, GameSettings settings)
         {
             var go = new GameObject("Profile", typeof(RectTransform));
             var rect = (RectTransform)go.transform;
@@ -56,6 +64,7 @@ namespace DoomScroller.Inventory
             view._loadout = loadout;
             view._progression = progression;
             view._health = health;
+            view._settings = settings;
             view._root = rect;
 
             // Scrollable body: equip cluster + abilities can outgrow a short/narrow
@@ -68,20 +77,78 @@ namespace DoomScroller.Inventory
             view._progressionText = CreateLabel(content, "Progression", "", 38, FontStyle.Italic);
             view._healthText = CreateLabel(content, "Health", "", 38, FontStyle.Italic);
 
-            view._equipCluster = EquipSlotClusterView.Create(content, loadout);
+            // Two tabs sharing everything above (title/portrait/progression/health):
+            // Inventory (today's equip cluster + abilities, unchanged) and the new Stats
+            // allocator. Only one panel is active at a time; switching tabs doesn't
+            // rebuild either, so neither loses scroll-independent state.
+            var tabRowGo = new GameObject("TabRow", typeof(RectTransform));
+            tabRowGo.transform.SetParent(content, false);
+            tabRowGo.AddComponent<LayoutElement>().preferredHeight = 96;
+            var tabRowLayout = tabRowGo.AddComponent<HorizontalLayoutGroup>();
+            tabRowLayout.spacing = 12;
+            tabRowLayout.childForceExpandWidth = true;
+            tabRowLayout.childForceExpandHeight = true;
+            tabRowLayout.childControlWidth = true;
+            tabRowLayout.childControlHeight = true;
 
-            CreateLabel(content, "AbilitiesHeader", "Weapon Abilities (tap to toggle, max " +
+            CreateTabButton(tabRowGo.transform, "InventoryTab", "Inventory", () => view.SelectTab(true), out view._inventoryTabImage);
+            CreateTabButton(tabRowGo.transform, "StatsTab", "Stats", () => view.SelectTab(false), out view._statsTabImage);
+
+            var inventoryPanelGo = new GameObject("InventoryPanel", typeof(RectTransform));
+            view._inventoryPanelGo = inventoryPanelGo;
+            inventoryPanelGo.transform.SetParent(content, false);
+            var inventoryPanelLayout = inventoryPanelGo.AddComponent<VerticalLayoutGroup>();
+            inventoryPanelLayout.spacing = 12;
+            inventoryPanelLayout.childForceExpandWidth = true;
+            inventoryPanelLayout.childForceExpandHeight = false;
+            inventoryPanelLayout.childControlWidth = true;
+            inventoryPanelLayout.childControlHeight = true;
+
+            view._equipCluster = EquipSlotClusterView.Create(inventoryPanelGo.transform, loadout);
+
+            // Global on/off for every active ability at once — mirrors PotionInventoryView's
+            // auto-consume-revive-potions settings row exactly (tap-to-flip button + a
+            // label describing the current state).
+            var manualCastingRowGo = new GameObject("ManualCastingRow", typeof(RectTransform));
+            manualCastingRowGo.transform.SetParent(inventoryPanelGo.transform, false);
+            manualCastingRowGo.AddComponent<LayoutElement>().preferredHeight = 96;
+            manualCastingRowGo.AddComponent<Image>().color = new Color(1f, 1f, 1f, 0.08f);
+            var manualCastingButton = manualCastingRowGo.AddComponent<Button>();
+            manualCastingButton.onClick.AddListener(() =>
+            {
+                view._settings.SetManualAbilityCasting(!view._settings.ManualAbilityCasting);
+                view.RefreshManualCastingToggle();
+            });
+
+            var manualCastingTextGo = new GameObject("Label", typeof(RectTransform));
+            manualCastingTextGo.transform.SetParent(manualCastingRowGo.transform, false);
+            var manualCastingTextRect = (RectTransform)manualCastingTextGo.transform;
+            manualCastingTextRect.anchorMin = Vector2.zero;
+            manualCastingTextRect.anchorMax = Vector2.one;
+            manualCastingTextRect.offsetMin = new Vector2(24, 0);
+            manualCastingTextRect.offsetMax = new Vector2(-24, 0);
+            view._manualCastingToggleText = manualCastingTextGo.AddComponent<Text>();
+            view._manualCastingToggleText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            view._manualCastingToggleText.fontSize = 28;
+            view._manualCastingToggleText.fontStyle = FontStyle.Bold;
+            view._manualCastingToggleText.alignment = TextAnchor.MiddleLeft;
+            view._manualCastingToggleText.color = Color.white;
+            view._manualCastingToggleText.horizontalOverflow = HorizontalWrapMode.Wrap;
+
+            CreateLabel(inventoryPanelGo.transform, "AbilitiesHeader", "Weapon Abilities (tap to toggle, max " +
                         PlayerLoadout.MaxActiveAbilities + ")", 32, FontStyle.Italic);
 
             var abilitiesGo = new GameObject("Abilities", typeof(RectTransform));
             view._abilitiesContainer = (RectTransform)abilitiesGo.transform;
-            view._abilitiesContainer.SetParent(content, false);
+            view._abilitiesContainer.SetParent(inventoryPanelGo.transform, false);
             var abilitiesLayout = abilitiesGo.AddComponent<VerticalLayoutGroup>();
             abilitiesLayout.spacing = 8;
             abilitiesLayout.childForceExpandWidth = true;
             abilitiesLayout.childForceExpandHeight = false;
             abilitiesLayout.childControlWidth = true;
             abilitiesLayout.childControlHeight = true;
+
+            view._statsPanelGo = StatsPanelView.Create(content, stats).gameObject;
 
             CreateButton(rect, "CloseButton", "Close", () => view.CloseRequested?.Invoke());
 
@@ -90,9 +157,57 @@ namespace DoomScroller.Inventory
             loadout.Changed += view.Refresh;
             progression.Changed += view.Refresh;
             health.Changed += view.RefreshHealthText;
+            settings.Changed += view.RefreshManualCastingToggle;
+
+            view.SelectTab(true);
 
             go.SetActive(false);
             return view;
+        }
+
+        // No page-router/enum needed for just two tabs — a bool reads perfectly clearly
+        // at both call sites (SelectTab(true)/SelectTab(false)) without adding a type.
+        private void SelectTab(bool inventory)
+        {
+            _inventoryPanelGo.SetActive(inventory);
+            _statsPanelGo.SetActive(!inventory);
+
+            // Same "only tint the selected one" treatment as nothing else in this project
+            // does yet, but simple enough not to need a shared helper for two buttons.
+            _inventoryTabImage.color = inventory ? SelectedTabColor : UnselectedTabColor;
+            _statsTabImage.color = inventory ? UnselectedTabColor : SelectedTabColor;
+        }
+
+        private static readonly Color SelectedTabColor = new(1f, 1f, 1f, 0.25f);
+        private static readonly Color UnselectedTabColor = new(1f, 1f, 1f, 0.08f);
+
+        private static void CreateTabButton(Transform parent, string name, string label, Action onClick, out Image image)
+        {
+            var go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+
+            image = go.AddComponent<Image>();
+            image.color = UnselectedTabColor;
+
+            var button = go.AddComponent<Button>();
+            button.onClick.AddListener(() => onClick());
+
+            var labelGo = new GameObject("Label", typeof(RectTransform));
+            labelGo.transform.SetParent(go.transform, false);
+            var labelRect = (RectTransform)labelGo.transform;
+            labelRect.anchorMin = Vector2.zero;
+            labelRect.anchorMax = Vector2.one;
+            labelRect.offsetMin = Vector2.zero;
+            labelRect.offsetMax = Vector2.zero;
+
+            var labelText = labelGo.AddComponent<Text>();
+            labelText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            labelText.fontSize = 34;
+            labelText.fontStyle = FontStyle.Bold;
+            labelText.alignment = TextAnchor.MiddleCenter;
+            labelText.color = Color.white;
+            labelText.text = label;
+            labelText.raycastTarget = false;
         }
 
         public void Show()
@@ -117,15 +232,15 @@ namespace DoomScroller.Inventory
 
         private void RefreshHealthText()
         {
-            if (_health.IsDepleted)
+            if (_health.CurrentMaxHealth < _health.TrueMaxHealth)
             {
                 var seconds = Mathf.CeilToInt(_health.SecondsUntilNextTick());
-                _healthText.text = $"HP {_health.CurrentHealth}/{_health.MaxHealth} — " +
-                    $"out of energy, next in {seconds / 60}:{seconds % 60:D2}";
+                _healthText.text = $"HP {_health.CurrentMaxHealth}/{_health.TrueMaxHealth} — " +
+                    $"full in {seconds / 60}:{seconds % 60:D2}";
             }
             else
             {
-                _healthText.text = $"HP {_health.CurrentHealth}/{_health.MaxHealth}";
+                _healthText.text = $"HP {_health.CurrentMaxHealth}/{_health.TrueMaxHealth}";
             }
         }
 
@@ -134,7 +249,15 @@ namespace DoomScroller.Inventory
             _progressionText.text = $"Level {_progression.Level} — {_progression.CurrentXp}/{_progression.XpToNextLevel} XP";
             RefreshHealthText();
             _equipCluster.Refresh();
+            RefreshManualCastingToggle();
             RefreshAbilities();
+        }
+
+        private void RefreshManualCastingToggle()
+        {
+            _manualCastingToggleText.text = _settings.ManualAbilityCasting
+                ? "Manual ability casting: ON (tap to auto-cast instead)"
+                : "Manual ability casting: OFF (tap to cast by hand instead)";
         }
 
         private void RefreshAbilities()
@@ -153,26 +276,28 @@ namespace DoomScroller.Inventory
 
             foreach (var ability in abilities.Where(a => !a.isActive))
             {
-                var text = CreateLabel(_abilitiesContainer, $"Ability_{ability.abilityName}",
-                    $"(passive) {ability.abilityName} — {ability.description}", 30, FontStyle.Normal);
-                text.alignment = TextAnchor.MiddleLeft;
-                text.color = new Color(1f, 1f, 1f, 0.75f);
+                CreateAbilityIconRow(_abilitiesContainer, ability, null,
+                    $"(passive) {ability.abilityName} — {ability.description}",
+                    new Color(1f, 1f, 1f, 0.75f));
             }
 
             foreach (var ability in abilities.Where(a => a.isActive))
             {
                 var capturedName = ability.abilityName;
                 var isOn = _loadout.IsAbilityActive(capturedName);
-                var text = CreateRow(_abilitiesContainer, $"Ability_{capturedName}",
-                    () => _loadout.ToggleAbility(capturedName));
-                text.text = $"[{(isOn ? "x" : " ")}] {ability.abilityName} — {ability.description}";
-                text.fontSize = 32;
+                CreateAbilityIconRow(_abilitiesContainer, ability, () => _loadout.ToggleAbility(capturedName),
+                    $"[{(isOn ? "x" : " ")}] {ability.abilityName} — {ability.description}", Color.white);
             }
         }
 
-        private static Text CreateRow(Transform parent, string name, Action onClick)
+        // A small colored square (the ability's greybox icon identity) beside the
+        // existing text row — shared shape for both the passive (non-tappable) and
+        // active (tap-to-toggle) rows, since the only real difference between them is
+        // whether onClick is null.
+        private static void CreateAbilityIconRow(Transform parent, WeaponAbilityData ability, Action onClick,
+            string label, Color textColor)
         {
-            var go = new GameObject(name, typeof(RectTransform));
+            var go = new GameObject($"Ability_{ability.abilityName}", typeof(RectTransform));
             go.transform.SetParent(parent, false);
 
             var image = go.AddComponent<Image>();
@@ -183,29 +308,48 @@ namespace DoomScroller.Inventory
             // descriptions can run long) without clipping or spilling into neighbors.
             layoutElement.preferredHeight = 124;
 
-            var button = go.AddComponent<Button>();
-            button.onClick.AddListener(() => onClick());
+            var rowLayout = go.AddComponent<HorizontalLayoutGroup>();
+            rowLayout.padding = new RectOffset(20, 20, 0, 0);
+            rowLayout.spacing = 16;
+            rowLayout.childAlignment = TextAnchor.MiddleLeft;
+            rowLayout.childForceExpandWidth = false;
+            rowLayout.childForceExpandHeight = false;
+            rowLayout.childControlWidth = true;
+            rowLayout.childControlHeight = true;
 
-            // Text lives on its own child GameObject: a single GameObject can only
-            // usefully drive one Graphic via its CanvasRenderer, so it can't share
-            // the row's own Image.
+            if (onClick != null)
+            {
+                var button = go.AddComponent<Button>();
+                button.onClick.AddListener(() => onClick());
+            }
+
+            var iconGo = new GameObject("Icon", typeof(RectTransform));
+            iconGo.transform.SetParent(go.transform, false);
+            var iconLayout = iconGo.AddComponent<LayoutElement>();
+            iconLayout.preferredWidth = 64;
+            iconLayout.preferredHeight = 64;
+            iconLayout.flexibleWidth = 0;
+            iconLayout.flexibleHeight = 0;
+            var icon = iconGo.AddComponent<Image>();
+            icon.color = ability.iconColor;
+            icon.raycastTarget = false;
+
             var textGo = new GameObject("Label", typeof(RectTransform));
             textGo.transform.SetParent(go.transform, false);
-            var textRect = (RectTransform)textGo.transform;
-            textRect.anchorMin = Vector2.zero;
-            textRect.anchorMax = Vector2.one;
-            textRect.offsetMin = new Vector2(20, 0);
-            textRect.offsetMax = new Vector2(-20, 0);
+            var textLayout = textGo.AddComponent<LayoutElement>();
+            textLayout.minWidth = 0;
+            textLayout.preferredWidth = 0;
+            textLayout.flexibleWidth = 1;
 
             var text = textGo.AddComponent<Text>();
             text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             text.fontSize = 32;
             text.alignment = TextAnchor.MiddleLeft;
-            text.color = Color.white;
+            text.color = textColor;
+            text.text = label;
             text.horizontalOverflow = HorizontalWrapMode.Wrap;
             text.verticalOverflow = VerticalWrapMode.Overflow;
-
-            return text;
+            text.raycastTarget = false;
         }
 
         // A fixed-size square portrait, centered — not full-width like the rest of this
