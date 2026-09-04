@@ -43,7 +43,6 @@ namespace DoomScroller.UI
             _healthText.fontSize = 30;
 
             CreateButton(rect, "ProfileButton", "Profile", () => profileController.Open(), 0);
-            CreateButton(rect, "PotionsButton", "Potions", () => profileController.OpenPotions(), 1);
 
             // Guarantee top rendering regardless of what other controllers do in their own
             // Awake() (this is exactly the ordering bug that hid the old corner button).
@@ -58,6 +57,7 @@ namespace DoomScroller.UI
             // every component's Awake() in the scene has completed.
             profileController.Progression.Changed += RefreshProgressionText;
             profileController.Health.Changed += RefreshHealthText;
+            profileController.Wallet.Changed += RefreshProgressionText;
             RefreshProgressionText();
             RefreshHealthText();
         }
@@ -73,7 +73,8 @@ namespace DoomScroller.UI
         private void RefreshProgressionText()
         {
             var progression = profileController.Progression;
-            _progressionText.text = $"Lv.{progression.Level} · {progression.CurrentXp}/{progression.XpToNextLevel} XP";
+            var gold = profileController.Wallet.Gold;
+            _progressionText.text = $"Lv.{progression.Level} · {progression.CurrentXp}/{progression.XpToNextLevel} XP · {gold}g";
         }
 
         private void RefreshHealthText()
@@ -91,7 +92,7 @@ namespace DoomScroller.UI
 
             if (health.CurrentMaxHealth < health.TrueMaxHealth)
             {
-                var seconds = Mathf.CeilToInt(health.SecondsUntilNextTick());
+                var seconds = Mathf.CeilToInt(health.SecondsUntilFullHealth());
                 _healthText.text = $"HP {percent}% · full in {seconds / 60}:{seconds % 60:D2}";
                 _healthText.color = new Color(0.95f, 0.4f, 0.35f);
             }

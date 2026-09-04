@@ -23,6 +23,7 @@ namespace DoomScroller.Inventory
         private GameSettings _settings;
         private RectTransform _root;
         private RectTransform _abilitiesContainer;
+        private RectTransform _materialsContainer;
         private Text _progressionText;
         private Text _healthText;
         private Text _manualCastingToggleText;
@@ -34,6 +35,15 @@ namespace DoomScroller.Inventory
         private Image _inventoryTabImage;
         private Image _abilitiesTabImage;
         private Image _statsTabImage;
+
+        // The Inventory tab's own inner sub-tabs — Equipment/Potions/Materials, one
+        // nesting level below the three above.
+        private GameObject _equipmentPanelGo;
+        private GameObject _potionsPanelGo;
+        private GameObject _materialsPanelGo;
+        private Image _equipmentTabImage;
+        private Image _potionsTabImage;
+        private Image _materialsTabImage;
 
         public static ProfileView Create(Transform parent, PlayerLoadout loadout, PlayerProgression progression,
             PlayerHealth health, PlayerStats stats, GameSettings settings)
@@ -109,7 +119,60 @@ namespace DoomScroller.Inventory
             inventoryPanelLayout.childControlWidth = true;
             inventoryPanelLayout.childControlHeight = true;
 
-            view._equipCluster = EquipSlotClusterView.Create(inventoryPanelGo.transform, loadout);
+            // Inventory's own inner tab row — Equipment/Potions/Materials — one nesting
+            // level below the outer Inventory/Abilities/Stats row, same
+            // CreateTabButton/SelectedTabColor pattern.
+            var inventoryTabRowGo = new GameObject("InventoryTabRow", typeof(RectTransform));
+            inventoryTabRowGo.transform.SetParent(inventoryPanelGo.transform, false);
+            inventoryTabRowGo.AddComponent<LayoutElement>().preferredHeight = 88;
+            var inventoryTabRowLayout = inventoryTabRowGo.AddComponent<HorizontalLayoutGroup>();
+            inventoryTabRowLayout.spacing = 12;
+            inventoryTabRowLayout.childForceExpandWidth = true;
+            inventoryTabRowLayout.childForceExpandHeight = true;
+            inventoryTabRowLayout.childControlWidth = true;
+            inventoryTabRowLayout.childControlHeight = true;
+
+            CreateTabButton(inventoryTabRowGo.transform, "EquipmentTab", "Equipment",
+                () => view.SelectInventoryTab(0), out view._equipmentTabImage);
+            CreateTabButton(inventoryTabRowGo.transform, "PotionsTab", "Potions",
+                () => view.SelectInventoryTab(1), out view._potionsTabImage);
+            CreateTabButton(inventoryTabRowGo.transform, "MaterialsTab", "Materials",
+                () => view.SelectInventoryTab(2), out view._materialsTabImage);
+
+            var equipmentPanelGo = new GameObject("EquipmentPanel", typeof(RectTransform));
+            view._equipmentPanelGo = equipmentPanelGo;
+            equipmentPanelGo.transform.SetParent(inventoryPanelGo.transform, false);
+            var equipmentPanelLayout = equipmentPanelGo.AddComponent<VerticalLayoutGroup>();
+            equipmentPanelLayout.childForceExpandWidth = true;
+            equipmentPanelLayout.childForceExpandHeight = false;
+            equipmentPanelLayout.childControlWidth = true;
+            equipmentPanelLayout.childControlHeight = true;
+
+            view._equipCluster = EquipSlotClusterView.Create(equipmentPanelGo.transform, loadout);
+
+            view._potionsPanelGo = PotionInventoryView.Create(inventoryPanelGo.transform, loadout, health, settings).gameObject;
+
+            var materialsPanelGo = new GameObject("MaterialsPanel", typeof(RectTransform));
+            view._materialsPanelGo = materialsPanelGo;
+            materialsPanelGo.transform.SetParent(inventoryPanelGo.transform, false);
+            var materialsPanelLayout = materialsPanelGo.AddComponent<VerticalLayoutGroup>();
+            materialsPanelLayout.spacing = 12;
+            materialsPanelLayout.childForceExpandWidth = true;
+            materialsPanelLayout.childForceExpandHeight = false;
+            materialsPanelLayout.childControlWidth = true;
+            materialsPanelLayout.childControlHeight = true;
+
+            CreateLabel(materialsPanelGo.transform, "MaterialsHeader", "Crafting Materials", 32, FontStyle.Italic);
+
+            var materialsGo = new GameObject("Materials", typeof(RectTransform));
+            view._materialsContainer = (RectTransform)materialsGo.transform;
+            view._materialsContainer.SetParent(materialsPanelGo.transform, false);
+            var materialsLayout = materialsGo.AddComponent<VerticalLayoutGroup>();
+            materialsLayout.spacing = 8;
+            materialsLayout.childForceExpandWidth = true;
+            materialsLayout.childForceExpandHeight = false;
+            materialsLayout.childControlWidth = true;
+            materialsLayout.childControlHeight = true;
 
             var abilitiesPanelGo = new GameObject("AbilitiesPanel", typeof(RectTransform));
             view._abilitiesPanelGo = abilitiesPanelGo;
@@ -176,14 +239,15 @@ namespace DoomScroller.Inventory
             settings.Changed += view.RefreshManualCastingToggle;
 
             view.SelectTab(0);
+            view.SelectInventoryTab(0);
 
             go.SetActive(false);
             return view;
         }
 
-        // Three static tabs — an int index (matching the three CreateTabButton calls
-        // above in order) reads clearly enough at each call site without a dedicated
-        // enum/router type for something this small.
+        // Three static tabs — an int index (matching the CreateTabButton calls above in
+        // order) reads clearly enough at each call site without a dedicated enum/router
+        // type for something this small.
         private void SelectTab(int index)
         {
             _inventoryPanelGo.SetActive(index == 0);
@@ -195,6 +259,19 @@ namespace DoomScroller.Inventory
             _inventoryTabImage.color = index == 0 ? SelectedTabColor : UnselectedTabColor;
             _abilitiesTabImage.color = index == 1 ? SelectedTabColor : UnselectedTabColor;
             _statsTabImage.color = index == 2 ? SelectedTabColor : UnselectedTabColor;
+        }
+
+        // Inventory's own inner sub-tabs — Equipment/Potions/Materials — same shape as
+        // SelectTab, one nesting level down.
+        private void SelectInventoryTab(int index)
+        {
+            _equipmentPanelGo.SetActive(index == 0);
+            _potionsPanelGo.SetActive(index == 1);
+            _materialsPanelGo.SetActive(index == 2);
+
+            _equipmentTabImage.color = index == 0 ? SelectedTabColor : UnselectedTabColor;
+            _potionsTabImage.color = index == 1 ? SelectedTabColor : UnselectedTabColor;
+            _materialsTabImage.color = index == 2 ? SelectedTabColor : UnselectedTabColor;
         }
 
         private static readonly Color SelectedTabColor = new(1f, 1f, 1f, 0.25f);
@@ -253,7 +330,7 @@ namespace DoomScroller.Inventory
         {
             if (_health.CurrentMaxHealth < _health.TrueMaxHealth)
             {
-                var seconds = Mathf.CeilToInt(_health.SecondsUntilNextTick());
+                var seconds = Mathf.CeilToInt(_health.SecondsUntilFullHealth());
                 _healthText.text = $"HP {_health.CurrentMaxHealth}/{_health.TrueMaxHealth} — " +
                     $"full in {seconds / 60}:{seconds % 60:D2}";
             }
@@ -270,6 +347,7 @@ namespace DoomScroller.Inventory
             _equipCluster.Refresh();
             RefreshManualCastingToggle();
             RefreshAbilities();
+            RefreshMaterials();
         }
 
         private void RefreshManualCastingToggle()
@@ -316,6 +394,42 @@ namespace DoomScroller.Inventory
             {
                 CreateAbilityIconRow(_abilitiesContainer, PassiveIconColor, $"Passive — {passive.DescribePassive()}");
             }
+        }
+
+        // Grouped by item reference (same ScriptableObject asset = same "type"), so N
+        // owned Iron Ore is one row reading "xN owned" rather than N identical rows.
+        private void RefreshMaterials()
+        {
+            for (var i = _materialsContainer.childCount - 1; i >= 0; i--)
+            {
+                Destroy(_materialsContainer.GetChild(i).gameObject);
+            }
+
+            var groups = _loadout.GetMaterials().GroupBy(m => m).ToList();
+            if (groups.Count == 0)
+            {
+                CreateLabel(_materialsContainer, "NoMaterials", "No crafting materials yet", 32, FontStyle.Normal);
+                return;
+            }
+
+            foreach (var group in groups)
+            {
+                CreateMaterialRow(_materialsContainer, group.Key, group.Count());
+            }
+        }
+
+        private static void CreateMaterialRow(Transform parent, ItemData material, int count)
+        {
+            var rowGo = new GameObject($"Material_{material.title}", typeof(RectTransform));
+            rowGo.transform.SetParent(parent, false);
+            var layoutElement = rowGo.AddComponent<LayoutElement>();
+            layoutElement.preferredHeight = 100;
+
+            var row = GearRowFactory.Create(rowGo.transform, 64, 22, 28, 24);
+            row.Icon.color = material.itemColor;
+            row.CaptionText.text = "Material";
+            row.TitleText.text = material.title;
+            row.StatText.text = $"x{count} owned";
         }
 
         // A small colored square beside a name/description — purely informational,

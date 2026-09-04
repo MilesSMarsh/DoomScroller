@@ -12,13 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9a8294fed99c4ae1880d2e20e4ba7a0b, type: 3}
   m_Name: Tavern_TheTavern
   m_EditorClassIdentifier: Assembly-CSharp::DoomScroller.Feed.EncounterData
-  title: The Tavern
+  title: The Village
   type: 3
   artwork: {fileID: 0}
   cardColor: {r: 0.45, g: 0.3, b: 0.15, a: 1}
   rewardSummary: "Trade tips, talk gear \u2014 no combat here"
   baseXpReward: 0
-  baseChallenge: 0
   enemyHealth: 0
   enemyAttackDamage: 0
   enemyAttackSpeed: 0

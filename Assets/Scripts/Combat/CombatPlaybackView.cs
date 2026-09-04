@@ -77,6 +77,10 @@ namespace DoomScroller.Combat
 
         public bool LastOutcomeWasVictory { get; private set; }
         public bool WasCloseCall { get; private set; }
+        // The player's HP when the fight ended — 0 by default, meaningless for a
+        // Treasure card's instant win (see the null-sim branch below). Read by
+        // DungeonStepPageView to carry HP forward into the next step of a run.
+        public int FinalPlayerHp { get; private set; }
 
         // screenRoot is a full-screen ancestor (the host view's own root) the revive
         // dialog anchors to — this view's own rect is only the bounded combat-sim area,
@@ -233,6 +237,11 @@ namespace DoomScroller.Combat
             UpdateHealthBar(_playerHealthFill, _playerHealthLabel, sim.PlayerHp, sim.PlayerStartHp);
             UpdateHealthBar(_enemyHealthFill, _enemyHealthLabel, sim.EnemyHp, sim.EnemyMaxHp);
 
+            // Every Revive potion is always "available" (see PlayerLoadout.GetBestRevivePotion)
+            // but a fight still only gets to use one — this used to fall out for free from
+            // only one potion ever being "carried" at a time; now it's tracked explicitly.
+            var revivedThisFight = false;
+
             while (true)
             {
                 var playerHpBefore = sim.PlayerHp;
@@ -287,7 +296,7 @@ namespace DoomScroller.Combat
 
                 if (sim.IsPlayerDead)
                 {
-                    var potion = loadout.GetActiveRevivePotion();
+                    var potion = revivedThisFight ? null : loadout.GetBestRevivePotion();
                     var revive = false;
 
                     if (potion != null)
@@ -305,8 +314,9 @@ namespace DoomScroller.Combat
 
                     if (revive)
                     {
-                        loadout.ConsumeActiveRevivePotion();
-                        sim.Revive(potion.potionAmount);
+                        loadout.ConsumeRevivePotion(potion);
+                        revivedThisFight = true;
+                        sim.Revive(loadout.GetRevivePotionAmount(potion));
                         UpdateHealthBar(_playerHealthFill, _playerHealthLabel, sim.PlayerHp, sim.PlayerStartHp);
                         SpawnPopup(_playerAnchor, "REVIVED!", new Color(0.4f, 0.9f, 1f), 44);
                         yield return new WaitForSeconds(BeatPause);
@@ -320,6 +330,7 @@ namespace DoomScroller.Combat
 
             WasCloseCall = LastOutcomeWasVictory && sim.PlayerStartHp > 0 &&
                 (float)sim.PlayerHp / sim.PlayerStartHp < CloseCallHealthFraction;
+            FinalPlayerHp = sim.PlayerHp;
             _sim = null;
         }
 

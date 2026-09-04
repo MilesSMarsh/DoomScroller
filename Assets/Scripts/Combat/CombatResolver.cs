@@ -33,7 +33,9 @@ namespace DoomScroller.Combat
         public static CombatSimulator CreateSimulatorForStep(PlayerLoadout loadout, PlayerStats stats,
             GameSettings settings, DungeonStep step, int playerStartHp, Random rng = null)
         {
-            if (step.IsTreasureRoom)
+            // Both resolve instantly with no fight — CombatPlaybackView.Play already
+            // treats a null simulator as a guaranteed win.
+            if (step.IsTreasureRoom || step.IsRestRoom)
             {
                 return null;
             }

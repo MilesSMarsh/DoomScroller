@@ -66,6 +66,18 @@ namespace DoomScroller.Progression
             Changed?.Invoke();
         }
 
+        // The Village Inn's effect — an immediate, free full heal.
+        public void FullyHeal()
+        {
+            if (CurrentMaxHealth >= TrueMaxHealth)
+            {
+                return;
+            }
+
+            CurrentMaxHealth = TrueMaxHealth;
+            Changed?.Invoke();
+        }
+
         // A max-health potion's effect — restores CurrentMaxHealth directly, capped at
         // TrueMaxHealth.
         public void RestoreMaxHealth(int amount)
@@ -102,8 +114,10 @@ namespace DoomScroller.Progression
             Changed?.Invoke();
         }
 
-        // Seconds until the next regen tick (0 once at TrueMaxHealth) — for a
-        // "back to full in X:XX" readout. No longer gates anything.
+        // Seconds until the next regen tick (0 once at TrueMaxHealth) — one tick only,
+        // not the full climb back to TrueMaxHealth. See SecondsUntilFullHealth for the
+        // "back to full in X:XX" readout; this exists for callers that specifically
+        // want just the next tick.
         public float SecondsUntilNextTick()
         {
             if (CurrentMaxHealth >= TrueMaxHealth)
@@ -114,6 +128,21 @@ namespace DoomScroller.Progression
             var elapsedSeconds = (DateTime.UtcNow - _lastRegenUtc).TotalSeconds;
             var remaining = _regenIntervalSeconds - elapsedSeconds % _regenIntervalSeconds;
             return (float)Math.Max(0.0, remaining);
+        }
+
+        // Seconds until CurrentMaxHealth actually reaches TrueMaxHealth (0 once there) —
+        // the real "back to full in X:XX" readout. SecondsUntilNextTick alone
+        // undercounts whenever more than one tick's worth of HP is still missing.
+        public float SecondsUntilFullHealth()
+        {
+            if (CurrentMaxHealth >= TrueMaxHealth)
+            {
+                return 0f;
+            }
+
+            var missing = TrueMaxHealth - CurrentMaxHealth;
+            var ticksNeeded = Mathf.CeilToInt(missing / (float)Mathf.Max(1, _regenPerInterval));
+            return SecondsUntilNextTick() + (ticksNeeded - 1) * _regenIntervalSeconds;
         }
     }
 }

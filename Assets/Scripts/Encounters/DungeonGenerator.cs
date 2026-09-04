@@ -5,15 +5,17 @@ using UnityEngine;
 namespace DoomScroller.Encounters
 {
     // Plain C# so dungeon scaling is testable without a running scene.
-    // Builds one dungeon run's fixed step sequence: escalating enemy depths, always
-    // capped by a guaranteed treasure room. Reward rarity per step is just its
-    // DepthIndex, fed straight into RewardGenerator.GenerateItem — the treasure room's
-    // DepthIndex (3) is one past the 0-2 rarity range and clamps to the best tier there.
+    // Builds one dungeon run's step sequence: escalating enemy depths, an optional rest
+    // stop, always capped by a guaranteed treasure room. Reward rarity per fight step is
+    // its RewardTierIndex (0/1/2), independent of the step's actual DepthIndex/list
+    // position so inserting a rest step never shifts a later fight's intended rarity —
+    // the treasure room's own reward always clamps to the best tier regardless.
     public static class DungeonGenerator
     {
         private const int EnemyDepthCount = 3;
         private const float StatGrowthPerDepth = 0.75f;
         private const float XpGrowthPerDepth = 0.75f;
+        private const float RestRoomChance = 0.5f;
 
         private static readonly string[] GearRarities = { "Common", "Uncommon", "Rare" };
 
@@ -28,10 +30,21 @@ namespace DoomScroller.Encounters
         };
 
         private static readonly Color TreasureColor = new(0.85f, 0.7f, 0.2f, 1f);
+        // Calming teal — reads as "safe," distinct from every combat depth and from gold.
+        private static readonly Color RestColor = new(0.2f, 0.5f, 0.45f, 1f);
 
-        public static IReadOnlyList<DungeonStep> Generate(EncounterData data)
+        public static IReadOnlyList<DungeonStep> Generate(EncounterData data, System.Random rng = null)
         {
-            var steps = new List<DungeonStep>(EnemyDepthCount + 1);
+            rng ??= new System.Random();
+
+            // Built unordered first (fight steps, then one optional rest step spliced in
+            // after a random fight), then re-walked below to assign clean sequential
+            // DepthIndex values matching final list order.
+            var steps = new List<DungeonStep>(EnemyDepthCount + 2);
+
+            // Picked once per run — never before the first fight, never after the
+            // treasure room — and only actually included per RestRoomChance below.
+            var restAfterDepth = rng.Next(EnemyDepthCount);
 
             for (var i = 0; i < EnemyDepthCount; i++)
             {
@@ -43,14 +56,32 @@ namespace DoomScroller.Encounters
                 var enemyAttackSpeed = data.enemyAttackSpeed;
                 var xp = Mathf.RoundToInt(data.baseXpReward * (1f + i * XpGrowthPerDepth));
                 var rewardSummary = $"{xp} XP + {GearRarities[i]} Gear";
-                steps.Add(new DungeonStep(i, $"Depth {i + 1}", rewardSummary, xp,
-                    enemyHealth, enemyAttackDamage, enemyAttackSpeed, false, DepthColors[i]));
+                steps.Add(new DungeonStep(0, $"Depth {i + 1}", rewardSummary, xp, i,
+                    enemyHealth, enemyAttackDamage, enemyAttackSpeed, false, false, DepthColors[i]));
+
+                // Splice the rest step in right after whichever fight depth was chosen —
+                // never before the first fight, never after the treasure room.
+                if (i == restAfterDepth && rng.NextDouble() < RestRoomChance)
+                {
+                    steps.Add(new DungeonStep(0, "Rest", "Full HP restore, no combat", 0, 0,
+                        0, 0, 0f, false, true, RestColor));
+                }
             }
 
             var treasureXp = Mathf.RoundToInt(data.baseXpReward * (1f + EnemyDepthCount * XpGrowthPerDepth));
             var treasureReward = $"{treasureXp} XP + guaranteed Rare loot";
-            steps.Add(new DungeonStep(EnemyDepthCount, "Treasure Room", treasureReward, treasureXp,
-                0, 0, 0f, true, TreasureColor));
+            steps.Add(new DungeonStep(0, "Treasure Room", treasureReward, treasureXp, GearRarities.Length - 1,
+                0, 0, 0f, true, false, TreasureColor));
+
+            // Re-stamp DepthIndex to the step's real position — the placeholder 0s above
+            // only exist because DungeonStep bakes DepthIndex in at construction, before
+            // final list order (and whether a rest step landed) is known.
+            for (var i = 0; i < steps.Count; i++)
+            {
+                var s = steps[i];
+                steps[i] = new DungeonStep(i, s.Label, s.RewardSummary, s.XpReward, s.RewardTierIndex,
+                    s.EnemyHealth, s.EnemyAttackDamage, s.EnemyAttackSpeed, s.IsTreasureRoom, s.IsRestRoom, s.StepColor);
+            }
 
             return steps;
         }

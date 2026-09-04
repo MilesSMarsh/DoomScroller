@@ -24,11 +24,17 @@ namespace DoomScroller.Encounters
         // know whether the frontier can advance.
         public event Action<DungeonStep, bool> Resolved;
 
+        // Only ever fires for the treasure-room page (the only one that gets a
+        // RewardChestView — see Resolve/RevealSequence) — DungeonView gates its
+        // Return button on this so a treasure-room win can't be swiped past unclaimed.
+        public event Action RewardClaimed;
+
         private CombatPlaybackView _playback;
         private Text _depthLabelText;
         private Text _outcomeText;
         private Text _rewardText;
         private Text _advanceHintText;
+        private RewardChestView _rewardChest;
 
         private DungeonStep _step;
         private bool _lastResultWasVictory;
@@ -36,6 +42,18 @@ namespace DoomScroller.Encounters
 
         public bool IsResolved { get; private set; }
         public bool LastResultWasVictory => IsResolved && _lastResultWasVictory;
+
+        // The player's HP once this step is done — DungeonView carries this into the
+        // next step instead of always starting fresh at PlayerHealth.CurrentMaxHealth.
+        // Meaningless after a loss (the run is over either way).
+        public int EndingPlayerHp { get; private set; }
+
+        // The running gold total across the whole run so far, including this step's own
+        // reward — DungeonView carries this forward the same way it does EndingPlayerHp.
+        // Never actually granted to the wallet until the treasure room's chest is
+        // opened (see RevealSequence's treasure-room branch); meaningless after a loss,
+        // since that gold is simply never banked.
+        public int AccumulatedGold { get; private set; }
 
         public static DungeonStepPageView Create(Transform parent, float pageWidth)
         {
@@ -97,19 +115,20 @@ namespace DoomScroller.Encounters
         }
 
         // Resolves combat for this step and reveals it — DungeonView only ever calls
-        // this once per page (guarded by IsResolved on its side).
+        // this once per page (guarded by IsResolved on its side). playerStartHp is
+        // DungeonView's running HP total for the run, not health.CurrentMaxHealth
+        // directly — see DungeonView._runningPlayerHp.
         public void Resolve(DungeonStep step, PlayerLoadout loadout, PlayerProgression progression,
-            PlayerHealth health, PlayerStats stats, GameSettings settings)
+            PlayerHealth health, PlayerStats stats, GameSettings settings, PlayerWallet wallet, int playerStartHp,
+            int accumulatedGold)
         {
             _step = step;
             _depthLabelText.text = step.Label;
 
-            var isFight = !step.IsTreasureRoom;
+            var isFight = !step.IsTreasureRoom && !step.IsRestRoom;
             _playback.gameObject.SetActive(isFight);
 
-            // Always enter at full of whatever CurrentMaxHealth currently is — see
-            // CombatResolutionView.Show for the same reasoning.
-            var sim = CombatResolver.CreateSimulatorForStep(loadout, stats, settings, step, health.CurrentMaxHealth);
+            var sim = CombatResolver.CreateSimulatorForStep(loadout, stats, settings, step, playerStartHp);
 
             _outcomeText.text = "";
             _rewardText.text = "";
@@ -120,11 +139,13 @@ namespace DoomScroller.Encounters
                 StopCoroutine(_revealCoroutine);
             }
 
-            _revealCoroutine = StartCoroutine(RevealSequence(sim, loadout, progression, health, settings));
+            _revealCoroutine = StartCoroutine(RevealSequence(sim, loadout, progression, health, settings, wallet,
+                accumulatedGold));
         }
 
         private IEnumerator RevealSequence(CombatSimulator sim, PlayerLoadout loadout,
-            PlayerProgression progression, PlayerHealth health, GameSettings settings)
+            PlayerProgression progression, PlayerHealth health, GameSettings settings, PlayerWallet wallet,
+            int accumulatedGold)
         {
             yield return StartCoroutine(_playback.Play(sim, loadout, settings, null, _step.StepColor));
 
@@ -134,26 +155,74 @@ namespace DoomScroller.Encounters
 
             if (isVictory)
             {
-                var previousLevel = progression.Level;
-                progression.AddXp(_step.XpReward);
-
-                var item = RewardGenerator.GenerateItem(_step.DepthIndex);
-                loadout.AddToInventory(item);
-
-                var rewardLine = $"Reward: {_step.XpReward} XP + {item.title} (equip it from Profile)";
-                if (_playback.WasCloseCall)
+                if (_step.IsTreasureRoom)
                 {
-                    rewardLine += "\nClose call — that one nearly had you.";
+                    var previousLevel = progression.Level;
+                    progression.AddXp(_step.XpReward);
+                    var item = RewardGenerator.GenerateItem(_step.RewardTierIndex);
+                    loadout.AddToInventory(item);
+                    // Everything banked across the whole run, plus this room's own —
+                    // opening this one chest is what actually grants all of it at once.
+                    AccumulatedGold = accumulatedGold + RewardGenerator.ComputeGoldReward(_step.XpReward);
+
+                    // The dungeon's finale gets the same tap-to-open reward chest a
+                    // plain encounter does — every other step keeps its inline text.
+                    if (_rewardChest == null)
+                    {
+                        _rewardChest = RewardChestView.Create(transform, includeReturnButton: false);
+                        // Slot it right after AdvanceHint (index 3) and before the first
+                        // Spacer, instead of trailing after the (hidden, for this step)
+                        // CombatPlaybackView.
+                        _rewardChest.transform.SetSiblingIndex(4);
+                        _rewardChest.ChestOpened += () => RewardClaimed?.Invoke();
+                    }
+
+                    _rewardChest.Show(_step.XpReward, AccumulatedGold, item, progression.Level > previousLevel,
+                        progression.Level, _playback.WasCloseCall, wallet);
+                    _advanceHintText.text = "";
+                    // The run ends here regardless, so this doesn't feed a next step —
+                    // set for consistency only.
+                    EndingPlayerHp = health.CurrentMaxHealth;
                 }
+                else if (_step.IsRestRoom)
+                {
+                    // A checkpoint, not a reward — no XP/item, just a full heal-up of
+                    // the running HP total DungeonView carries between steps. The gold
+                    // total simply carries through untouched.
+                    _rewardText.text = "You rest and recover. HP restored to full.";
+                    _advanceHintText.text = "◂ Swipe left to press deeper into the dungeon";
+                    EndingPlayerHp = health.CurrentMaxHealth;
+                    AccumulatedGold = accumulatedGold;
+                }
+                else
+                {
+                    var previousLevel = progression.Level;
+                    progression.AddXp(_step.XpReward);
+                    var item = RewardGenerator.GenerateItem(_step.RewardTierIndex);
+                    loadout.AddToInventory(item);
+                    // Not granted here — it joins the running total DungeonView carries
+                    // forward, only actually paid out when the treasure room's chest is
+                    // opened at the end of the run (or lost entirely on a loss before then).
+                    var goldReward = RewardGenerator.ComputeGoldReward(_step.XpReward);
+                    AccumulatedGold = accumulatedGold + goldReward;
 
-                _rewardText.text = progression.Level > previousLevel
-                    ? $"{rewardLine}\nLevel up! You're now level {progression.Level}."
-                    : rewardLine;
+                    var rewardLine = $"Reward: {_step.XpReward} XP + {item.title} (equip it from Profile)" +
+                        $"\n+{goldReward} Gold banked for the treasure room";
+                    if (_playback.WasCloseCall)
+                    {
+                        rewardLine += "\nClose call — that one nearly had you.";
+                    }
 
-                // The only indicator that there's more dungeon ahead — a fresh win with
-                // no further step (the treasure room) needs no prompt, since Return to
-                // Feed is the only thing left to do.
-                _advanceHintText.text = _step.IsTreasureRoom ? "" : "◂ Swipe left to press deeper into the dungeon";
+                    _rewardText.text = progression.Level > previousLevel
+                        ? $"{rewardLine}\nLevel up! You're now level {progression.Level}."
+                        : rewardLine;
+
+                    // The only indicator that there's more dungeon ahead.
+                    _advanceHintText.text = "◂ Swipe left to press deeper into the dungeon";
+                    // Carries forward into the next step — this is the whole point of
+                    // the "no free heal between fights" change.
+                    EndingPlayerHp = _playback.FinalPlayerHp;
+                }
             }
             else
             {

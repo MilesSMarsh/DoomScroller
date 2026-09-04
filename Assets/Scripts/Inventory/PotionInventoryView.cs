@@ -1,24 +1,24 @@
 using System;
 using System.Linq;
 using DoomScroller.Progression;
-using DoomScroller.UI;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace DoomScroller.Inventory
 {
-    // Full-screen potions list — mirrors EquipSlotDetailView's option-row shape
-    // (GearRowFactory icon+text, one action button per row), but potions are never
-    // equipped to a body slot: MaxHealthRestore potions get a "Drink" button (consumed
-    // immediately), Revive potions get a "Carry"/"Carrying" toggle (mirrors the
-    // existing active-ability toggle pattern — see PlayerLoadout). A settings row at
-    // the top controls whether a carried revive potion auto-consumes or pauses to ask
-    // (see CombatPlaybackView.Play).
+    // The Potions sub-tab of Profile's Inventory tab (see ProfileView) — mirrors
+    // EquipSlotDetailView's option-row shape (GearRowFactory icon+text, one action
+    // button per row), but potions are never equipped to a body slot: MaxHealthRestore
+    // potions get a "Drink" button (consumed immediately). Revive potions have no button
+    // at all — every one owned is always available, spent automatically (at most one per
+    // fight) the moment it would save the player (see PlayerLoadout.GetBestRevivePotion).
+    // A settings row at the top controls whether that auto-consumes or pauses to ask
+    // (see CombatPlaybackView.Play). A plain embeddable content block, not a screen of
+    // its own — its own root GameObject is what ProfileView shows/hides when switching
+    // sub-tabs, same shape VillageTavernView/StatsPanelView already are.
     public class PotionInventoryView : MonoBehaviour
     {
         private const float IconSize = 110f;
-
-        public event Action CloseRequested;
 
         private PlayerLoadout _loadout;
         private PlayerHealth _health;
@@ -29,18 +29,8 @@ namespace DoomScroller.Inventory
         public static PotionInventoryView Create(Transform parent, PlayerLoadout loadout, PlayerHealth health, GameSettings settings)
         {
             var go = new GameObject("PotionInventory", typeof(RectTransform));
-            var rect = (RectTransform)go.transform;
-            rect.SetParent(parent, false);
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
-
-            var background = go.AddComponent<Image>();
-            background.color = new Color(0.08f, 0.08f, 0.1f, 1f);
 
             var layoutGroup = go.AddComponent<VerticalLayoutGroup>();
-            layoutGroup.padding = new RectOffset(0, 0, NavBarController.Height, 0);
             layoutGroup.spacing = 12;
             layoutGroup.childAlignment = TextAnchor.UpperCenter;
             layoutGroup.childForceExpandWidth = true;
@@ -53,9 +43,8 @@ namespace DoomScroller.Inventory
             view._health = health;
             view._settings = settings;
 
-            var content = ScrollAreaFactory.Create(rect, new RectOffset(40, 40, 0, 40), 12);
-
-            CreateLabel(content, "Title", "Potions", 60, FontStyle.Bold);
+            var content = (RectTransform)go.transform;
+            content.SetParent(parent, false);
 
             var settingsRowGo = new GameObject("SettingsRow", typeof(RectTransform));
             settingsRowGo.transform.SetParent(content, false);
@@ -95,27 +84,14 @@ namespace DoomScroller.Inventory
             listLayout.childControlWidth = true;
             listLayout.childControlHeight = true;
 
-            CreateButton(rect, "CloseButton", "Close", () => view.CloseRequested?.Invoke());
-
             loadout.Changed += view.Refresh;
             settings.Changed += view.Refresh;
 
-            go.SetActive(false);
+            view.Refresh();
             return view;
         }
 
-        public void Show()
-        {
-            Refresh();
-            gameObject.SetActive(true);
-        }
-
-        public void Hide()
-        {
-            gameObject.SetActive(false);
-        }
-
-        private void Refresh()
+        public void Refresh()
         {
             _settingsToggleText.text = _settings.AutoConsumeRevivePotions
                 ? "Auto-use revive potions: ON (tap to ask instead)"
@@ -184,16 +160,9 @@ namespace DoomScroller.Inventory
                         Refresh();
                     });
             }
-            else
-            {
-                var isCarrying = _loadout.IsRevivePotionActive(potion);
-                CreateActionButton(rowGo.transform, "CarryButton", isCarrying ? "Carrying" : "Carry", 200, 150,
-                    isCarrying ? new Color(0.2f, 0.55f, 0.75f, 0.85f) : new Color(1f, 1f, 1f, 0.15f), () =>
-                    {
-                        _loadout.ToggleRevivePotionActive(potion);
-                        Refresh();
-                    });
-            }
+            // Revive potions have no action button — every one owned is always available
+            // (see PlayerLoadout.GetBestRevivePotion), spent automatically the moment a
+            // fight would otherwise be lost. Nothing to pre-select from here any more.
         }
 
         private static void SetFixedHeight(LayoutElement layoutElement, float height)
@@ -258,36 +227,6 @@ namespace DoomScroller.Inventory
             labelText.color = Color.white;
             labelText.text = label;
             labelText.raycastTarget = false;
-        }
-
-        private static void CreateButton(Transform parent, string name, string label, Action onClick)
-        {
-            var go = new GameObject(name, typeof(RectTransform));
-            go.transform.SetParent(parent, false);
-
-            var image = go.AddComponent<Image>();
-            image.color = new Color(1, 1, 1, 0.15f);
-
-            SetFixedHeight(go.AddComponent<LayoutElement>(), 120);
-
-            var button = go.AddComponent<Button>();
-            button.onClick.AddListener(() => onClick());
-
-            var labelGo = new GameObject("Label", typeof(RectTransform));
-            labelGo.transform.SetParent(go.transform, false);
-            var labelRect = (RectTransform)labelGo.transform;
-            labelRect.anchorMin = Vector2.zero;
-            labelRect.anchorMax = Vector2.one;
-            labelRect.offsetMin = Vector2.zero;
-            labelRect.offsetMax = Vector2.zero;
-
-            var labelText = labelGo.AddComponent<Text>();
-            labelText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            labelText.fontSize = 40;
-            labelText.fontStyle = FontStyle.Bold;
-            labelText.alignment = TextAnchor.MiddleCenter;
-            labelText.color = Color.white;
-            labelText.text = label;
         }
     }
 }

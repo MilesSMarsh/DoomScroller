@@ -12,6 +12,7 @@ namespace DoomScroller.Inventory
                 ItemCategory.Armor => "Defence",
                 ItemCategory.Shield => "Defence",
                 ItemCategory.Talisman => "Power",
+                ItemCategory.Material => "Material",
                 _ => "Power"
             };
         }

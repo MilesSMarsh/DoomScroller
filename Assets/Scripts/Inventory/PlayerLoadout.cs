@@ -17,10 +17,20 @@ namespace DoomScroller.Inventory
         private readonly List<ItemData> _inventory;
         private readonly Dictionary<EquipmentSlotType, ItemData> _equipped = new();
 
-        // The one revive potion "carried" into the next fight(s) — deliberately
-        // simpler than the multi-slot active-ability system, since only one can ever
-        // matter within a single fight (see CombatPlaybackView.Play).
-        private ItemData _activeRevivePotion;
+        // Which potion types the Village's Tavern can refill — the exact set the player
+        // started the game with. Captured once at construction since there's no
+        // shop/discovery system yet to grow this list later (see RefillPotions).
+        private readonly List<ItemData> _knownPotionTypes;
+        private const int BaseRefillCapacity = 3;
+
+        // The Alchemist's two upgrade tracks for a Revive potion, keyed by which potion
+        // type (there's only ever one in practice today — see GetKnownRevivePotionType).
+        // Never mutates the shared ItemData asset itself; both are read as a bonus layered
+        // on top of it (GetRefillCapacity, GetRevivePotionAmount).
+        public const int MaxUpgradeLevel = 5;
+        private const int ReviveQualityBonusPerLevel = 10;
+        private readonly Dictionary<ItemData, int> _reviveCapacityLevel = new();
+        private readonly Dictionary<ItemData, int> _reviveQualityLevel = new();
 
         public event Action Changed;
 
@@ -31,6 +41,7 @@ namespace DoomScroller.Inventory
         public PlayerLoadout(IEnumerable<ItemData> inventory, Sprite playerSprite = null)
         {
             _inventory = inventory.ToList();
+            _knownPotionTypes = _inventory.Where(i => i.category == ItemCategory.Potion).Distinct().ToList();
             PlayerSprite = playerSprite;
         }
 
@@ -90,7 +101,7 @@ namespace DoomScroller.Inventory
         public void Equip(ItemData item)
         {
             // Potions are never equipped to a body slot — they're drunk (MaxHealthRestore)
-            // or carried into a fight (Revive, see ToggleRevivePotionActive).
+            // or spent automatically on defeat (Revive, see GetBestRevivePotion).
             if (item == null || item.category == ItemCategory.Potion || !_inventory.Contains(item))
             {
                 return;
@@ -199,42 +210,176 @@ namespace DoomScroller.Inventory
             return _inventory.Where(i => i.category == ItemCategory.Potion);
         }
 
-        public bool IsRevivePotionActive(ItemData potion)
+        // The default for every potion type, except a Revive potion whose capacity has
+        // been raised at the Alchemist.
+        public int GetRefillCapacity(ItemData potionType)
         {
-            return _activeRevivePotion == potion;
+            return potionType.potionEffect == PotionEffect.Revive
+                ? BaseRefillCapacity + GetReviveCapacityLevel(potionType)
+                : BaseRefillCapacity;
         }
 
-        // Only one revive potion can be carried at a time — toggling a different one
-        // replaces whichever was active, toggling the active one off clears it.
-        public void ToggleRevivePotionActive(ItemData potion)
+        public bool ArePotionsFullyStocked()
         {
-            if (potion == null || potion.potionEffect != PotionEffect.Revive || !_inventory.Contains(potion))
+            return _knownPotionTypes.All(t => _inventory.Count(i => i == t) >= GetRefillCapacity(t));
+        }
+
+        // The flat total to fully refill everything missing right now — for a button
+        // label that states one sum rather than a per-unit price.
+        public int ComputeRefillCost(Func<ItemData, int> pricePerPotion)
+        {
+            var total = 0;
+            foreach (var potionType in _knownPotionTypes)
+            {
+                var owned = _inventory.Count(i => i == potionType);
+                var missing = Mathf.Max(0, GetRefillCapacity(potionType) - owned);
+                total += missing * pricePerPotion(potionType);
+            }
+
+            return total;
+        }
+
+        // Tops every potion type the player started with back up to its refill capacity
+        // (raised per-type by an Alchemist capacity upgrade) — one potion at a time,
+        // stopping the moment the wallet can't afford the next one (a partial refill, not
+        // all-or-nothing). Returns how many were actually bought, for a confirmation
+        // message; 0 if fully stocked already or the wallet couldn't afford even one.
+        // pricePerPotion is per-type since a quality-upgraded Revive potion costs more.
+        public int RefillPotions(PlayerWallet wallet, Func<ItemData, int> pricePerPotion)
+        {
+            var added = 0;
+            foreach (var potionType in _knownPotionTypes)
+            {
+                var owned = _inventory.Count(i => i == potionType);
+                var price = pricePerPotion(potionType);
+                for (var i = owned; i < GetRefillCapacity(potionType); i++)
+                {
+                    if (!wallet.TrySpendGold(price))
+                    {
+                        if (added > 0)
+                        {
+                            Changed?.Invoke();
+                        }
+
+                        return added;
+                    }
+
+                    _inventory.Add(potionType);
+                    added++;
+                }
+            }
+
+            if (added > 0)
+            {
+                Changed?.Invoke();
+            }
+
+            return added;
+        }
+
+        // The strongest owned Revive potion (highest *effective* amount, including any
+        // Alchemist quality upgrade) — null if none owned. Every Revive potion is always
+        // available; there's nothing to pre-select any more (see CombatPlaybackView.Play).
+        public ItemData GetBestRevivePotion()
+        {
+            return _inventory.Where(i => i.potionEffect == PotionEffect.Revive)
+                .OrderByDescending(GetRevivePotionAmount)
+                .FirstOrDefault();
+        }
+
+        // Spent by CombatPlaybackView when a Revive potion actually saves the player.
+        public void ConsumeRevivePotion(ItemData potion)
+        {
+            if (potion == null || !_inventory.Remove(potion))
             {
                 return;
             }
 
-            _activeRevivePotion = _activeRevivePotion == potion ? null : potion;
             Changed?.Invoke();
         }
 
-        // Null once consumed, unequipped from carry, or no longer in the inventory.
-        public ItemData GetActiveRevivePotion()
+        public int GetReviveCapacityLevel(ItemData potion)
         {
-            return _activeRevivePotion != null && _inventory.Contains(_activeRevivePotion) ? _activeRevivePotion : null;
+            return _reviveCapacityLevel.TryGetValue(potion, out var level) ? level : 0;
         }
 
-        // Spent by CombatPlaybackView when a carried revive potion actually saves the
-        // player — removed from the inventory and no longer carried.
-        public void ConsumeActiveRevivePotion()
+        public int GetReviveQualityLevel(ItemData potion)
         {
-            if (_activeRevivePotion == null)
+            return _reviveQualityLevel.TryGetValue(potion, out var level) ? level : 0;
+        }
+
+        // The actual HP a revive potion restores — base amount plus quality upgrades.
+        // Never mutates the shared ItemData asset itself, just layers a player-specific
+        // bonus on top of it.
+        public int GetRevivePotionAmount(ItemData potion)
+        {
+            return potion.potionAmount + GetReviveQualityLevel(potion) * ReviveQualityBonusPerLevel;
+        }
+
+        // The one Revive-type potion this player has ever owned — there's only ever one
+        // in practice today; the Alchemist's upgrades operate on whichever this returns.
+        // Null (the Alchemist shows "no revive potions discovered yet") if none.
+        public ItemData GetKnownRevivePotionType()
+        {
+            return _knownPotionTypes.FirstOrDefault(p => p.potionEffect == PotionEffect.Revive);
+        }
+
+        public int CountMaterials()
+        {
+            return _inventory.Count(i => i.category == ItemCategory.Material);
+        }
+
+        public IEnumerable<ItemData> GetMaterials()
+        {
+            return _inventory.Where(i => i.category == ItemCategory.Material);
+        }
+
+        private void ConsumeMaterials(int count)
+        {
+            foreach (var material in _inventory.Where(i => i.category == ItemCategory.Material).Take(count).ToList())
             {
-                return;
+                _inventory.Remove(material);
+            }
+        }
+
+        // goldCost/materialsCost are the Alchemist view's call (same split as
+        // RewardGenerator/MarketGenerator owning prices while PlayerLoadout just executes
+        // the spend) — this only enforces affordability and MaxUpgradeLevel, atomically
+        // (nothing is spent when it returns false).
+        public bool TryUpgradeReviveCapacity(ItemData potion, PlayerWallet wallet, int goldCost, int materialsCost)
+        {
+            if (potion == null || GetReviveCapacityLevel(potion) >= MaxUpgradeLevel || CountMaterials() < materialsCost)
+            {
+                return false;
             }
 
-            _inventory.Remove(_activeRevivePotion);
-            _activeRevivePotion = null;
+            if (!wallet.TrySpendGold(goldCost))
+            {
+                return false;
+            }
+
+            ConsumeMaterials(materialsCost);
+            _reviveCapacityLevel[potion] = GetReviveCapacityLevel(potion) + 1;
             Changed?.Invoke();
+            return true;
+        }
+
+        public bool TryUpgradeReviveQuality(ItemData potion, PlayerWallet wallet, int goldCost, int materialsCost)
+        {
+            if (potion == null || GetReviveQualityLevel(potion) >= MaxUpgradeLevel || CountMaterials() < materialsCost)
+            {
+                return false;
+            }
+
+            if (!wallet.TrySpendGold(goldCost))
+            {
+                return false;
+            }
+
+            ConsumeMaterials(materialsCost);
+            _reviveQualityLevel[potion] = GetReviveQualityLevel(potion) + 1;
+            Changed?.Invoke();
+            return true;
         }
 
         // Instant-use from the Potions tab — restores current max health right away,

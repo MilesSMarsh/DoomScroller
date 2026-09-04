@@ -35,20 +35,24 @@ namespace DoomScroller.Inventory
         [SerializeField] private int vigorHealthPerPoint = 5;
         [SerializeField] private int statPointsPerLevel = 3;
 
+        [Header("Currency")]
+        [SerializeField] private int startingGold = 50;
+
         private PlayerLoadout _loadout;
         private PlayerProgression _progression;
         private PlayerHealth _health;
         private PlayerStats _stats;
         private GameSettings _settings;
+        private PlayerWallet _wallet;
         private ProfileView _profileView;
         private EquipSlotDetailView _equipSlotDetailView;
-        private PotionInventoryView _potionInventoryView;
 
         public PlayerLoadout Loadout => _loadout;
         public PlayerProgression Progression => _progression;
         public PlayerHealth Health => _health;
         public PlayerStats Stats => _stats;
         public GameSettings Settings => _settings;
+        public PlayerWallet Wallet => _wallet;
 
         private void Awake()
         {
@@ -57,6 +61,7 @@ namespace DoomScroller.Inventory
             _health = new PlayerHealth(maxHealth, regenPerInterval, regenIntervalSeconds);
             _stats = new PlayerStats();
             _settings = new GameSettings();
+            _wallet = new PlayerWallet(startingGold);
             EquipStarterWeapon();
 
             // Vigor's effect on the health ceiling. Fires immediately once here too, but
@@ -75,9 +80,6 @@ namespace DoomScroller.Inventory
 
             _equipSlotDetailView = EquipSlotDetailView.Create(rect, _loadout);
             _equipSlotDetailView.BackRequested += CloseSlotDetail;
-
-            _potionInventoryView = PotionInventoryView.Create(rect, _loadout, _health, _settings);
-            _potionInventoryView.CloseRequested += ClosePotions;
         }
 
         private void Update()
@@ -131,14 +133,5 @@ namespace DoomScroller.Inventory
             _profileView.Show();
         }
 
-        public void OpenPotions()
-        {
-            _potionInventoryView.Show();
-        }
-
-        private void ClosePotions()
-        {
-            _potionInventoryView.Hide();
-        }
     }
 }

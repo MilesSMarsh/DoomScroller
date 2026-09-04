@@ -9,6 +9,10 @@ namespace DoomScroller.Inventory
         Weapon,
         Shield,
         Talisman,
-        Potion
+        Potion,
+
+        // Owned, never equipped — same shape as Potion. Feeds the Blacksmith's future
+        // crafting stub; for now only ever obtained from the Market.
+        Material
     }
 }

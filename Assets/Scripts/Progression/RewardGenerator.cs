@@ -17,16 +17,31 @@ namespace DoomScroller.Progression
             new(0.8f, 0.6f, 0.15f, 1f)
         };
 
-        public static ItemData GenerateItem(int rarityTierIndex, System.Random rng = null)
+        // Gold granted alongside XP for a combat win — one source of truth so
+        // CombatResolutionView and DungeonStepPageView can't drift out of sync on how
+        // gold scales. No separately-authored field needed; gold just rides the XP
+        // reward that's already there.
+        private const float GoldPerXpRatio = 0.5f;
+
+        public static int ComputeGoldReward(int xpReward)
+        {
+            return Mathf.RoundToInt(xpReward * GoldPerXpRatio);
+        }
+
+        // allowedCategories restricts the roll (the Market uses this to sell only
+        // Armor/Shield/Talisman) — null means today's default pool.
+        public static ItemData GenerateItem(int rarityTierIndex, System.Random rng = null,
+            ItemCategory[] allowedCategories = null)
         {
             rng ??= new System.Random();
             rarityTierIndex = Mathf.Clamp(rarityTierIndex, 0, RarityNames.Length - 1);
 
-            // Potion is excluded — a randomly-generated "Common Potion" doesn't mean
-            // anything the way "Common Head" does; potions are hand-authored content
-            // only, for now.
-            var categories = ((ItemCategory[])System.Enum.GetValues(typeof(ItemCategory)))
-                .Where(c => c != ItemCategory.Potion)
+            // Potion and Material are excluded from the default pool — a randomly-generated
+            // "Common Potion" doesn't mean anything the way "Common Head" does (potions are
+            // hand-authored content only), and Material has no equip slots at all (would
+            // throw below when picking one).
+            var categories = allowedCategories ?? ((ItemCategory[])System.Enum.GetValues(typeof(ItemCategory)))
+                .Where(c => c != ItemCategory.Potion && c != ItemCategory.Material)
                 .ToArray();
             var category = categories[rng.Next(categories.Length)];
             var slots = ItemCategoryInfo.SlotsFor(category);

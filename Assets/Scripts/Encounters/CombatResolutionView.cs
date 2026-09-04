@@ -6,6 +6,7 @@ using DoomScroller.Inventory;
 using DoomScroller.Progression;
 using DoomScroller.UI;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace DoomScroller.Encounters
@@ -14,8 +15,19 @@ namespace DoomScroller.Encounters
     // clear win/lose outcome. The fight is its own ephemeral CombatSimulator instance —
     // it never touches the persistent PlayerHealth; only a defeat (including leaving
     // early) costs anything, via PlayerHealth.ApplyDefeatPenalty.
-    public class CombatResolutionView : MonoBehaviour
+    //
+    // A win pages sideways into a second page (mirroring DungeonView's horizontal
+    // swipe-to-page mechanic) holding a RewardChestView — the footer Leave button is
+    // hidden the instant a fight is won, so opening that chest is the only way back to
+    // the feed. A loss (or leaving mid-fight) has nothing to claim, so the footer button
+    // keeps working immediately, exactly as before, and page 2 is unreachable.
+    public class CombatResolutionView : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
     {
+        private const float SnapSpeed = 12f;
+        private const float SnapThreshold = 0.5f;
+        private const float HorizontalSwipeThreshold = 80f;
+        private const float AxisLockThreshold = 12f;
+
         public event Action ReturnToFeedRequested;
         public event Action<EncounterData> EncounterWon;
         public event Action<EncounterData> EncounterLost;
@@ -23,9 +35,28 @@ namespace DoomScroller.Encounters
         private CombatPlaybackView _playback;
         private Text _outcomeText;
         private Text _rewardText;
+        private Text _hintText;
+        private RewardChestView _rewardChest;
+        private GameObject _leaveButtonGo;
         private Coroutine _revealCoroutine;
         private EncounterData _data;
         private PlayerHealth _health;
+
+        private RectTransform _viewport;
+        private RectTransform _content;
+        private LayoutElement _fightPageLayout;
+        private LayoutElement _rewardPageLayout;
+        private float _pageWidth;
+        private int _currentPage;
+        // 0 normally; pinned to 1 for a Treasure card (see Show()) so there's nothing
+        // to swipe back into — the chest is page 1 for those, full stop.
+        private int _minPage;
+        private bool _canReachRewardPage;
+
+        private Vector2 _dragStart;
+        private bool? _dragIsHorizontal;
+        private bool _isSnapping;
+        private float _targetX;
 
         public static CombatResolutionView Create(Transform parent)
         {
@@ -54,16 +85,52 @@ namespace DoomScroller.Encounters
 
             var view = go.AddComponent<CombatResolutionView>();
 
-            // Outcome/reward sit at the top so they stay visible above the fight itself;
-            // a flexible spacer on each side of CombatPlaybackView centers it in the
-            // remaining space below the reward text instead of it sitting right under
-            // the reward text or hugging the very bottom of the screen.
-            var contentAreaGo = new GameObject("ContentArea", typeof(RectTransform));
-            contentAreaGo.transform.SetParent(rect, false);
-            var contentAreaLayout = contentAreaGo.AddComponent<LayoutElement>();
-            contentAreaLayout.flexibleHeight = 1;
-            contentAreaLayout.minHeight = 0;
-            contentAreaLayout.preferredHeight = 0;
+            var pagerAreaGo = new GameObject("PagerArea", typeof(RectTransform));
+            pagerAreaGo.transform.SetParent(rect, false);
+            var pagerAreaLayout = pagerAreaGo.AddComponent<LayoutElement>();
+            pagerAreaLayout.minHeight = 0;
+            pagerAreaLayout.preferredHeight = 0;
+            pagerAreaLayout.flexibleHeight = 1;
+
+            var viewportGo = new GameObject("Viewport", typeof(RectTransform));
+            var viewportRect = (RectTransform)viewportGo.transform;
+            viewportRect.SetParent(pagerAreaGo.transform, false);
+            viewportRect.anchorMin = Vector2.zero;
+            viewportRect.anchorMax = Vector2.one;
+            viewportRect.offsetMin = Vector2.zero;
+            viewportRect.offsetMax = Vector2.zero;
+            viewportGo.AddComponent<RectMask2D>();
+            view._viewport = viewportRect;
+
+            var contentGo = new GameObject("Content", typeof(RectTransform));
+            var contentRect = (RectTransform)contentGo.transform;
+            contentRect.SetParent(viewportRect, false);
+            contentRect.anchorMin = new Vector2(0, 0);
+            contentRect.anchorMax = new Vector2(0, 1);
+            contentRect.pivot = new Vector2(0, 0.5f);
+            contentRect.sizeDelta = Vector2.zero;
+            view._content = contentRect;
+
+            var contentLayout = contentGo.AddComponent<HorizontalLayoutGroup>();
+            contentLayout.spacing = 0;
+            contentLayout.childForceExpandWidth = false;
+            contentLayout.childForceExpandHeight = true;
+            contentLayout.childControlWidth = true;
+            contentLayout.childControlHeight = true;
+
+            var contentFitter = contentGo.AddComponent<ContentSizeFitter>();
+            contentFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            // Page 0 — outcome/reward-on-loss text sit at the top so they stay visible
+            // above the fight itself; a flexible spacer on each side of
+            // CombatPlaybackView centers it in the remaining space instead of it
+            // sitting right under the text or hugging the very bottom of the screen.
+            var contentAreaGo = new GameObject("FightPage", typeof(RectTransform));
+            contentAreaGo.transform.SetParent(contentRect, false);
+            var contentAreaPageLayout = contentAreaGo.AddComponent<LayoutElement>();
+            contentAreaPageLayout.flexibleWidth = 0;
+            contentAreaPageLayout.flexibleHeight = 1;
+            view._fightPageLayout = contentAreaPageLayout;
 
             var contentAreaGroup = contentAreaGo.AddComponent<VerticalLayoutGroup>();
             contentAreaGroup.padding = new RectOffset(48, 48, 0, 24);
@@ -75,9 +142,12 @@ namespace DoomScroller.Encounters
             contentAreaGroup.childControlHeight = true;
 
             view._outcomeText = CreateLabel(contentAreaGo.transform, "Outcome", 64, FontStyle.Bold, 90);
-            // Tall enough for a 3-line reward string (reward + close-call note +
-            // level-up), not just the visually-tighter single-line case.
+            // Tall enough for a 2-line defeat string (message + HP note).
             view._rewardText = CreateLabel(contentAreaGo.transform, "Reward", 34, FontStyle.Italic, 150);
+            view._hintText = CreateLabel(contentAreaGo.transform, "SwipeHint", 30, FontStyle.Bold, 60);
+            view._hintText.color = new Color(0.4f, 0.85f, 1f, 0.95f);
+            view._hintText.text = "◂ Swipe left for your reward";
+            view._hintText.gameObject.SetActive(false);
 
             CreateSpacer(contentAreaGo.transform);
 
@@ -87,14 +157,26 @@ namespace DoomScroller.Encounters
 
             CreateSpacer(contentAreaGo.transform);
 
-            CreateButton(rect, "LeaveButton", "Leave", () => view.OnLeaveClicked());
+            // Page 1 — the reward chest. Owns its own Return-to-Feed button (see
+            // RewardChestView) since the footer one below is hidden on a win.
+            var rewardPageGo = new GameObject("RewardPage", typeof(RectTransform));
+            rewardPageGo.transform.SetParent(contentRect, false);
+            var rewardPageLayout = rewardPageGo.AddComponent<LayoutElement>();
+            rewardPageLayout.flexibleWidth = 0;
+            rewardPageLayout.flexibleHeight = 1;
+            view._rewardPageLayout = rewardPageLayout;
+
+            view._rewardChest = RewardChestView.Create(rewardPageGo.transform);
+            view._rewardChest.ReturnRequested += () => view.ReturnToFeedRequested?.Invoke();
+
+            view._leaveButtonGo = CreateButton(rect, "LeaveButton", "Leave", () => view.OnLeaveClicked());
 
             go.SetActive(false);
             return view;
         }
 
         public void Show(EncounterData data, PlayerLoadout loadout, PlayerProgression progression, PlayerHealth health,
-            PlayerStats stats, GameSettings settings)
+            PlayerStats stats, GameSettings settings, PlayerWallet wallet)
         {
             gameObject.SetActive(true);
             _data = data;
@@ -110,13 +192,33 @@ namespace DoomScroller.Encounters
 
             _outcomeText.text = "";
             _rewardText.text = "";
+            _hintText.gameObject.SetActive(false);
+            _leaveButtonGo.SetActive(true);
+
+            // Reset the pager to the fight page and re-lock the reward page — a fresh
+            // Show() reuses this same instance (see EncounterFlowController.Awake). A
+            // Treasure card has no fight worth swiping to/from at all, so it starts
+            // pinned straight on the reward page instead — see _minPage below.
+            var isTreasure = data.type == EncounterType.Treasure;
+            _canReachRewardPage = false;
+            _minPage = isTreasure ? 1 : 0;
+            _currentPage = isTreasure ? 1 : 0;
+            _isSnapping = false;
+            Canvas.ForceUpdateCanvases();
+            _pageWidth = _viewport.rect.width;
+            _fightPageLayout.minWidth = _pageWidth;
+            _fightPageLayout.preferredWidth = _pageWidth;
+            _rewardPageLayout.minWidth = _pageWidth;
+            _rewardPageLayout.preferredWidth = _pageWidth;
+            Canvas.ForceUpdateCanvases();
+            _content.anchoredPosition = new Vector2(isTreasure ? -_pageWidth : 0f, 0f);
 
             if (_revealCoroutine != null)
             {
                 StopCoroutine(_revealCoroutine);
             }
 
-            _revealCoroutine = StartCoroutine(RevealSequence(sim, data.baseXpReward, loadout, progression, settings));
+            _revealCoroutine = StartCoroutine(RevealSequence(sim, data.baseXpReward, loadout, progression, settings, wallet));
         }
 
         public void Hide()
@@ -134,7 +236,9 @@ namespace DoomScroller.Encounters
         // as actually losing, not a free way to walk away from a bad matchup mid-fight.
         // _revealCoroutine is non-null for exactly that window (set in Show, cleared the
         // instant RevealSequence reaches its own Won/Lost below), so its presence alone
-        // tells us whether this is an early leave.
+        // tells us whether this is an early leave. Once a fight is won this button is
+        // hidden (see RevealSequence), so it's otherwise only ever reachable pre-resolution
+        // or after a loss — both of which return immediately, nothing to claim.
         private void OnLeaveClicked()
         {
             if (_revealCoroutine != null)
@@ -149,7 +253,7 @@ namespace DoomScroller.Encounters
         }
 
         private IEnumerator RevealSequence(CombatSimulator sim, int xpReward, PlayerLoadout loadout,
-            PlayerProgression progression, GameSettings settings)
+            PlayerProgression progression, GameSettings settings, PlayerWallet wallet)
         {
             yield return StartCoroutine(_playback.Play(sim, loadout, settings, _data.artwork, _data.cardColor));
 
@@ -167,15 +271,19 @@ namespace DoomScroller.Encounters
                 var item = RewardGenerator.GenerateItem(0);
                 loadout.AddToInventory(item);
 
-                var rewardLine = $"Reward: {xpReward} XP + {item.title} (equip it from Profile)";
-                if (_playback.WasCloseCall)
-                {
-                    rewardLine += "\nClose call — that one nearly had you.";
-                }
+                // Not granted here — RewardChestView.Show only stores it, and actually
+                // adds it to the wallet once the chest is opened.
+                var goldReward = RewardGenerator.ComputeGoldReward(xpReward);
 
-                _rewardText.text = progression.Level > previousLevel
-                    ? $"{rewardLine}\nLevel up! You're now level {progression.Level}."
-                    : rewardLine;
+                _rewardChest.Show(xpReward, goldReward, item, progression.Level > previousLevel, progression.Level,
+                    _playback.WasCloseCall, wallet);
+                // Already sitting on the reward page for a Treasure card (see Show()) —
+                // no swipe needed, so no hint to swipe.
+                _hintText.gameObject.SetActive(_data.type != EncounterType.Treasure);
+                _canReachRewardPage = true;
+
+                // Opening the chest is now the only way back — see the class comment.
+                _leaveButtonGo.SetActive(false);
 
                 EncounterWon?.Invoke(_data);
             }
@@ -189,6 +297,81 @@ namespace DoomScroller.Encounters
             }
 
             _revealCoroutine = null;
+        }
+
+        public void OnBeginDrag(PointerEventData eventData)
+        {
+            _dragStart = eventData.position;
+            _dragIsHorizontal = null;
+            _isSnapping = false;
+        }
+
+        public void OnDrag(PointerEventData eventData)
+        {
+            var delta = eventData.position - _dragStart;
+
+            if (_dragIsHorizontal == null)
+            {
+                if (Mathf.Abs(delta.x) < AxisLockThreshold && Mathf.Abs(delta.y) < AxisLockThreshold)
+                {
+                    return;
+                }
+
+                _dragIsHorizontal = Mathf.Abs(delta.x) >= Mathf.Abs(delta.y);
+            }
+
+            if (_dragIsHorizontal == true)
+            {
+                var pos = _content.anchoredPosition;
+                pos.x = -_currentPage * _pageWidth + delta.x;
+                _content.anchoredPosition = pos;
+            }
+        }
+
+        public void OnEndDrag(PointerEventData eventData)
+        {
+            if (_dragIsHorizontal != true)
+            {
+                SnapTo(_currentPage);
+                return;
+            }
+
+            var delta = eventData.position - _dragStart;
+            var desired = Mathf.Abs(delta.x) >= HorizontalSwipeThreshold
+                ? _currentPage + (delta.x < 0 ? 1 : -1)
+                : _currentPage;
+
+            // Mathf.Max, not a bare 0/1: for a Treasure card _minPage is already 1, and
+            // Mathf.Clamp with min > max would silently return min instead of clamping
+            // sanely if this ever raced _canReachRewardPage still being false.
+            var maxPage = Mathf.Max(_minPage, _canReachRewardPage ? 1 : 0);
+            SnapTo(Mathf.Clamp(desired, _minPage, maxPage));
+        }
+
+        private void SnapTo(int page)
+        {
+            _currentPage = page;
+            _targetX = -page * _pageWidth;
+            _isSnapping = true;
+        }
+
+        private void LateUpdate()
+        {
+            if (!_isSnapping)
+            {
+                return;
+            }
+
+            var pos = _content.anchoredPosition;
+            pos.x = Mathf.Lerp(pos.x, _targetX, Time.unscaledDeltaTime * SnapSpeed);
+
+            if (Mathf.Abs(pos.x - _targetX) < SnapThreshold)
+            {
+                pos.x = _targetX;
+                _isSnapping = false;
+            }
+
+            _content.anchoredPosition = pos;
         }
 
         private static void CreateSpacer(Transform parent)
@@ -221,7 +404,7 @@ namespace DoomScroller.Encounters
             return text;
         }
 
-        private static void CreateButton(Transform parent, string name, string label, Action onClick)
+        private static GameObject CreateButton(Transform parent, string name, string label, Action onClick)
         {
             var go = new GameObject(name, typeof(RectTransform));
             go.transform.SetParent(parent, false);
@@ -250,6 +433,8 @@ namespace DoomScroller.Encounters
             labelText.alignment = TextAnchor.MiddleCenter;
             labelText.color = Color.white;
             labelText.text = label;
+
+            return go;
         }
     }
 }

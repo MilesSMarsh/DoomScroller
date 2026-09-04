@@ -42,12 +42,25 @@ namespace DoomScroller.Encounters
         private PlayerHealth _health;
         private PlayerStats _stats;
         private GameSettings _settings;
+        private PlayerWallet _wallet;
         private IReadOnlyList<DungeonStep> _steps;
 
         private int _frontierIndex;
         private int _currentPage;
         private float _pageWidth;
         private bool _runOver;
+        // The running HP total carried step-to-step within this run — a fight no longer
+        // always starts fresh at _health.CurrentMaxHealth; only a fresh run or a rest
+        // step resets it (see ResolveAndReveal/OnPageResolved).
+        private int _runningPlayerHp;
+        // The running gold total across the whole run — never actually granted to the
+        // wallet until the treasure room's chest is opened (see
+        // DungeonStepPageView.AccumulatedGold); simply discarded on a loss.
+        private int _accumulatedGold;
+        // True from the instant the treasure-room step wins until its RewardChestView is
+        // tapped open — gates the Return button so a run-clearing win can't be swiped
+        // past without claiming it. Never set for a mid-run loss (nothing to claim then).
+        private bool _pendingChestClaim;
 
         private Vector2 _dragStart;
         private bool? _dragIsHorizontal;
@@ -127,7 +140,7 @@ namespace DoomScroller.Encounters
         }
 
         public void Show(EncounterData data, PlayerLoadout loadout, PlayerProgression progression, PlayerHealth health,
-            PlayerStats stats, GameSettings settings)
+            PlayerStats stats, GameSettings settings, PlayerWallet wallet)
         {
             _data = data;
             _loadout = loadout;
@@ -135,6 +148,7 @@ namespace DoomScroller.Encounters
             _health = health;
             _stats = stats;
             _settings = settings;
+            _wallet = wallet;
 
             foreach (var page in _pages)
             {
@@ -153,12 +167,19 @@ namespace DoomScroller.Encounters
             _steps = DungeonGenerator.Generate(data);
             foreach (var step in _steps)
             {
-                _pages.Add(DungeonStepPageView.Create(_content, _pageWidth));
+                var page = DungeonStepPageView.Create(_content, _pageWidth);
+                page.RewardClaimed += OnRewardClaimed;
+                _pages.Add(page);
             }
 
             _frontierIndex = 0;
             _currentPage = 0;
             _runOver = false;
+            _pendingChestClaim = false;
+            // A fresh run always starts at the player's real current ceiling — carried
+            // forward (or reset by a rest step) from here on, see OnPageResolved.
+            _runningPlayerHp = _health.CurrentMaxHealth;
+            _accumulatedGold = 0;
             _content.anchoredPosition = Vector2.zero;
             _isSnapping = false;
 
@@ -174,7 +195,8 @@ namespace DoomScroller.Encounters
         {
             var page = _pages[index];
             page.Resolved += OnPageResolved;
-            page.Resolve(_steps[index], _loadout, _progression, _health, _stats, _settings);
+            page.Resolve(_steps[index], _loadout, _progression, _health, _stats, _settings, _wallet, _runningPlayerHp,
+                _accumulatedGold);
         }
 
         // Health's own defeat penalty is applied inside DungeonStepPageView itself (it
@@ -192,15 +214,35 @@ namespace DoomScroller.Encounters
             else if (step.IsTreasureRoom)
             {
                 _runOver = true;
+                _pendingChestClaim = true;
                 EncounterWon?.Invoke(_data);
             }
+            else
+            {
+                // Run continues — carries forward either the damage taken this step
+                // (a normal fight) or a full heal-up (a rest step); either way
+                // DungeonStepPageView.EndingPlayerHp already encodes which happened.
+                _runningPlayerHp = _pages[step.DepthIndex].EndingPlayerHp;
+                _accumulatedGold = _pages[step.DepthIndex].AccumulatedGold;
+            }
+        }
+
+        private void OnRewardClaimed()
+        {
+            _pendingChestClaim = false;
         }
 
         private void OnReturnButtonClicked()
         {
             if (_runOver)
             {
-                ReturnToFeedRequested?.Invoke();
+                // A treasure-room win holds the door shut until its chest is opened —
+                // see DungeonStepPageView.RewardClaimed. A loss has nothing to claim, so
+                // _pendingChestClaim is never true there.
+                if (!_pendingChestClaim)
+                {
+                    ReturnToFeedRequested?.Invoke();
+                }
             }
             else
             {

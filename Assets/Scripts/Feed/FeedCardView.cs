@@ -246,7 +246,7 @@ namespace DoomScroller.Feed
         {
             return data.type switch
             {
-                EncounterType.Tavern => "No reward — just chat",
+                EncounterType.Tavern => "No combat — shop, chat, and upgrade",
                 EncounterType.Dungeon => $"+{data.baseXpReward}+ XP · Common → Rare Gear",
                 _ => $"+{data.baseXpReward} XP · Common Gear"
             };
@@ -287,7 +287,7 @@ namespace DoomScroller.Feed
             return data.type switch
             {
                 EncounterType.Dungeon => "Dungeon Door",
-                EncounterType.Tavern => "The Tavern",
+                EncounterType.Tavern => "The Village",
                 _ => $"{data.type} · {EntryDifficultyLabel}"
             };
         }
