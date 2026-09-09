@@ -5,8 +5,7 @@ namespace DoomScroller.Progression
     // Plain C# so it's testable without a scene, same convention as PlayerProgression/
     // PlayerHealth. A tiny persistent settings bag — just the revive-potion auto-consume
     // flag today, room to grow later without overloading PlayerLoadout/PlayerHealth with
-    // an unrelated concern. Session-only, like everything else in this project (no
-    // save/load system exists yet).
+    // an unrelated concern. Persisted via SaveSystem (see ProfileController).
     public class GameSettings
     {
         public event Action Changed;
@@ -41,6 +40,14 @@ namespace DoomScroller.Progression
 
             ManualAbilityCasting = value;
             Changed?.Invoke();
+        }
+
+        // The save/load path. Doesn't fire Changed — called once, before anything
+        // subscribes.
+        public void LoadState(bool autoConsumeRevivePotions, bool manualAbilityCasting)
+        {
+            AutoConsumeRevivePotions = autoConsumeRevivePotions;
+            ManualAbilityCasting = manualAbilityCasting;
         }
     }
 }

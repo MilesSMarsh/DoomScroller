@@ -19,6 +19,7 @@ namespace DoomScroller.Encounters
         private CombatResolutionView _resolutionView;
         private DungeonView _dungeonView;
         private VillageView _villageView;
+        private ResourceEncounterView _resourceEncounterView;
 
         private void Awake()
         {
@@ -26,6 +27,7 @@ namespace DoomScroller.Encounters
             _resolutionView = CombatResolutionView.Create(rect);
             _dungeonView = DungeonView.Create(rect);
             _villageView = VillageView.Create(rect);
+            _resourceEncounterView = ResourceEncounterView.Create(rect);
 
             feedController.EncounterSelected += OnEncounterSelected;
 
@@ -41,6 +43,9 @@ namespace DoomScroller.Encounters
             // The Village never fires Won/Lost/Abandoned — it's never locked, and
             // there's nothing to mark it with.
             _villageView.ReturnToFeedRequested += OnBackToFeed;
+
+            _resourceEncounterView.ReturnToFeedRequested += OnBackToFeed;
+            _resourceEncounterView.EncounterWon += feedController.MarkWon;
         }
 
         private void OnEncounterSelected(EncounterData data)
@@ -50,16 +55,21 @@ namespace DoomScroller.Encounters
             if (data.type == EncounterType.Dungeon)
             {
                 _dungeonView.Show(data, profileController.Loadout, profileController.Progression,
-                    profileController.Health, profileController.Stats, profileController.Settings, profileController.Wallet);
+                    profileController.Health, profileController.Attributes, profileController.Settings, profileController.Wallet);
             }
             else if (data.type == EncounterType.Tavern)
             {
-                _villageView.Show(data, profileController.Loadout, profileController.Health, profileController.Wallet);
+                _villageView.Show(data, profileController.Loadout, profileController.Health, profileController.Wallet,
+                    profileController.Attributes);
+            }
+            else if (data.type == EncounterType.Resource)
+            {
+                _resourceEncounterView.Show(data, profileController.Loadout, profileController.Attributes);
             }
             else
             {
                 _resolutionView.Show(data, profileController.Loadout, profileController.Progression,
-                    profileController.Health, profileController.Stats, profileController.Settings, profileController.Wallet);
+                    profileController.Health, profileController.Attributes, profileController.Settings, profileController.Wallet);
             }
         }
 
@@ -68,6 +78,7 @@ namespace DoomScroller.Encounters
             _resolutionView.Hide();
             _dungeonView.Hide();
             _villageView.Hide();
+            _resourceEncounterView.Hide();
             feedController.gameObject.SetActive(true);
         }
     }

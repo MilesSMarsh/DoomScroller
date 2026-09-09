@@ -40,7 +40,7 @@ namespace DoomScroller.Encounters
         private PlayerLoadout _loadout;
         private PlayerProgression _progression;
         private PlayerHealth _health;
-        private PlayerStats _stats;
+        private PlayerAttributes _attributes;
         private GameSettings _settings;
         private PlayerWallet _wallet;
         private IReadOnlyList<DungeonStep> _steps;
@@ -140,13 +140,13 @@ namespace DoomScroller.Encounters
         }
 
         public void Show(EncounterData data, PlayerLoadout loadout, PlayerProgression progression, PlayerHealth health,
-            PlayerStats stats, GameSettings settings, PlayerWallet wallet)
+            PlayerAttributes attributes, GameSettings settings, PlayerWallet wallet)
         {
             _data = data;
             _loadout = loadout;
             _progression = progression;
             _health = health;
-            _stats = stats;
+            _attributes = attributes;
             _settings = settings;
             _wallet = wallet;
 
@@ -195,7 +195,7 @@ namespace DoomScroller.Encounters
         {
             var page = _pages[index];
             page.Resolved += OnPageResolved;
-            page.Resolve(_steps[index], _loadout, _progression, _health, _stats, _settings, _wallet, _runningPlayerHp,
+            page.Resolve(_steps[index], _loadout, _progression, _health, _attributes, _settings, _wallet, _runningPlayerHp,
                 _accumulatedGold);
         }
 

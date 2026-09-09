@@ -176,7 +176,7 @@ namespace DoomScroller.Encounters
         }
 
         public void Show(EncounterData data, PlayerLoadout loadout, PlayerProgression progression, PlayerHealth health,
-            PlayerStats stats, GameSettings settings, PlayerWallet wallet)
+            PlayerAttributes attributes, GameSettings settings, PlayerWallet wallet)
         {
             gameObject.SetActive(true);
             _data = data;
@@ -188,7 +188,7 @@ namespace DoomScroller.Encounters
             // Always enter at full of whatever CurrentMaxHealth currently is — the
             // fight is a separate instance from here on; PlayerHealth isn't touched
             // again until it's over (see RevealSequence/OnLeaveClicked).
-            var sim = CombatResolver.CreateSimulator(loadout, stats, settings, data, health.CurrentMaxHealth);
+            var sim = CombatResolver.CreateSimulator(loadout, attributes, settings, data, health.CurrentMaxHealth);
 
             _outcomeText.text = "";
             _rewardText.text = "";

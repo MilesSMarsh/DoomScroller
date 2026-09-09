@@ -219,17 +219,20 @@ namespace DoomScroller.Inventory
                 : BaseRefillCapacity;
         }
 
-        public bool ArePotionsFullyStocked()
+        // potionFilter restricts which known potion types this considers — the Tavern
+        // only ever refills Revive Draughts, not Max-Health potions (see
+        // VillageTavernView).
+        public bool ArePotionsFullyStocked(Func<ItemData, bool> potionFilter)
         {
-            return _knownPotionTypes.All(t => _inventory.Count(i => i == t) >= GetRefillCapacity(t));
+            return _knownPotionTypes.Where(potionFilter).All(t => _inventory.Count(i => i == t) >= GetRefillCapacity(t));
         }
 
         // The flat total to fully refill everything missing right now — for a button
         // label that states one sum rather than a per-unit price.
-        public int ComputeRefillCost(Func<ItemData, int> pricePerPotion)
+        public int ComputeRefillCost(Func<ItemData, int> pricePerPotion, Func<ItemData, bool> potionFilter)
         {
             var total = 0;
-            foreach (var potionType in _knownPotionTypes)
+            foreach (var potionType in _knownPotionTypes.Where(potionFilter))
             {
                 var owned = _inventory.Count(i => i == potionType);
                 var missing = Mathf.Max(0, GetRefillCapacity(potionType) - owned);
@@ -239,16 +242,16 @@ namespace DoomScroller.Inventory
             return total;
         }
 
-        // Tops every potion type the player started with back up to its refill capacity
-        // (raised per-type by an Alchemist capacity upgrade) — one potion at a time,
-        // stopping the moment the wallet can't afford the next one (a partial refill, not
+        // Tops every matching known potion type back up to its refill capacity (raised
+        // per-type by an Alchemist capacity upgrade) — one potion at a time, stopping the
+        // moment the wallet can't afford the next one (a partial refill, not
         // all-or-nothing). Returns how many were actually bought, for a confirmation
         // message; 0 if fully stocked already or the wallet couldn't afford even one.
         // pricePerPotion is per-type since a quality-upgraded Revive potion costs more.
-        public int RefillPotions(PlayerWallet wallet, Func<ItemData, int> pricePerPotion)
+        public int RefillPotions(PlayerWallet wallet, Func<ItemData, int> pricePerPotion, Func<ItemData, bool> potionFilter)
         {
             var added = 0;
-            foreach (var potionType in _knownPotionTypes)
+            foreach (var potionType in _knownPotionTypes.Where(potionFilter))
             {
                 var owned = _inventory.Count(i => i == potionType);
                 var price = pricePerPotion(potionType);
@@ -324,6 +327,28 @@ namespace DoomScroller.Inventory
             return _knownPotionTypes.FirstOrDefault(p => p.potionEffect == PotionEffect.Revive);
         }
 
+        // Every owned item not currently equipped anywhere — gear, potions, and
+        // materials alike (the Market's Sell tab draws directly from this).
+        public IEnumerable<ItemData> GetSellableItems()
+        {
+            return _inventory.Where(i => !_equipped.Values.Contains(i));
+        }
+
+        // The Market's Sell tab action — mirrors TryCraftItem/TryUpgradeRevive*'s shape
+        // (a combined inventory+wallet transaction living here, wallet passed in). Refuses
+        // an equipped item the same way RemoveFromInventory already does.
+        public bool SellItem(ItemData item, PlayerWallet wallet)
+        {
+            if (item == null || _equipped.Values.Contains(item) || !_inventory.Remove(item))
+            {
+                return false;
+            }
+
+            wallet.AddGold(item.goldValue);
+            Changed?.Invoke();
+            return true;
+        }
+
         public int CountMaterials()
         {
             return _inventory.Count(i => i.category == ItemCategory.Material);
@@ -382,6 +407,27 @@ namespace DoomScroller.Inventory
             return true;
         }
 
+        // The Blacksmith's craft action — goldCost/materialsCost are its call (same split
+        // as every other Try* purchase here); on success the item lands straight in the
+        // inventory, same as any other reward (AddToInventory already fires Changed, so
+        // this doesn't fire it a second time).
+        public bool TryCraftItem(ItemData item, PlayerWallet wallet, int goldCost, int materialsCost)
+        {
+            if (item == null || CountMaterials() < materialsCost)
+            {
+                return false;
+            }
+
+            if (!wallet.TrySpendGold(goldCost))
+            {
+                return false;
+            }
+
+            ConsumeMaterials(materialsCost);
+            AddToInventory(item);
+            return true;
+        }
+
         // Instant-use from the Potions tab — restores current max health right away,
         // rather than being carried into a fight like a revive potion.
         public void ConsumeMaxHealthPotion(ItemData potion, PlayerHealth health)
@@ -394,6 +440,103 @@ namespace DoomScroller.Inventory
             health.RestoreMaxHealth(potion.potionAmount);
             _inventory.Remove(potion);
             Changed?.Invoke();
+        }
+
+        // Fills in data's item-related fields (itemPool, inventory, equipped,
+        // knownPotionTypes, reviveUpgrades) for SaveSystem — see SaveData's own doc
+        // comment for why every distinct ItemData reference is captured exactly once
+        // (itemPool) with everything else referencing it by index, rather than each
+        // owned copy capturing its own independent snapshot.
+        public void CaptureInto(SaveData data)
+        {
+            var poolIndex = new Dictionary<ItemData, int>();
+            data.itemPool.Clear();
+
+            int Intern(ItemData item)
+            {
+                if (poolIndex.TryGetValue(item, out var existingIndex))
+                {
+                    return existingIndex;
+                }
+
+                var newIndex = data.itemPool.Count;
+                data.itemPool.Add(ItemSnapshot.Capture(item));
+                poolIndex[item] = newIndex;
+                return newIndex;
+            }
+
+            data.inventory.Clear();
+            foreach (var item in _inventory)
+            {
+                data.inventory.Add(Intern(item));
+            }
+
+            data.equipped.Clear();
+            foreach (var kvp in _equipped)
+            {
+                data.equipped.Add(new EquippedEntry { slot = kvp.Key, itemIndex = Intern(kvp.Value) });
+            }
+
+            data.knownPotionTypes.Clear();
+            foreach (var potion in _knownPotionTypes)
+            {
+                data.knownPotionTypes.Add(Intern(potion));
+            }
+
+            data.reviveUpgrades.Clear();
+            foreach (var potion in _reviveCapacityLevel.Keys.Union(_reviveQualityLevel.Keys))
+            {
+                data.reviveUpgrades.Add(new PotionUpgradeEntry
+                {
+                    itemIndex = Intern(potion),
+                    capacityLevel = GetReviveCapacityLevel(potion),
+                    qualityLevel = GetReviveQualityLevel(potion)
+                });
+            }
+        }
+
+        // The load path — rebuilds every collection from a saved itemPool, so N indices
+        // pointing at the same pool entry resolve back to one shared recreated instance
+        // (preserving the reference-equality stacking every owner of this data relies
+        // on). Called once, right after construction, before anything subscribes to
+        // Changed — deliberately doesn't fire it.
+        public void RestoreFrom(SaveData data)
+        {
+            var pool = data.itemPool.Select(snapshot => snapshot.Restore()).ToArray();
+
+            _inventory.Clear();
+            foreach (var index in data.inventory)
+            {
+                _inventory.Add(pool[index]);
+            }
+
+            _equipped.Clear();
+            foreach (var entry in data.equipped)
+            {
+                _equipped[entry.slot] = pool[entry.itemIndex];
+            }
+
+            _knownPotionTypes.Clear();
+            foreach (var index in data.knownPotionTypes)
+            {
+                _knownPotionTypes.Add(pool[index]);
+            }
+
+            _reviveCapacityLevel.Clear();
+            _reviveQualityLevel.Clear();
+            foreach (var upgrade in data.reviveUpgrades)
+            {
+                var potion = pool[upgrade.itemIndex];
+                if (upgrade.capacityLevel > 0)
+                {
+                    _reviveCapacityLevel[potion] = upgrade.capacityLevel;
+                }
+
+                if (upgrade.qualityLevel > 0)
+                {
+                    _reviveQualityLevel[potion] = upgrade.qualityLevel;
+                }
+            }
         }
 
         private static bool IsHandSlot(EquipmentSlotType slot)

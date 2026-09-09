@@ -30,6 +30,7 @@ namespace DoomScroller.Feed
         private readonly System.Random _rng = new();
 
         private EncounterData[] _pool;
+        private EncounterData _landingCard;
         private FeedCardView _activeCard;
 
         private RectTransform _viewport;
@@ -57,9 +58,14 @@ namespace DoomScroller.Feed
         // Auto-discovery, not a manually-maintained list: drop a new EncounterData asset
         // into Assets/Resources/Encounters/ and it's in the rotation on next play, no
         // registration step. See the workflow notes on EncounterData for authoring one.
+        // The one Landing-type asset (if any) is pulled out here rather than left in the
+        // rotation — it's meant to appear exactly once, at the very start (see
+        // BuildFeed), never redrawn by the shuffle bag.
         private void LoadPool()
         {
-            _pool = Resources.LoadAll<EncounterData>(PoolResourcesPath);
+            var loaded = Resources.LoadAll<EncounterData>(PoolResourcesPath);
+            _landingCard = Array.Find(loaded, e => e.type == EncounterType.Landing);
+            _pool = Array.FindAll(loaded, e => e.type != EncounterType.Landing);
             Array.Sort(_pool, (a, b) => string.CompareOrdinal(a.title, b.title));
 
             if (_pool.Length == 0)
@@ -126,9 +132,23 @@ namespace DoomScroller.Feed
             _pager = gameObject.AddComponent<FeedPager>();
             _pager.SetPageRequestHandler(OnPageRequested);
 
+            // The blank landing card, if authored, always sits at absolute index 0 —
+            // created unconditionally before any shuffle-bag draws, so real content
+            // still starts at index 1 exactly as it always has.
+            if (_landingCard != null)
+            {
+                var landingCardView = FeedCardView.Create(_content, _landingCard, _pageHeight, 1f, 0f, OnCardTapped);
+                _liveCards.Add(landingCardView);
+                _windowEndIndex++;
+            }
+
             if (_pool.Length > 0)
             {
-                EnsureFilledThrough(AheadBuffer);
+                // Offset by however many cards (0 or 1) already occupy the window, so
+                // this always fills exactly AheadBuffer+1 cards of real content — same
+                // as before the landing card existed, just shifted to start at index 1
+                // instead of 0 when one's present.
+                EnsureFilledThrough(_windowEndIndex + AheadBuffer);
             }
 
             // Content's height is only computed lazily by VerticalLayoutGroup/ContentSizeFitter;
@@ -185,6 +205,13 @@ namespace DoomScroller.Feed
             // Cards ignore their own taps once locked, but guard here too since this
             // handler is the single source of truth for entering an encounter.
             if (card.IsLocked)
+            {
+                return;
+            }
+
+            // The blank landing card is genuinely inert — scrolling past it is the only
+            // way by design (see BuildFeed/LoadPool).
+            if (card.Data.type == EncounterType.Landing)
             {
                 return;
             }
@@ -247,10 +274,10 @@ namespace DoomScroller.Feed
             while (_windowEndIndex <= absoluteIndexInclusive)
             {
                 var encounter = DrawNext();
-                var winChance = CombatResolver.PredictWinChance(profileController.Loadout, profileController.Stats,
+                var winChance = CombatResolver.PredictWinChance(profileController.Loadout, profileController.Attributes,
                     profileController.Health, encounter);
                 var closeCallChance = CombatResolver.PredictCloseCallChance(profileController.Loadout,
-                    profileController.Stats, profileController.Health, encounter);
+                    profileController.Attributes, profileController.Health, encounter);
                 var card = FeedCardView.Create(_content, encounter, _pageHeight, winChance, closeCallChance, OnCardTapped);
                 _liveCards.Add(card);
                 _windowEndIndex++;
@@ -263,10 +290,10 @@ namespace DoomScroller.Feed
         {
             foreach (var card in _liveCards)
             {
-                var winChance = CombatResolver.PredictWinChance(profileController.Loadout, profileController.Stats,
+                var winChance = CombatResolver.PredictWinChance(profileController.Loadout, profileController.Attributes,
                     profileController.Health, card.Data);
                 var closeCallChance = CombatResolver.PredictCloseCallChance(profileController.Loadout,
-                    profileController.Stats, profileController.Health, card.Data);
+                    profileController.Attributes, profileController.Health, card.Data);
                 card.SetOdds(winChance, closeCallChance);
             }
         }

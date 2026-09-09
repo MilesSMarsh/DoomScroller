@@ -31,10 +31,10 @@ namespace DoomScroller.Inventory
 
         private GameObject _inventoryPanelGo;
         private GameObject _abilitiesPanelGo;
-        private GameObject _statsPanelGo;
+        private GameObject _attributesPanelGo;
         private Image _inventoryTabImage;
         private Image _abilitiesTabImage;
-        private Image _statsTabImage;
+        private Image _attributesTabImage;
 
         // The Inventory tab's own inner sub-tabs — Equipment/Potions/Materials, one
         // nesting level below the three above.
@@ -46,7 +46,7 @@ namespace DoomScroller.Inventory
         private Image _materialsTabImage;
 
         public static ProfileView Create(Transform parent, PlayerLoadout loadout, PlayerProgression progression,
-            PlayerHealth health, PlayerStats stats, GameSettings settings)
+            PlayerHealth health, PlayerAttributes attributes, GameSettings settings)
         {
             var go = new GameObject("Profile", typeof(RectTransform));
             var rect = (RectTransform)go.transform;
@@ -92,7 +92,7 @@ namespace DoomScroller.Inventory
             // Three tabs sharing everything above (title/portrait/progression/health):
             // Inventory (equip cluster), Abilities (its own tab now — the equip cluster
             // plus manual-casting toggle plus a growing ability list no longer all fit
-            // on one screen together) and Stats. Only one panel is active at a time;
+            // on one screen together) and Attributes. Only one panel is active at a time;
             // switching tabs doesn't rebuild any of them, so none loses scroll-independent
             // state.
             var tabRowGo = new GameObject("TabRow", typeof(RectTransform));
@@ -107,7 +107,7 @@ namespace DoomScroller.Inventory
 
             CreateTabButton(tabRowGo.transform, "InventoryTab", "Inventory", () => view.SelectTab(0), out view._inventoryTabImage);
             CreateTabButton(tabRowGo.transform, "AbilitiesTab", "Abilities", () => view.SelectTab(1), out view._abilitiesTabImage);
-            CreateTabButton(tabRowGo.transform, "StatsTab", "Stats", () => view.SelectTab(2), out view._statsTabImage);
+            CreateTabButton(tabRowGo.transform, "AttributesTab", "Attributes", () => view.SelectTab(2), out view._attributesTabImage);
 
             var inventoryPanelGo = new GameObject("InventoryPanel", typeof(RectTransform));
             view._inventoryPanelGo = inventoryPanelGo;
@@ -227,7 +227,7 @@ namespace DoomScroller.Inventory
             abilitiesLayout.childControlWidth = true;
             abilitiesLayout.childControlHeight = true;
 
-            view._statsPanelGo = StatsPanelView.Create(content, stats).gameObject;
+            view._attributesPanelGo = AttributesPanelView.Create(content, attributes).gameObject;
 
             CreateButton(rect, "CloseButton", "Close", () => view.CloseRequested?.Invoke());
 
@@ -252,13 +252,13 @@ namespace DoomScroller.Inventory
         {
             _inventoryPanelGo.SetActive(index == 0);
             _abilitiesPanelGo.SetActive(index == 1);
-            _statsPanelGo.SetActive(index == 2);
+            _attributesPanelGo.SetActive(index == 2);
 
             // Same "only tint the selected one" treatment as nothing else in this project
             // does yet, but simple enough not to need a shared helper for three buttons.
             _inventoryTabImage.color = index == 0 ? SelectedTabColor : UnselectedTabColor;
             _abilitiesTabImage.color = index == 1 ? SelectedTabColor : UnselectedTabColor;
-            _statsTabImage.color = index == 2 ? SelectedTabColor : UnselectedTabColor;
+            _attributesTabImage.color = index == 2 ? SelectedTabColor : UnselectedTabColor;
         }
 
         // Inventory's own inner sub-tabs — Equipment/Potions/Materials — same shape as

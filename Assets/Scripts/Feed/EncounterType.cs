@@ -7,6 +7,12 @@ namespace DoomScroller.Feed
         Treasure,
         Enemy,
         Dungeon,
-        Tavern
+        Tavern,
+        Resource,
+
+        // A blank, non-interactive card shown once, at the very start of the feed, on
+        // first open — see FeedController.LoadPool/BuildFeed. Never drawn by the normal
+        // shuffle bag.
+        Landing
     }
 }

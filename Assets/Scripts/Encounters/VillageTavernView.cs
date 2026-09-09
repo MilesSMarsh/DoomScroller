@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using DoomScroller.Feed;
 using DoomScroller.Inventory;
 using DoomScroller.Progression;
 using DoomScroller.Social;
@@ -7,21 +9,29 @@ using UnityEngine.UI;
 namespace DoomScroller.Encounters
 {
     // One establishment in the Village (see VillageView): the old standalone Tavern's
-    // chat board, plus a potion refill that now costs gold — tops every potion type the
-    // player started with back up to its refill capacity, one at a time, as far as the
-    // wallet can afford (see PlayerLoadout.RefillPotions). A Revive potion the Alchemist
-    // has upgraded costs more per unit to refill (PricePerPotion) — the button always
-    // states one flat total, not a per-unit price.
+    // chat board, plus a Revive-Draught refill that costs gold — tops Revive potions
+    // back up to their refill capacity, one at a time, as far as the wallet can afford
+    // (see PlayerLoadout.RefillPotions). Max-Health potions are never refilled here.
+    // Usable once per village visit (see _refilledVillages) — re-entering the same
+    // village shows it already used, same pattern as this session's Market
+    // stock-per-village fix; a different village gets its own fresh refill.
     public class VillageTavernView : MonoBehaviour
     {
         private const int BaseRefillPrice = 8;
         private const int PricePerQualityLevel = 4;
 
         private MessageBoardView _messageBoard;
+        private Button _refillButton;
         private Text _refillButtonLabel;
         private Text _refillResultText;
         private PlayerLoadout _loadout;
         private PlayerWallet _wallet;
+        private PlayerAttributes _attributes;
+        private EncounterData _village;
+
+        // Session-only, like VillageMarketView's stock cache — not part of the save
+        // file (village-specific Village state is explicitly out of scope there).
+        private readonly HashSet<EncounterData> _refilledVillages = new();
 
         public static VillageTavernView Create(Transform parent)
         {
@@ -44,6 +54,7 @@ namespace DoomScroller.Encounters
 
             var refillButtonGo = CreateButton(go.transform, "RefillButton", "Refill Potions", () => view.OnRefillClicked());
             SetFixedHeight(refillButtonGo.GetComponent<LayoutElement>(), 100);
+            view._refillButton = refillButtonGo.GetComponent<Button>();
             view._refillButtonLabel = refillButtonGo.GetComponentInChildren<Text>();
 
             view._refillResultText = CreateLabel(go.transform, "RefillResult", "", 24, FontStyle.Italic);
@@ -61,7 +72,7 @@ namespace DoomScroller.Encounters
         // once (guarded below) keeps the button's total correct even if the player
         // upgrades a flask at the Alchemist earlier in the same visit, without needing
         // to leave and re-enter this page.
-        public void Show(PlayerLoadout loadout, PlayerWallet wallet)
+        public void Show(PlayerLoadout loadout, PlayerWallet wallet, PlayerAttributes attributes, EncounterData village)
         {
             if (_loadout == null)
             {
@@ -70,38 +81,54 @@ namespace DoomScroller.Encounters
 
             _loadout = loadout;
             _wallet = wallet;
+            _attributes = attributes;
+            _village = village;
             _refillResultText.text = "";
             _messageBoard.PopulateWithEntries(MessageBoardGenerator.GenerateTavernChatter());
             RefreshRefillButton();
         }
 
-        // A Revive potion the Alchemist has upgraded costs more per unit to refill;
-        // every other potion type stays at the flat base price.
+        // Only Revive Draughts are refilled here — Max-Health potions never match.
+        private static bool IsRevivePotion(ItemData potionType) => potionType.potionEffect == PotionEffect.Revive;
+
+        // A Revive potion the Alchemist has upgraded costs more per unit to refill.
         private int PricePerPotion(ItemData potionType)
         {
-            return potionType.potionEffect == PotionEffect.Revive
-                ? BaseRefillPrice + _loadout.GetReviveQualityLevel(potionType) * PricePerQualityLevel
-                : BaseRefillPrice;
+            var basePrice = BaseRefillPrice + _loadout.GetReviveQualityLevel(potionType) * PricePerQualityLevel;
+            return Mathf.RoundToInt(basePrice * _attributes.GoldCostMultiplier);
         }
 
         private void RefreshRefillButton()
         {
-            var cost = _loadout.ComputeRefillCost(PricePerPotion);
-            _refillButtonLabel.text = cost > 0 ? $"Refill Potions ({cost}g)" : "Fully Stocked";
-        }
-
-        private void OnRefillClicked()
-        {
-            if (_loadout.ArePotionsFullyStocked())
+            if (_refilledVillages.Contains(_village))
             {
-                _refillResultText.text = "Already fully stocked.";
+                _refillButtonLabel.text = "Already Refilled";
+                _refillButton.interactable = false;
                 return;
             }
 
-            var added = _loadout.RefillPotions(_wallet, PricePerPotion);
-            _refillResultText.text = added > 0
-                ? $"Refilled {added} potion{(added == 1 ? "" : "s")}."
-                : "Not enough gold to refill any potions.";
+            var cost = _loadout.ComputeRefillCost(PricePerPotion, IsRevivePotion);
+            _refillButtonLabel.text = cost > 0 ? $"Refill Potions ({cost}g)" : "Fully Stocked";
+            _refillButton.interactable = true;
+        }
+
+        // One use per village visit, regardless of outcome — tapping this is the one
+        // refill this village offers; leaving for a different village grants a fresh one.
+        private void OnRefillClicked()
+        {
+            if (_loadout.ArePotionsFullyStocked(IsRevivePotion))
+            {
+                _refillResultText.text = "Already fully stocked.";
+            }
+            else
+            {
+                var added = _loadout.RefillPotions(_wallet, PricePerPotion, IsRevivePotion);
+                _refillResultText.text = added > 0
+                    ? $"Refilled {added} potion{(added == 1 ? "" : "s")}."
+                    : "Not enough gold to refill any potions.";
+            }
+
+            _refilledVillages.Add(_village);
             RefreshRefillButton();
         }
 

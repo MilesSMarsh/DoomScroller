@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61d99f5d642a9f6b68bf4d9f3473d672, type: 3}
+  m_Name: Weapon_HeavyWarbow
+  m_EditorClassIdentifier: Assembly-CSharp::DoomScroller.Inventory.ItemData
+  title: Heavy Warbow
+  slotType: 5
+  category: 1
+  statSummary: +12 Attack, scales off Dexterity and Strength
+  itemColor: {r: 0.45, g: 0.35, b: 0.2, a: 1}
+  goldValue: 18
+  powerValue: 12
+  abilities:
+  - abilityName: Piercing Shot
+    description: A heavy, armor-piercing arrow
+    iconColor: {r: 0.85, g: 0.75, b: 0.35, a: 1}
+    powerBonus: 9
+    cooldownSeconds: 3.5
+    onCastEffects: []
+  passiveEffects: []
+  isTwoHanded: 1
+  attackSpeed: 0.7
+  isRanged: 1
+  potionEffect: 0
+  potionAmount: 20
+  attributeScalingEntries:
+  - attribute: 1
+    coefficient: 0.6
+  - attribute: 0
+    coefficient: 0.4

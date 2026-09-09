@@ -31,11 +31,11 @@ namespace DoomScroller.Combat
         private const float UnarmedAttackSpeed = 0.6f;
         private const float MinIntervalSeconds = 0.05f;
 
-        // Global stat effects that aren't weapon-specific (Strength/Dexterity/Spirit
-        // are expressed purely through each weapon's own StatScaling entries instead —
-        // there's no single global coefficient for those three).
-        private const float EnduranceAttackSpeedPerPoint = 0.015f;
-        private const float IntelligenceCooldownDivisorPerPoint = 0.03f;
+        // Global attribute effects that aren't weapon-specific (Constitution's/Agility's/
+        // Spirit's damage halves are expressed purely through each weapon's own
+        // AttributeScaling entries instead — there's no single global coefficient for those).
+        private const float AgilityAttackSpeedPerPoint = 0.015f;
+        private const float SpiritCooldownDivisorPerPoint = 0.03f;
 
         private readonly List<AttackTimer> _timers;
         private readonly Dictionary<string, ManualAbility> _manualAbilities = new();
@@ -54,7 +54,7 @@ namespace DoomScroller.Combat
         public bool IsPlayerDead => PlayerHp <= 0;
         public bool IsEnemyDead => EnemyHp <= 0;
 
-        public CombatSimulator(PlayerLoadout loadout, PlayerStats stats, GameSettings settings, int playerStartHp,
+        public CombatSimulator(PlayerLoadout loadout, PlayerAttributes attributes, GameSettings settings, int playerStartHp,
             int enemyMaxHealth, int enemyAttackDamage, float enemyAttackSpeed, System.Random rng)
         {
             _rng = rng;
@@ -62,7 +62,7 @@ namespace DoomScroller.Combat
             EnemyHp = EnemyMaxHp = enemyMaxHealth;
 
             var passives = ComputePassiveTotals(loadout);
-            var basicAttack = ComputeBasicAttackProfile(loadout, stats, passives);
+            var basicAttack = ComputeBasicAttackProfile(loadout, attributes, passives);
             _playerDefense = EstimatePlayerDefense(loadout);
 
             // A passive WeakenDamage/SlowAttackSpeed weapon actually changes the fight,
@@ -85,7 +85,7 @@ namespace DoomScroller.Combat
                 }
             }
 
-            foreach (var abilityProfile in ComputeAbilityProfiles(loadout, stats, passives))
+            foreach (var abilityProfile in ComputeAbilityProfiles(loadout, attributes, passives))
             {
                 if (settings.ManualAbilityCasting)
                 {
@@ -121,7 +121,7 @@ namespace DoomScroller.Combat
         // The player's basic-attack damage/speed from currently equipped weapon(s) (or
         // unarmed) — shared by the constructor and by EstimatePlayerDps below, so the
         // feed badge's difficulty estimate can never drift from what a fight actually does.
-        private static WeaponAttackProfile ComputeBasicAttackProfile(PlayerLoadout loadout, PlayerStats stats,
+        private static WeaponAttackProfile ComputeBasicAttackProfile(PlayerLoadout loadout, PlayerAttributes attributes,
             PassiveTotals passives)
         {
             var leftHand = loadout.GetEquipped(EquipmentSlotType.LeftHand);
@@ -131,12 +131,12 @@ namespace DoomScroller.Combat
             if (rightHand?.category == ItemCategory.Weapon) weapons.Add(rightHand);
 
             var damage = weapons.Count > 0
-                ? weapons.Sum(w => w.powerValue + ScalingBonus(w, stats))
+                ? weapons.Sum(w => w.powerValue + ScalingBonus(w, attributes))
                 : UnarmedAttackDamage;
             damage = Mathf.RoundToInt(damage * passives.SelfDamageMultiplier);
 
             var speed = (weapons.Count > 0 ? weapons.Average(w => w.attackSpeed) : UnarmedAttackSpeed)
-                + stats.Get(PlayerStat.Endurance) * EnduranceAttackSpeedPerPoint;
+                + attributes.Get(PlayerAttribute.Agility) * AgilityAttackSpeedPerPoint;
             speed *= passives.SelfSpeedMultiplier;
 
             var isRanged = weapons.Any(w => w.isRanged);
@@ -147,17 +147,17 @@ namespace DoomScroller.Combat
         // Damage/cooldown for every ability on a currently-equipped weapon — shared by
         // the constructor (which routes each into the auto-timer list or the manual
         // dictionary) and by EstimatePlayerDps below.
-        private static IEnumerable<AbilityProfile> ComputeAbilityProfiles(PlayerLoadout loadout, PlayerStats stats,
+        private static IEnumerable<AbilityProfile> ComputeAbilityProfiles(PlayerLoadout loadout, PlayerAttributes attributes,
             PassiveTotals passives)
         {
-            var cooldownDivisor = 1f + stats.Get(PlayerStat.Intelligence) * IntelligenceCooldownDivisorPerPoint;
+            var cooldownDivisor = 1f + attributes.Get(PlayerAttribute.Spirit) * SpiritCooldownDivisorPerPoint;
             foreach (var (weapon, ability) in loadout.GetEquippedWeaponAbilityPairs())
             {
                 // An ability hits harder than a basic swing while scaling identically
-                // off whatever the weapon scales off: the same base-power + stat-scaling
+                // off whatever the weapon scales off: the same base-power + attribute-scaling
                 // math a basic attack uses, plus the ability's own bonus on top.
                 var damage = Mathf.RoundToInt(
-                    (weapon.powerValue + ScalingBonus(weapon, stats) + ability.powerBonus) * passives.SelfDamageMultiplier);
+                    (weapon.powerValue + ScalingBonus(weapon, attributes) + ability.powerBonus) * passives.SelfDamageMultiplier);
                 var cooldown = Mathf.Max(MinIntervalSeconds, ability.cooldownSeconds / cooldownDivisor);
                 yield return new AbilityProfile(ability.abilityName, damage, cooldown);
             }
@@ -210,13 +210,13 @@ namespace DoomScroller.Combat
         // Basic attack plus every ability's damage/cooldown averaged into a rate, plus
         // any passive DoT's guaranteed tick rate. Deliberately doesn't average in the
         // uptime of temporary on-cast effects — see CombatResolver.
-        public static float EstimatePlayerDps(PlayerLoadout loadout, PlayerStats stats)
+        public static float EstimatePlayerDps(PlayerLoadout loadout, PlayerAttributes attributes)
         {
             var passives = ComputePassiveTotals(loadout);
-            var basicAttack = ComputeBasicAttackProfile(loadout, stats, passives);
+            var basicAttack = ComputeBasicAttackProfile(loadout, attributes, passives);
             var dps = basicAttack.Damage * basicAttack.Speed;
 
-            foreach (var ability in ComputeAbilityProfiles(loadout, stats, passives))
+            foreach (var ability in ComputeAbilityProfiles(loadout, attributes, passives))
             {
                 dps += ability.Damage / ability.Cooldown;
             }
@@ -259,21 +259,22 @@ namespace DoomScroller.Combat
             return ComputePassiveTotals(loadout).EnemySpeedMultiplier;
         }
 
-        // Strength/Dexterity/Spirit have no single global coefficient — each weapon
-        // defines which stat(s) it scales off and by how much, so a weapon concept can
-        // scale off more than one (a magic sword off Strength and Spirit, a heavy bow
-        // off Dexterity and Strength) and different tiers can scale differently.
-        private static int ScalingBonus(ItemData weapon, PlayerStats stats)
+        // Constitution/Agility/Spirit's damage halves have no single global coefficient —
+        // each weapon defines which attribute(s) it scales off and by how much, so a
+        // weapon concept can scale off more than one (a magic sword off Constitution and
+        // Spirit, a heavy bow off Agility and Constitution) and different tiers can scale
+        // differently.
+        private static int ScalingBonus(ItemData weapon, PlayerAttributes attributes)
         {
-            if (weapon.statScalingEntries == null || weapon.statScalingEntries.Length == 0)
+            if (weapon.attributeScalingEntries == null || weapon.attributeScalingEntries.Length == 0)
             {
                 return 0;
             }
 
             var bonus = 0f;
-            foreach (var entry in weapon.statScalingEntries)
+            foreach (var entry in weapon.attributeScalingEntries)
             {
-                bonus += stats.Get(entry.stat) * entry.coefficient;
+                bonus += attributes.Get(entry.attribute) * entry.coefficient;
             }
 
             return Mathf.RoundToInt(bonus);
@@ -344,7 +345,7 @@ namespace DoomScroller.Combat
 
         // Only the two basic-attack timers (no AbilityName, not a DoT) are affected by
         // Haste/Slow — ability cooldowns and DoT tick rates stay exactly as authored
-        // (Intelligence is still the only thing that moves an ability's cooldown), so
+        // (Spirit is still the only thing that moves an ability's cooldown), so
         // attack-speed effects can't have surprise interactions with cooldown pacing.
         private float GetIntervalSeconds(AttackTimer actor)
         {

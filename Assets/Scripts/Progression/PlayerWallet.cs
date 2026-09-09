@@ -42,5 +42,12 @@ namespace DoomScroller.Progression
             Changed?.Invoke();
             return true;
         }
+
+        // The save/load path. Doesn't fire Changed — called once, before anything
+        // subscribes.
+        public void LoadState(int gold)
+        {
+            Gold = gold;
+        }
     }
 }

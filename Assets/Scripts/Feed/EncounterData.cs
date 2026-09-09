@@ -1,3 +1,4 @@
+using DoomScroller.Inventory;
 using UnityEngine;
 
 namespace DoomScroller.Feed
@@ -36,5 +37,13 @@ namespace DoomScroller.Feed
 
         [Tooltip("Enemy basic attacks per second.")]
         public float enemyAttackSpeed = 0.8f;
+
+        [Header("Resource Encounter")]
+        [Tooltip("Only relevant when type is Resource. The material instantly granted on entry.")]
+        public ItemData resourceMaterial;
+
+        [Tooltip("Only relevant when type is Resource. Units granted before scaling by the " +
+                  "player's Expertise (PlayerAttributes.ResourceYieldMultiplier).")]
+        public int baseResourceYield = 5;
     }
 }

@@ -27,6 +27,7 @@ namespace DoomScroller.Progression
 
         private const float MaterialChance = 0.3f;
         private const int MaterialPrice = 15;
+        private const int MaterialSellValue = 5;
         private static readonly string[] MaterialNames =
         {
             "Iron Ore", "Ancient Bone", "Enchanted Thread", "Dragon Scale Fragment"
@@ -62,13 +63,21 @@ namespace DoomScroller.Progression
 
         private static MarketEntry GenerateMaterial(System.Random rng)
         {
+            return new MarketEntry(GenerateMaterialItem(rng), MaterialPrice);
+        }
+
+        // Shared with CraftingGenerator (the Blacksmith's Materials tab) — the one place
+        // a Material ItemData is actually constructed, so both can't drift apart.
+        public static ItemData GenerateMaterialItem(System.Random rng)
+        {
             var item = ScriptableObject.CreateInstance<ItemData>();
             item.title = MaterialNames[rng.Next(MaterialNames.Length)];
             item.category = ItemCategory.Material;
             item.statSummary = "Crafting material";
             item.powerValue = 0;
             item.itemColor = MaterialColor;
-            return new MarketEntry(item, MaterialPrice);
+            item.goldValue = MaterialSellValue;
+            return item;
         }
     }
 }

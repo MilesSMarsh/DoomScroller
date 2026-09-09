@@ -10,6 +10,10 @@ namespace DoomScroller.Progression
     {
         private static readonly string[] RarityNames = { "Common", "Uncommon", "Rare" };
         private static readonly int[] RarityPower = { 8, 14, 22 };
+
+        // Sell price at the Market's Sell tab — a placeholder scale parallel to
+        // RarityPower, tuned later per the user's own call on this.
+        private static readonly int[] RarityGoldValue = { 12, 20, 35 };
         private static readonly Color[] RarityColors =
         {
             new(0.7f, 0.7f, 0.7f, 1f),
@@ -57,6 +61,7 @@ namespace DoomScroller.Progression
             item.statSummary = $"+{power} {ItemCategoryInfo.Label(category)}";
             item.powerValue = power;
             item.itemColor = RarityColors[rarityTierIndex];
+            item.goldValue = RarityGoldValue[rarityTierIndex];
 
             if (category == ItemCategory.Weapon)
             {

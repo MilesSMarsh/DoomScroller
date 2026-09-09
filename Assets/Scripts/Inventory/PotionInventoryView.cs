@@ -15,7 +15,7 @@ namespace DoomScroller.Inventory
     // A settings row at the top controls whether that auto-consumes or pauses to ask
     // (see CombatPlaybackView.Play). A plain embeddable content block, not a screen of
     // its own — its own root GameObject is what ProfileView shows/hides when switching
-    // sub-tabs, same shape VillageTavernView/StatsPanelView already are.
+    // sub-tabs, same shape VillageTavernView/AttributesPanelView already are.
     public class PotionInventoryView : MonoBehaviour
     {
         private const float IconSize = 110f;
@@ -107,20 +107,23 @@ namespace DoomScroller.Inventory
                 Destroy(_listContainer.GetChild(i).gameObject);
             }
 
-            var potions = _loadout.GetPotions().ToList();
-            if (potions.Count == 0)
+            // Grouped by item reference (same convention ProfileView.RefreshMaterials
+            // already uses) so N owned copies of the same potion show as one stacked row
+            // rather than N identical rows.
+            var groups = _loadout.GetPotions().GroupBy(p => p).ToList();
+            if (groups.Count == 0)
             {
                 CreateLabel(_listContainer, "NoPotions", "No potions yet", 28, FontStyle.Normal);
                 return;
             }
 
-            foreach (var potion in potions)
+            foreach (var group in groups)
             {
-                CreatePotionRow(potion);
+                CreatePotionRow(group.Key, group.Count());
             }
         }
 
-        private void CreatePotionRow(ItemData potion)
+        private void CreatePotionRow(ItemData potion, int count)
         {
             var rowGo = new GameObject($"Potion_{potion.title}", typeof(RectTransform));
             rowGo.transform.SetParent(_listContainer, false);
@@ -146,13 +149,17 @@ namespace DoomScroller.Inventory
             var row = GearRowFactory.Create(infoGo.transform, IconSize, 24, 32, 28);
             row.Icon.color = potion.itemColor;
             row.CaptionText.text = potion.potionEffect == PotionEffect.MaxHealthRestore ? "Max HP Potion" : "Revive Potion";
-            row.TitleText.text = potion.title;
+            row.TitleText.text = count > 1 ? $"{potion.title} (x{count} owned)" : potion.title;
             row.StatText.text = potion.potionEffect == PotionEffect.MaxHealthRestore
                 ? $"Restores {potion.potionAmount} max HP"
                 : $"Revives at {potion.potionAmount} HP if you'd die";
 
             if (potion.potionEffect == PotionEffect.MaxHealthRestore)
             {
+                // Removes exactly one unit — every stacked copy is the same ItemData
+                // reference, so which "instance" is consumed is meaningless; the row's
+                // count (and, once it hits zero, the row itself) updates via the
+                // Refresh() this triggers regardless.
                 CreateActionButton(rowGo.transform, "DrinkButton", "Drink", 200, 150,
                     new Color(0.2f, 0.55f, 0.3f, 0.7f), () =>
                     {

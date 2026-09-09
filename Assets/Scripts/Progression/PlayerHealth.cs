@@ -20,6 +20,12 @@ namespace DoomScroller.Progression
         public int TrueMaxHealth { get; private set; }
         public int CurrentMaxHealth { get; private set; }
 
+        // Exposed for SaveSystem — Regenerate() computes elapsed time from this against
+        // wall-clock DateTime.UtcNow, so restoring it (not just the two HP fields) means
+        // offline time between sessions is correctly credited on the very next
+        // Regenerate() call, the same way backgrounding the app already is today.
+        public long LastRegenUtcTicks => _lastRegenUtc.Ticks;
+
         private readonly int _regenPerInterval;
         private readonly float _regenIntervalSeconds;
         private DateTime _lastRegenUtc;
@@ -39,6 +45,15 @@ namespace DoomScroller.Progression
             _lastRegenUtc = DateTime.UtcNow;
         }
 
+        // The save/load path — restores both HP fields and the regen clock directly.
+        // Doesn't fire Changed — called once, before anything subscribes.
+        public void LoadState(int trueMax, int currentMax, long lastRegenUtcTicks)
+        {
+            TrueMaxHealth = trueMax;
+            CurrentMaxHealth = currentMax;
+            _lastRegenUtc = new DateTime(lastRegenUtcTicks, DateTimeKind.Utc);
+        }
+
         // Called once when a fight ends in defeat (including leaving one early).
         public void ApplyDefeatPenalty()
         {
@@ -47,12 +62,12 @@ namespace DoomScroller.Progression
             Changed?.Invoke();
         }
 
-        // Vigor's effect — ProfileController recomputes the intended true max whenever
-        // PlayerStats changes and pushes it here. Raising the ceiling raises
+        // Constitution's effect — ProfileController recomputes the intended true max
+        // whenever PlayerAttributes changes and pushes it here. Raising the ceiling raises
         // CurrentMaxHealth by the same amount immediately (you don't have to regen into
-        // a stat point you just spent); lowering it (not currently possible — stats
-        // only ever go up) would shrink CurrentMaxHealth proportionally via the same
-        // delta, clamped to the floor.
+        // an attribute point you just spent); lowering it (not currently possible —
+        // attributes only ever go up) would shrink CurrentMaxHealth proportionally via
+        // the same delta, clamped to the floor.
         public void SetTrueMaxHealth(int newTrueMax)
         {
             var delta = newTrueMax - TrueMaxHealth;

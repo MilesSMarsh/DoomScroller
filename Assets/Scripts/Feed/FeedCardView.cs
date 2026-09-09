@@ -248,6 +248,8 @@ namespace DoomScroller.Feed
             {
                 EncounterType.Tavern => "No combat — shop, chat, and upgrade",
                 EncounterType.Dungeon => $"+{data.baseXpReward}+ XP · Common → Rare Gear",
+                EncounterType.Resource => $"+{data.baseResourceYield}+ {data.resourceMaterial.title}",
+                EncounterType.Landing => "",
                 _ => $"+{data.baseXpReward} XP · Common Gear"
             };
         }
@@ -262,6 +264,8 @@ namespace DoomScroller.Feed
                 EncounterType.Treasure => "Collect",
                 EncounterType.Dungeon => "Enter",
                 EncounterType.Tavern => "Enter",
+                EncounterType.Resource => "Gather",
+                EncounterType.Landing => "",
                 _ => "Enter"
             };
         }
@@ -274,6 +278,8 @@ namespace DoomScroller.Feed
                 EncounterType.Treasure => new Color(0.8f, 0.65f, 0.15f, 0.9f),
                 EncounterType.Dungeon => new Color(0.4f, 0.3f, 0.65f, 0.9f),
                 EncounterType.Tavern => new Color(0.5f, 0.35f, 0.2f, 0.9f),
+                EncounterType.Resource => new Color(0.35f, 0.55f, 0.25f, 0.9f),
+                EncounterType.Landing => new Color(1f, 1f, 1f, 0.08f),
                 _ => new Color(1f, 1f, 1f, 0.15f)
             };
         }
@@ -288,6 +294,8 @@ namespace DoomScroller.Feed
             {
                 EncounterType.Dungeon => "Dungeon Door",
                 EncounterType.Tavern => "The Village",
+                EncounterType.Resource => $"{data.resourceMaterial.title} Node",
+                EncounterType.Landing => "",
                 _ => $"{data.type} · {EntryDifficultyLabel}"
             };
         }

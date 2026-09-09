@@ -28,11 +28,26 @@ namespace DoomScroller.Progression
             {
                 CurrentXp -= XpToNextLevel;
                 Level++;
-                XpToNextLevel = Mathf.RoundToInt(BaseXpToNextLevel * (1f + (Level - 1) * XpGrowthPerLevel));
+                XpToNextLevel = ComputeXpToNextLevel(Level);
                 LeveledUp?.Invoke(Level);
             }
 
             Changed?.Invoke();
+        }
+
+        private static int ComputeXpToNextLevel(int level)
+        {
+            return Mathf.RoundToInt(BaseXpToNextLevel * (1f + (level - 1) * XpGrowthPerLevel));
+        }
+
+        // The save/load path — restores Level/CurrentXp directly and recomputes
+        // XpToNextLevel via the same formula AddXp uses, so the two can never drift.
+        // Doesn't fire Changed — called once, before anything subscribes.
+        public void LoadState(int level, int currentXp)
+        {
+            Level = level;
+            CurrentXp = currentXp;
+            XpToNextLevel = ComputeXpToNextLevel(level);
         }
     }
 }

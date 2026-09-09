@@ -15,7 +15,7 @@ namespace DoomScroller.Combat
         // Plain single-resolution encounters (Enemy/Treasure feed cards) — enemy combat
         // stats come straight from the authored asset. Null for Treasure — there's no
         // fight to simulate; the caller treats a null simulator as an instant win.
-        public static CombatSimulator CreateSimulator(PlayerLoadout loadout, PlayerStats stats, GameSettings settings,
+        public static CombatSimulator CreateSimulator(PlayerLoadout loadout, PlayerAttributes attributes, GameSettings settings,
             EncounterData data, int playerStartHp, Random rng = null)
         {
             if (data.type == EncounterType.Treasure)
@@ -23,14 +23,14 @@ namespace DoomScroller.Combat
                 return null;
             }
 
-            return new CombatSimulator(loadout, stats, settings, playerStartHp, data.enemyHealth,
+            return new CombatSimulator(loadout, attributes, settings, playerStartHp, data.enemyHealth,
                 data.enemyAttackDamage, data.enemyAttackSpeed, rng ?? new Random());
         }
 
         // One page of a dungeon run — enemy stats come from the generated step (scaled
         // per depth by DungeonGenerator) instead of the raw asset. Null for the
         // treasure-room step, same reasoning as above.
-        public static CombatSimulator CreateSimulatorForStep(PlayerLoadout loadout, PlayerStats stats,
+        public static CombatSimulator CreateSimulatorForStep(PlayerLoadout loadout, PlayerAttributes attributes,
             GameSettings settings, DungeonStep step, int playerStartHp, Random rng = null)
         {
             // Both resolve instantly with no fight — CombatPlaybackView.Play already
@@ -40,7 +40,7 @@ namespace DoomScroller.Combat
                 return null;
             }
 
-            return new CombatSimulator(loadout, stats, settings, playerStartHp, step.EnemyHealth,
+            return new CombatSimulator(loadout, attributes, settings, playerStartHp, step.EnemyHealth,
                 step.EnemyAttackDamage, step.EnemyAttackSpeed, rng ?? new Random());
         }
 
@@ -54,35 +54,39 @@ namespace DoomScroller.Combat
         private const float WinChanceSteepness = 2f;
         private const float MinDps = 0.01f;
 
-        public static float PredictWinChance(PlayerLoadout loadout, PlayerStats stats, PlayerHealth health, EncounterData data)
+        public static float PredictWinChance(PlayerLoadout loadout, PlayerAttributes attributes, PlayerHealth health, EncounterData data)
         {
-            // Neither ever fights — Tavern is a non-combat social hub (see TavernView).
-            if (data.type == EncounterType.Treasure || data.type == EncounterType.Tavern)
+            // None of these ever fight — Tavern is a non-combat social hub (see
+            // TavernView), Resource nodes are an instant gather (see ResourceEncounterView),
+            // Landing is the blank first-open card (see FeedController).
+            if (data.type == EncounterType.Treasure || data.type == EncounterType.Tavern ||
+                data.type == EncounterType.Resource || data.type == EncounterType.Landing)
             {
                 return 1f;
             }
 
-            return ComputeWinChance(loadout, stats, health.CurrentMaxHealth, data.enemyHealth, data.enemyAttackDamage,
+            return ComputeWinChance(loadout, attributes, health.CurrentMaxHealth, data.enemyHealth, data.enemyAttackDamage,
                 data.enemyAttackSpeed);
         }
 
-        public static float PredictCloseCallChance(PlayerLoadout loadout, PlayerStats stats, PlayerHealth health, EncounterData data)
+        public static float PredictCloseCallChance(PlayerLoadout loadout, PlayerAttributes attributes, PlayerHealth health, EncounterData data)
         {
-            if (data.type == EncounterType.Treasure || data.type == EncounterType.Tavern)
+            if (data.type == EncounterType.Treasure || data.type == EncounterType.Tavern ||
+                data.type == EncounterType.Resource || data.type == EncounterType.Landing)
             {
                 return 0f;
             }
 
-            var winChance = PredictWinChance(loadout, stats, health, data);
+            var winChance = PredictWinChance(loadout, attributes, health, data);
             // Peaks at an even (50/50) fight and fades out toward either lopsided edge —
             // an early tuning knob, same as CombatSimulator's own DamageVariance/MissChance.
             return MathF.Max(0f, 0.3f - MathF.Abs(winChance - 0.5f) * 1.2f);
         }
 
-        private static float ComputeWinChance(PlayerLoadout loadout, PlayerStats stats, int playerHealth,
+        private static float ComputeWinChance(PlayerLoadout loadout, PlayerAttributes attributes, int playerHealth,
             int enemyHealth, int enemyAttackDamage, float enemyAttackSpeed)
         {
-            var playerDps = MathF.Max(MinDps, CombatSimulator.EstimatePlayerDps(loadout, stats));
+            var playerDps = MathF.Max(MinDps, CombatSimulator.EstimatePlayerDps(loadout, attributes));
             var playerDefense = CombatSimulator.EstimatePlayerDefense(loadout);
             // Passive WeakenDamage/SlowAttackSpeed weapons lower the enemy's own stats
             // here too — same multipliers the real fight applies in CombatSimulator's

@@ -119,7 +119,7 @@ namespace DoomScroller.Encounters
         // DungeonView's running HP total for the run, not health.CurrentMaxHealth
         // directly — see DungeonView._runningPlayerHp.
         public void Resolve(DungeonStep step, PlayerLoadout loadout, PlayerProgression progression,
-            PlayerHealth health, PlayerStats stats, GameSettings settings, PlayerWallet wallet, int playerStartHp,
+            PlayerHealth health, PlayerAttributes attributes, GameSettings settings, PlayerWallet wallet, int playerStartHp,
             int accumulatedGold)
         {
             _step = step;
@@ -128,7 +128,7 @@ namespace DoomScroller.Encounters
             var isFight = !step.IsTreasureRoom && !step.IsRestRoom;
             _playback.gameObject.SetActive(isFight);
 
-            var sim = CombatResolver.CreateSimulatorForStep(loadout, stats, settings, step, playerStartHp);
+            var sim = CombatResolver.CreateSimulatorForStep(loadout, attributes, settings, step, playerStartHp);
 
             _outcomeText.text = "";
             _rewardText.text = "";

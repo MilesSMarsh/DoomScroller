@@ -19,6 +19,7 @@ namespace DoomScroller.Encounters
 
         private PlayerLoadout _loadout;
         private PlayerWallet _wallet;
+        private PlayerAttributes _attributes;
 
         private Text _capacityStatusText;
         private Text _capacityCostText;
@@ -77,15 +78,17 @@ namespace DoomScroller.Encounters
         }
 
         // Called once per Village visit (see VillageView.Show).
-        public void Show(PlayerLoadout loadout, PlayerWallet wallet)
+        public void Show(PlayerLoadout loadout, PlayerWallet wallet, PlayerAttributes attributes)
         {
             _loadout = loadout;
             _wallet = wallet;
+            _attributes = attributes;
             Refresh();
         }
 
         private static int GoldCostFor(int level) => BaseGoldCost + level * GoldCostPerLevel;
         private static int MaterialsCostFor(int level) => BaseMaterialsCost + level * MaterialsCostPerLevel;
+        private int DiscountedGoldCostFor(int level) => Mathf.RoundToInt(GoldCostFor(level) * _attributes.GoldCostMultiplier);
 
         private void Refresh()
         {
@@ -128,7 +131,7 @@ namespace DoomScroller.Encounters
                 return;
             }
 
-            var goldCost = GoldCostFor(level);
+            var goldCost = DiscountedGoldCostFor(level);
             var materialsCost = MaterialsCostFor(level);
             costText.text = $"Cost: {goldCost}g + {materialsCost} materials (you have {ownedMaterials})";
             label.text = "Upgrade";
@@ -139,7 +142,7 @@ namespace DoomScroller.Encounters
         {
             var potion = _loadout.GetKnownRevivePotionType();
             var level = _loadout.GetReviveCapacityLevel(potion);
-            _loadout.TryUpgradeReviveCapacity(potion, _wallet, GoldCostFor(level), MaterialsCostFor(level));
+            _loadout.TryUpgradeReviveCapacity(potion, _wallet, DiscountedGoldCostFor(level), MaterialsCostFor(level));
             Refresh();
         }
 
@@ -147,7 +150,7 @@ namespace DoomScroller.Encounters
         {
             var potion = _loadout.GetKnownRevivePotionType();
             var level = _loadout.GetReviveQualityLevel(potion);
-            _loadout.TryUpgradeReviveQuality(potion, _wallet, GoldCostFor(level), MaterialsCostFor(level));
+            _loadout.TryUpgradeReviveQuality(potion, _wallet, DiscountedGoldCostFor(level), MaterialsCostFor(level));
             Refresh();
         }
 

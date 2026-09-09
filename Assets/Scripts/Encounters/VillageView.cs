@@ -21,12 +21,16 @@ namespace DoomScroller.Encounters
     // Adding a new establishment later is a two-line change: write its own
     // `static XyzView Create(Transform parent)` view class (same shape as every other
     // view in this project), then add one entry to Establishments below.
-    public class VillageView : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
+    //
+    // Swiping is only recognized starting on the EstablishmentStrip bar (see
+    // SwipeForwarder below) — not this whole screen — specifically so an establishment's
+    // own content is free to hold a ScrollRect of its own (e.g. VillageBlacksmithView's
+    // recipe lists) without it fighting the page-swipe gesture for the same drag.
+    public class VillageView : MonoBehaviour
     {
         private const float SnapSpeed = 12f;
         private const float SnapThreshold = 0.5f;
         private const float HorizontalSwipeThreshold = 80f;
-        private const float AxisLockThreshold = 12f;
 
         // The single registration point for the Village's establishments — label plus a
         // static Create(Transform) factory, same pattern the rest of this project's
@@ -51,6 +55,7 @@ namespace DoomScroller.Encounters
         private VillageInnView _innView;
         private VillageMarketView _marketView;
         private VillageAlchemistView _alchemistView;
+        private VillageBlacksmithView _blacksmithView;
 
         // The persistent "you are here, swipe for these" strip above the pager — see
         // UpdateEstablishmentStrip.
@@ -65,7 +70,6 @@ namespace DoomScroller.Encounters
         private float _targetX;
 
         private Vector2 _dragStart;
-        private bool? _dragIsHorizontal;
 
         public static VillageView Create(Transform parent)
         {
@@ -90,14 +94,18 @@ namespace DoomScroller.Encounters
 
             var view = go.AddComponent<VillageView>();
 
-            // A persistent strip above the pager — current establishment centered and
+            // A persistent bar above the pager — current establishment centered and
             // highlighted, with the establishment on either side named next to a swipe
-            // arrow (blank/no-arrow at either end of the list). Doubles as the "you can
-            // swipe" affordance, since nothing else on this screen otherwise hints at it.
+            // arrow (blank/no-arrow at either end of the list). Its own background color
+            // (distinct from the page behind it) so it visually reads as a control
+            // surface, not text floating on the page — this is also the *only* place a
+            // swipe is recognized (see SwipeForwarder), so it needs to look tappable.
             var stripGo = new GameObject("EstablishmentStrip", typeof(RectTransform));
             stripGo.transform.SetParent(rect, false);
             var stripLayout = stripGo.AddComponent<LayoutElement>();
-            SetFixedHeight(stripLayout, 70);
+            SetFixedHeight(stripLayout, 130);
+            stripGo.AddComponent<Image>().color = new Color(0.22f, 0.16f, 0.1f, 1f);
+            stripGo.AddComponent<SwipeForwarder>().Target = view;
 
             var stripGroup = stripGo.AddComponent<HorizontalLayoutGroup>();
             stripGroup.padding = new RectOffset(24, 24, 0, 0);
@@ -188,13 +196,11 @@ namespace DoomScroller.Encounters
                 // already names the current establishment; a second big title on every
                 // page just duplicated it.
 
-                // Deliberately no ScrollAreaFactory here: its ScrollRect is itself an
-                // IBeginDragHandler/IDragHandler, and being a closer ancestor than this
-                // view's own root, it would swallow every drag gesture that starts over
-                // it — including horizontal swipes meant for the outer pager — before
-                // VillageView's own handlers ever see them. Same reasoning is why
-                // DungeonStepPageView's content isn't wrapped in a scroll area either;
-                // overflow clips at the pager's RectMask2D instead of scrolling.
+                // An establishment is free to wrap its own content in a ScrollAreaFactory
+                // area if it needs to (e.g. VillageBlacksmithView's recipe lists) — the
+                // page-swipe gesture only ever starts on the EstablishmentStrip bar (see
+                // SwipeForwarder), so a ScrollRect here no longer has anything to
+                // conflict with.
                 var establishment = createEstablishment(pageGo.transform);
 
                 if (establishment is VillageTavernView tavern)
@@ -213,6 +219,10 @@ namespace DoomScroller.Encounters
                 {
                     view._alchemistView = alchemist;
                 }
+                else if (establishment is VillageBlacksmithView blacksmith)
+                {
+                    view._blacksmithView = blacksmith;
+                }
             }
 
             CreateButton(rect, "ReturnButton", "Leave", () => view.ReturnToFeedRequested?.Invoke());
@@ -221,14 +231,16 @@ namespace DoomScroller.Encounters
             return view;
         }
 
-        public void Show(EncounterData data, PlayerLoadout loadout, PlayerHealth health, PlayerWallet wallet)
+        public void Show(EncounterData data, PlayerLoadout loadout, PlayerHealth health, PlayerWallet wallet,
+            PlayerAttributes attributes)
         {
             gameObject.SetActive(true);
 
-            _tavernView.Show(loadout, wallet);
+            _tavernView.Show(loadout, wallet, attributes, data);
             _innView.Show(health);
-            _marketView.Show(loadout, wallet);
-            _alchemistView.Show(loadout, wallet);
+            _marketView.Show(loadout, wallet, attributes, data);
+            _alchemistView.Show(loadout, wallet, attributes);
+            _blacksmithView.Show(loadout, wallet, attributes);
 
             // Create() ran at EncounterFlowController.Awake() time, when the canvas may
             // not have settled to its real screen size yet — same lesson learned on
@@ -254,49 +266,46 @@ namespace DoomScroller.Encounters
             gameObject.SetActive(false);
         }
 
-        public void OnBeginDrag(PointerEventData eventData)
+        // Called only via SwipeForwarder, which sits on the EstablishmentStrip bar —
+        // never directly by the event system, since VillageView itself no longer
+        // implements the drag interfaces. Nothing vertical competes for a drag that
+        // starts on the strip, so unlike DungeonView's equivalent there's no axis lock
+        // to do here — every drag from here is treated as a page gesture directly.
+        public void HandleStripBeginDrag(PointerEventData eventData)
         {
             _dragStart = eventData.position;
-            _dragIsHorizontal = null;
             _isSnapping = false;
         }
 
-        public void OnDrag(PointerEventData eventData)
+        public void HandleStripDrag(PointerEventData eventData)
         {
             var delta = eventData.position - _dragStart;
-
-            if (_dragIsHorizontal == null)
-            {
-                if (Mathf.Abs(delta.x) < AxisLockThreshold && Mathf.Abs(delta.y) < AxisLockThreshold)
-                {
-                    return;
-                }
-
-                _dragIsHorizontal = Mathf.Abs(delta.x) >= Mathf.Abs(delta.y);
-            }
-
-            if (_dragIsHorizontal == true)
-            {
-                var pos = _content.anchoredPosition;
-                pos.x = -_currentPage * _pageWidth + delta.x;
-                _content.anchoredPosition = pos;
-            }
+            var pos = _content.anchoredPosition;
+            pos.x = -_currentPage * _pageWidth + delta.x;
+            _content.anchoredPosition = pos;
         }
 
-        public void OnEndDrag(PointerEventData eventData)
+        public void HandleStripEndDrag(PointerEventData eventData)
         {
-            if (_dragIsHorizontal != true)
-            {
-                SnapTo(_currentPage);
-                return;
-            }
-
             var delta = eventData.position - _dragStart;
             var desired = Mathf.Abs(delta.x) >= HorizontalSwipeThreshold
                 ? _currentPage + (delta.x < 0 ? 1 : -1)
                 : _currentPage;
 
             SnapTo(Mathf.Clamp(desired, 0, _pageCount - 1));
+        }
+
+        // The only thing in this screen that actually implements the drag interfaces —
+        // sits on the EstablishmentStrip GameObject only, so a swipe is recognized
+        // exactly there and nowhere else, leaving every establishment's own content free
+        // to hold a ScrollRect without a conflicting ancestor drag handler. Just forwards
+        // to VillageView, which still owns all the real paging state/logic.
+        private class SwipeForwarder : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
+        {
+            public VillageView Target;
+            public void OnBeginDrag(PointerEventData eventData) => Target.HandleStripBeginDrag(eventData);
+            public void OnDrag(PointerEventData eventData) => Target.HandleStripDrag(eventData);
+            public void OnEndDrag(PointerEventData eventData) => Target.HandleStripEndDrag(eventData);
         }
 
         private void SnapTo(int page)
