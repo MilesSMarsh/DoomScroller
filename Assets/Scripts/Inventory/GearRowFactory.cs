@@ -10,16 +10,22 @@ namespace DoomScroller.Inventory
     // populate.
     public static class GearRowFactory
     {
+        // How thick the rarity-colored ring around an icon reads — thin enough to stay
+        // a border, not a second background.
+        private const float BorderThickness = 4f;
+
         public readonly struct Row
         {
             public readonly Image Icon;
+            public readonly Image Border;
             public readonly Text CaptionText;
             public readonly Text TitleText;
             public readonly Text StatText;
 
-            public Row(Image icon, Text captionText, Text titleText, Text statText)
+            public Row(Image icon, Image border, Text captionText, Text titleText, Text statText)
             {
                 Icon = icon;
+                Border = border;
                 CaptionText = captionText;
                 TitleText = titleText;
                 StatText = statText;
@@ -47,10 +53,7 @@ namespace DoomScroller.Inventory
             rowLayout.childControlWidth = true;
             rowLayout.childControlHeight = true;
 
-            var iconGo = new GameObject("Icon", typeof(RectTransform));
-            iconGo.transform.SetParent(rowGo.transform, false);
-            SetFixedLayout(iconGo.AddComponent<LayoutElement>(), squareSize, squareSize);
-            var icon = iconGo.AddComponent<Image>();
+            var (icon, border) = CreateIconFrame(rowGo.transform, squareSize);
 
             var textColumnGo = new GameObject("TextColumn", typeof(RectTransform));
             textColumnGo.transform.SetParent(rowGo.transform, false);
@@ -73,7 +76,58 @@ namespace DoomScroller.Inventory
             var title = CreateText(textColumnGo.transform, titleSize, FontStyle.Bold, Color.white);
             var stat = CreateText(textColumnGo.transform, statSize, FontStyle.Normal, new Color(1f, 1f, 1f, 0.7f));
 
-            return new Row(icon, caption, title, stat);
+            return new Row(icon, border, caption, title, stat);
+        }
+
+        // A rarity-colored frame behind an icon square, inset by BorderThickness on
+        // every side — reads as a colored ring regardless of whether the icon ends up a
+        // real sprite or the flat itemColor fallback square (a plain Outline component
+        // only shows against transparent pixels, so it'd be invisible on an opaque
+        // fallback square). Shared by Create() and any custom row layout that wants the
+        // same icon+border treatment without GearRowFactory's own caption/title/stat
+        // text column (e.g. VillageBlacksmithView's recipe/upgrade rows).
+        public static (Image Icon, Image Border) CreateIconFrame(Transform parent, float squareSize)
+        {
+            var iconFrameGo = new GameObject("IconFrame", typeof(RectTransform));
+            iconFrameGo.transform.SetParent(parent, false);
+            SetFixedLayout(iconFrameGo.AddComponent<LayoutElement>(), squareSize, squareSize);
+            var border = iconFrameGo.AddComponent<Image>();
+            border.raycastTarget = false;
+
+            var iconGo = new GameObject("Icon", typeof(RectTransform));
+            var iconRect = (RectTransform)iconGo.transform;
+            iconRect.SetParent(iconFrameGo.transform, false);
+            iconRect.anchorMin = Vector2.zero;
+            iconRect.anchorMax = Vector2.one;
+            iconRect.offsetMin = new Vector2(BorderThickness, BorderThickness);
+            iconRect.offsetMax = new Vector2(-BorderThickness, -BorderThickness);
+            var icon = iconGo.AddComponent<Image>();
+            return (icon, border);
+        }
+
+        // Renders a real sprite when assigned, falling back to a flat tinted square
+        // otherwise — same convention as EncounterData.artwork/cardColor. The one place
+        // every gear row's icon should be set through, so real art and the greybox
+        // fallback can never drift out of sync.
+        public static void SetIcon(Image icon, Sprite sprite, Color fallbackColor)
+        {
+            icon.sprite = sprite;
+            icon.color = sprite != null ? Color.white : fallbackColor;
+        }
+
+        // Item-aware overload — sets the icon AND its rarity-colored border in one call,
+        // so a call site can't set one and forget the other. Pass null for a row that
+        // isn't showing a concrete item right now (a locked/empty equip slot) to hide
+        // the border rather than showing a stale or misleading rarity.
+        public static void SetIcon(Row row, Sprite sprite, Color fallbackColor, ItemRarity? rarity)
+        {
+            SetIcon(row.Icon, sprite, fallbackColor);
+            SetRarityBorder(row.Border, rarity);
+        }
+
+        public static void SetRarityBorder(Image border, ItemRarity? rarity)
+        {
+            border.color = rarity.HasValue ? ItemRarityInfo.ColorFor(rarity.Value) : Color.clear;
         }
 
         private static void SetFixedLayout(LayoutElement layoutElement, float width, float height)

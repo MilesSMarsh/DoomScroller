@@ -385,14 +385,14 @@ namespace DoomScroller.Inventory
                     label += " (" + string.Join(", ", ability.onCastEffects.Select(e => e.Describe())) + ")";
                 }
 
-                CreateAbilityIconRow(_abilitiesContainer, ability.iconColor, label);
+                CreateAbilityIconRow(_abilitiesContainer, ability.iconColor, ability.icon, label);
             }
 
             // Always-on weapon traits, listed separately since — unlike the abilities
             // above — nothing needs to be cast for these to be in effect.
             foreach (var passive in passives)
             {
-                CreateAbilityIconRow(_abilitiesContainer, PassiveIconColor, $"Passive — {passive.DescribePassive()}");
+                CreateAbilityIconRow(_abilitiesContainer, PassiveIconColor, null, $"Passive — {passive.DescribePassive()}");
             }
         }
 
@@ -426,7 +426,7 @@ namespace DoomScroller.Inventory
             layoutElement.preferredHeight = 100;
 
             var row = GearRowFactory.Create(rowGo.transform, 64, 22, 28, 24);
-            row.Icon.color = material.itemColor;
+            GearRowFactory.SetIcon(row, material.icon, material.itemColor, material.rarity);
             row.CaptionText.text = "Material";
             row.TitleText.text = material.title;
             row.StatText.text = $"x{count} owned";
@@ -435,7 +435,7 @@ namespace DoomScroller.Inventory
         // A small colored square beside a name/description — purely informational,
         // since every ability on an equipped weapon (and every passive) is always in
         // the fight, nothing here is toggleable.
-        private static void CreateAbilityIconRow(Transform parent, Color iconColor, string label)
+        private static void CreateAbilityIconRow(Transform parent, Color iconColor, Sprite icon, string label)
         {
             var go = new GameObject("EffectRow", typeof(RectTransform));
             go.transform.SetParent(parent, false);
@@ -464,9 +464,9 @@ namespace DoomScroller.Inventory
             iconLayout.preferredHeight = 64;
             iconLayout.flexibleWidth = 0;
             iconLayout.flexibleHeight = 0;
-            var icon = iconGo.AddComponent<Image>();
-            icon.color = iconColor;
-            icon.raycastTarget = false;
+            var iconImage = iconGo.AddComponent<Image>();
+            GearRowFactory.SetIcon(iconImage, icon, iconColor);
+            iconImage.raycastTarget = false;
 
             var textGo = new GameObject("Label", typeof(RectTransform));
             textGo.transform.SetParent(go.transform, false);

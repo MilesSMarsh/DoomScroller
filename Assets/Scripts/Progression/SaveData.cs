@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using DoomScroller.Inventory;
 using UnityEngine;
 
@@ -13,11 +14,22 @@ namespace DoomScroller.Progression
     [Serializable]
     public class ItemSnapshot
     {
+        // When set, Restore() returns the ORIGINAL singleton ItemData asset (looked up by
+        // this id) instead of a fresh clone — required for anything a static design-time
+        // reference points at that must survive a save/reload (currently
+        // RecipeIngredient.material; see ItemData.itemId's own doc comment). Blank for
+        // procedurally-rolled items, which fall back to the clone-from-snapshot behavior
+        // every item used before this field existed.
+        public string itemId;
+
         public string title;
         public EquipmentSlotType slotType;
         public ItemCategory category;
+        public ItemRarity rarity;
         public string statSummary;
         public Color itemColor;
+        public WeaponType weaponType;
+        public DamageType damageType;
         public int goldValue;
         public int powerValue;
         public WeaponAbilityData[] abilities;
@@ -33,11 +45,15 @@ namespace DoomScroller.Progression
         {
             return new ItemSnapshot
             {
+                itemId = item.itemId,
                 title = item.title,
                 slotType = item.slotType,
                 category = item.category,
+                rarity = item.rarity,
                 statSummary = item.statSummary,
                 itemColor = item.itemColor,
+                weaponType = item.weaponType,
+                damageType = item.damageType,
                 goldValue = item.goldValue,
                 powerValue = item.powerValue,
                 abilities = item.abilities,
@@ -53,12 +69,25 @@ namespace DoomScroller.Progression
 
         public ItemData Restore()
         {
+            if (!string.IsNullOrEmpty(itemId))
+            {
+                var original = Resources.LoadAll<ItemData>("Items").FirstOrDefault(i => i.itemId == itemId);
+                if (original != null)
+                {
+                    return original;
+                }
+            }
+
             var item = ScriptableObject.CreateInstance<ItemData>();
+            item.itemId = itemId;
             item.title = title;
             item.slotType = slotType;
             item.category = category;
+            item.rarity = rarity;
             item.statSummary = statSummary;
             item.itemColor = itemColor;
+            item.weaponType = weaponType;
+            item.damageType = damageType;
             item.goldValue = goldValue;
             item.powerValue = powerValue;
             item.abilities = abilities;
@@ -105,6 +134,12 @@ namespace DoomScroller.Progression
         public List<EquippedEntry> equipped = new();
         public List<int> knownPotionTypes = new();
         public List<PotionUpgradeEntry> reviveUpgrades = new();
+
+        // Materials ever owned (itemPool-indexed, same convention as knownPotionTypes)
+        // and RecipeDefinition.recipeId values ever crafted — see
+        // PlayerLoadout.IsRecipeUnlocked for what these gate.
+        public List<int> discoveredMaterials = new();
+        public List<string> craftedRecipeIds = new();
 
         public int progressionLevel;
         public int progressionCurrentXp;

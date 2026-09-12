@@ -147,7 +147,7 @@ namespace DoomScroller.Inventory
             infoLayout.flexibleHeight = 0;
 
             var row = GearRowFactory.Create(infoGo.transform, IconSize, 24, 32, 28);
-            row.Icon.color = potion.itemColor;
+            GearRowFactory.SetIcon(row, potion.icon, potion.itemColor, potion.rarity);
             row.CaptionText.text = potion.potionEffect == PotionEffect.MaxHealthRestore ? "Max HP Potion" : "Revive Potion";
             row.TitleText.text = count > 1 ? $"{potion.title} (x{count} owned)" : potion.title;
             row.StatText.text = potion.potionEffect == PotionEffect.MaxHealthRestore

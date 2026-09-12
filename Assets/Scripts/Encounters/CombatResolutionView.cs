@@ -268,7 +268,7 @@ namespace DoomScroller.Encounters
 
                 // No difficulty choice any more on a plain encounter — always the base
                 // (Common) reward tier; Dungeons are the vehicle for better loot now.
-                var item = RewardGenerator.GenerateItem(0);
+                var item = RewardGenerator.GenerateItem(DoomScroller.Inventory.ItemRarity.Common);
                 loadout.AddToInventory(item);
 
                 // Not granted here — RewardChestView.Show only stores it, and actually

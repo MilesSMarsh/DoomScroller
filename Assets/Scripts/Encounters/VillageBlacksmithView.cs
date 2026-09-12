@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using DoomScroller.Inventory;
 using DoomScroller.Progression;
 using DoomScroller.UI;
@@ -8,12 +9,17 @@ using UnityEngine.UI;
 
 namespace DoomScroller.Encounters
 {
-    // One establishment in the Village (see VillageView): craft armor, weapons,
-    // talismans, and crafting materials, split across four tabs. Recipes are generated
-    // exactly once per session (CraftingGenerator.GenerateRecipes, on the first-ever
-    // Show()) and never rerolled again — the Blacksmith reads the same at every village,
-    // and leaving/re-entering can't be used to reroll its stock. Materials cost is
-    // undifferentiated ("any N materials") until real crafting trees exist.
+    // One establishment in the Village (see VillageView): a Craft tab (armor, weapons,
+    // talismans, and crafting materials, split across the four category sub-tabs — the
+    // original functionality, unchanged) and an Upgrade tab (Empower/Reroll sub-tabs,
+    // each listing every owned weapon). Recipes are generated exactly once per session
+    // (RecipeCatalog.RecipesFor, on the first-ever Show()) and never rerolled again —
+    // the Blacksmith reads the same at every village, and leaving/re-entering can't be
+    // used to reroll its stock. Each recipe names specific material ingredients and is
+    // gated behind having discovered them (and crafted any prerequisite recipes) — see
+    // PlayerLoadout.IsRecipeUnlocked. The Upgrade tab's weapon lists, unlike recipes,
+    // rebuild from scratch on every loadout change instead of refreshing in place, since
+    // which weapons are owned (not just their lock state) can change at any time.
     public class VillageBlacksmithView : MonoBehaviour
     {
         private const float RowHeight = 130f;
@@ -26,6 +32,8 @@ namespace DoomScroller.Encounters
             ("Materials", ItemCategory.Material),
         };
 
+        private static readonly string[] UpgradeTabLabels = { "Empower", "Reroll" };
+
         private static readonly Color SelectedTabColor = new(1f, 1f, 1f, 0.25f);
         private static readonly Color UnselectedTabColor = new(1f, 1f, 1f, 0.08f);
 
@@ -34,21 +42,39 @@ namespace DoomScroller.Encounters
         private PlayerAttributes _attributes;
         private Text _statusText;
 
+        // Root tabs: Craft (index 0) / Upgrade (index 1).
+        private readonly List<GameObject> _rootPanelGos = new();
+        private readonly List<Image> _rootTabButtonImages = new();
+
+        // Craft tab's own category sub-tabs (Armor/Weapons/Talismans/Materials).
         private readonly List<GameObject> _tabPanelGos = new();
         private readonly List<Image> _tabButtonImages = new();
         private readonly List<RectTransform> _listContainers = new();
 
+        // Upgrade tab's own sub-tabs (Empower/Reroll).
+        private readonly List<GameObject> _upgradeTabPanelGos = new();
+        private readonly List<Image> _upgradeTabButtonImages = new();
+        private readonly List<RectTransform> _upgradeListContainers = new();
+
         // Generated exactly once (first Show()) and never rebuilt again — see the class
-        // comment. Cost labels still need refreshing on every Show() since
-        // GoldCostMultiplier can change between visits (Expertise points spent), so each
-        // row's recipe is kept alongside its cost Text to update in place.
+        // comment. Every row needs refreshing on every Show(), not just its cost label:
+        // GoldCostMultiplier can change between visits (Expertise points spent), and a
+        // recipe's lock state can too (a material discovered, or a prerequisite crafted,
+        // at the Market or elsewhere since the last visit).
         private bool _recipesGenerated;
-        private readonly List<(CraftingRecipe Recipe, Text CostText)> _recipeRows = new();
+        private readonly List<(RecipeDefinition Recipe, Text CostText, Image RowBackground, Button RowButton)> _recipeRows = new();
+
+        private static readonly Color LockedRowColor = new(1f, 1f, 1f, 0.02f);
+        private static readonly Color UnlockedRowColor = new(1f, 1f, 1f, 0.06f);
 
         private GameObject _confirmDialogGo;
         private Text _confirmMessageText;
         private GameObject _confirmCraftButtonGo;
-        private CraftingRecipe _pendingRecipe;
+
+        // Set by whichever of OnRecipeTapped/OnEmpowerTapped/OnRerollTapped last opened
+        // the (shared) confirm dialog — invoked once by its Craft/Confirm button, so one
+        // dialog GameObject tree serves all three actions instead of duplicating it.
+        private Action _pendingConfirmAction;
 
         public static VillageBlacksmithView Create(Transform parent)
         {
@@ -65,7 +91,8 @@ namespace DoomScroller.Encounters
 
             var view = go.AddComponent<VillageBlacksmithView>();
 
-            var subtitle = CreateLabel(go.transform, "Subtitle", "Craft armor, weapons, talismans, and materials.", 28, FontStyle.Italic);
+            var subtitle = CreateLabel(go.transform, "Subtitle",
+                "Craft armor, weapons, talismans, and materials, or upgrade what you already own.", 28, FontStyle.Italic);
             subtitle.color = new Color(1f, 1f, 1f, 0.6f);
             SetFixedHeight(subtitle.GetComponent<LayoutElement>(), 48);
 
@@ -73,26 +100,29 @@ namespace DoomScroller.Encounters
             view._statusText.color = new Color(0.6f, 0.9f, 1f, 0.95f);
             SetFixedHeight(view._statusText.GetComponent<LayoutElement>(), 40);
 
-            var tabRowGo = new GameObject("TabRow", typeof(RectTransform));
-            tabRowGo.transform.SetParent(go.transform, false);
-            // All three explicit (SetFixedHeight), not just preferredHeight: this
-            // GameObject's own HorizontalLayoutGroup below is itself an ILayoutElement
-            // tying with this LayoutElement on layoutPriority, and an unset
-            // minHeight/flexibleHeight here lets the group's own (much larger) computed
-            // value win the tie — same bug/fix as FeedCardView's TopRow and
-            // CombatPlaybackView's outer layout.
-            SetFixedHeight(tabRowGo.AddComponent<LayoutElement>(), 88);
-            var tabRowLayout = tabRowGo.AddComponent<HorizontalLayoutGroup>();
-            tabRowLayout.spacing = 10;
-            tabRowLayout.childForceExpandWidth = true;
-            tabRowLayout.childForceExpandHeight = true;
-            tabRowLayout.childControlWidth = true;
-            tabRowLayout.childControlHeight = true;
+            // --- Root tabs: Craft | Upgrade ---
+            var rootTabRowGo = CreateTabRowContainer(go.transform, "RootTabRow");
+            var rootLabels = new[] { "Craft", "Upgrade" };
+            for (var i = 0; i < rootLabels.Length; i++)
+            {
+                var index = i;
+                CreateTabButton(rootTabRowGo.transform, $"{rootLabels[i]}Tab", rootLabels[i],
+                    () => view.SelectRootTab(index), out var tabImage);
+                view._rootTabButtonImages.Add(tabImage);
+            }
 
+            var craftPanelGo = CreateSubPanelContainer(go.transform, "CraftPanel");
+            view._rootPanelGos.Add(craftPanelGo);
+
+            var upgradePanelGo = CreateSubPanelContainer(go.transform, "UpgradePanel");
+            view._rootPanelGos.Add(upgradePanelGo);
+
+            // --- Craft: the original category tab strip + recipe lists, unchanged ---
+            var categoryTabRowGo = CreateTabRowContainer(craftPanelGo.transform, "CategoryTabRow");
             for (var i = 0; i < Categories.Length; i++)
             {
                 var index = i;
-                CreateTabButton(tabRowGo.transform, $"{Categories[i].Label}Tab", Categories[i].Label,
+                CreateTabButton(categoryTabRowGo.transform, $"{Categories[i].Label}Tab", Categories[i].Label,
                     () => view.SelectCategoryTab(index), out var tabImage);
                 view._tabButtonImages.Add(tabImage);
             }
@@ -108,38 +138,134 @@ namespace DoomScroller.Encounters
             var panelHeight = RowHeight * 4 + 30;
             foreach (var (label, _) in Categories)
             {
-                var panelGo = new GameObject($"{label}Panel", typeof(RectTransform));
-                panelGo.transform.SetParent(go.transform, false);
-                SetFixedHeight(panelGo.AddComponent<LayoutElement>(), panelHeight);
-
-                // ScrollAreaFactory's own result relies on its parent being a LayoutGroup
-                // that respects childControlWidth/Height (see that file's doc comment) —
-                // a bare LayoutElement on panelGo alone isn't enough, so it needs one of
-                // its own driving its single ScrollArea child.
-                var panelGroup = panelGo.AddComponent<VerticalLayoutGroup>();
-                panelGroup.childForceExpandWidth = true;
-                panelGroup.childForceExpandHeight = true;
-                panelGroup.childControlWidth = true;
-                panelGroup.childControlHeight = true;
-
-                var scrollContent = ScrollAreaFactory.Create(panelGo.transform, new RectOffset(0, 0, 0, 0), 10);
+                var panelGo = CreateScrollPanel(craftPanelGo.transform, $"{label}Panel", panelHeight, out var scrollContent);
                 view._listContainers.Add(scrollContent);
                 view._tabPanelGos.Add(panelGo);
             }
 
+            // --- Upgrade: Empower | Reroll sub-tabs, each a scrollable owned-weapon list ---
+            var upgradeSubTabRowGo = CreateTabRowContainer(upgradePanelGo.transform, "UpgradeSubTabRow");
+            for (var i = 0; i < UpgradeTabLabels.Length; i++)
+            {
+                var index = i;
+                CreateTabButton(upgradeSubTabRowGo.transform, $"{UpgradeTabLabels[i]}Tab", UpgradeTabLabels[i],
+                    () => view.SelectUpgradeSubTab(index), out var tabImage);
+                view._upgradeTabButtonImages.Add(tabImage);
+            }
+
+            foreach (var label in UpgradeTabLabels)
+            {
+                var panelGo = CreateScrollPanel(upgradePanelGo.transform, $"{label}Panel", panelHeight, out var scrollContent);
+                view._upgradeListContainers.Add(scrollContent);
+                view._upgradeTabPanelGos.Add(panelGo);
+            }
+
             view._confirmDialogGo = CreateConfirmDialog((RectTransform)go.transform, view);
 
+            view.SelectRootTab(0);
             view.SelectCategoryTab(0);
+            view.SelectUpgradeSubTab(0);
 
             return view;
         }
 
+        // Shared "row of tab buttons" setup — the root tabs, Craft's category tabs, and
+        // Upgrade's Empower/Reroll tabs all need the exact same HorizontalLayoutGroup +
+        // explicit-height container. All three LayoutElement sizes explicit (not just
+        // preferredHeight): this GameObject's own HorizontalLayoutGroup is itself an
+        // ILayoutElement tying with this LayoutElement on layoutPriority, and an unset
+        // minHeight/flexibleHeight here lets the group's own (much larger) computed
+        // value win the tie — same bug/fix as FeedCardView's TopRow and
+        // CombatPlaybackView's outer layout.
+        private static GameObject CreateTabRowContainer(Transform parent, string name)
+        {
+            var tabRowGo = new GameObject(name, typeof(RectTransform));
+            tabRowGo.transform.SetParent(parent, false);
+            SetFixedHeight(tabRowGo.AddComponent<LayoutElement>(), 88);
+            var tabRowLayout = tabRowGo.AddComponent<HorizontalLayoutGroup>();
+            tabRowLayout.spacing = 10;
+            tabRowLayout.childForceExpandWidth = true;
+            tabRowLayout.childForceExpandHeight = true;
+            tabRowLayout.childControlWidth = true;
+            tabRowLayout.childControlHeight = true;
+            return tabRowGo;
+        }
+
+        // A root-level tab's own content container (Craft/Upgrade) — just a plain
+        // VerticalLayoutGroup so its own tab row + panels lay out the same way the
+        // Blacksmith's own root already does.
+        private static GameObject CreateSubPanelContainer(Transform parent, string name)
+        {
+            var panelGo = new GameObject(name, typeof(RectTransform));
+            panelGo.transform.SetParent(parent, false);
+            var panelLayout = panelGo.AddComponent<VerticalLayoutGroup>();
+            panelLayout.spacing = 14;
+            panelLayout.childAlignment = TextAnchor.UpperCenter;
+            panelLayout.childForceExpandWidth = true;
+            panelLayout.childForceExpandHeight = false;
+            panelLayout.childControlWidth = true;
+            panelLayout.childControlHeight = true;
+            return panelGo;
+        }
+
+        // One fixed-height scrollable panel — shared by Craft's 4 category panels and
+        // Upgrade's 2 sub-tab panels.
+        private static GameObject CreateScrollPanel(Transform parent, string name, float height, out RectTransform scrollContent)
+        {
+            var panelGo = new GameObject(name, typeof(RectTransform));
+            panelGo.transform.SetParent(parent, false);
+            SetFixedHeight(panelGo.AddComponent<LayoutElement>(), height);
+
+            // ScrollAreaFactory's own result relies on its parent being a LayoutGroup
+            // that respects childControlWidth/Height (see that file's doc comment) —
+            // a bare LayoutElement on panelGo alone isn't enough, so it needs one of
+            // its own driving its single ScrollArea child.
+            var panelGroup = panelGo.AddComponent<VerticalLayoutGroup>();
+            panelGroup.childForceExpandWidth = true;
+            panelGroup.childForceExpandHeight = true;
+            panelGroup.childControlWidth = true;
+            panelGroup.childControlHeight = true;
+
+            scrollContent = ScrollAreaFactory.Create(panelGo.transform, new RectOffset(0, 0, 0, 0), 10);
+            return panelGo;
+        }
+
+        private void SelectRootTab(int index)
+        {
+            for (var i = 0; i < _rootPanelGos.Count; i++)
+            {
+                _rootPanelGos[i].SetActive(i == index);
+                _rootTabButtonImages[i].color = i == index ? SelectedTabColor : UnselectedTabColor;
+            }
+        }
+
+        private void SelectUpgradeSubTab(int index)
+        {
+            for (var i = 0; i < _upgradeTabPanelGos.Count; i++)
+            {
+                _upgradeTabPanelGos[i].SetActive(i == index);
+                _upgradeTabButtonImages[i].color = i == index ? SelectedTabColor : UnselectedTabColor;
+            }
+        }
+
         // Called once per Village visit (see VillageView.Show). Recipes themselves are
-        // only ever generated the first time this is called (see _recipesGenerated) —
-        // every subsequent call just refreshes each row's cost label, since that can go
-        // stale (GoldCostMultiplier) even though the recipe list itself never changes.
+        // only ever generated the first time this is called (see _recipesGenerated).
+        // Every establishment page is created up front and lives side-by-side in the
+        // Village's swipe pager (see VillageView.Show/Create) — none of them get Show()n
+        // again on a page swipe — so without the loadout.Changed subscription below, a
+        // material bought at the Market wouldn't unlock its recipe here until leaving and
+        // re-entering the Village. loadout is one long-lived instance for the whole
+        // session, so subscribing exactly once (guarded below, same pattern
+        // VillageMarketView already uses for its Sell tab) keeps every row live while
+        // browsing the Blacksmith.
         public void Show(PlayerLoadout loadout, PlayerWallet wallet, PlayerAttributes attributes)
         {
+            if (_loadout == null)
+            {
+                loadout.Changed += RefreshAllRecipeRows;
+                loadout.Changed += RebuildUpgradePanels;
+            }
+
             _loadout = loadout;
             _wallet = wallet;
             _attributes = attributes;
@@ -151,17 +277,72 @@ namespace DoomScroller.Encounters
                 _recipesGenerated = true;
                 for (var i = 0; i < Categories.Length; i++)
                 {
-                    foreach (var recipe in CraftingGenerator.GenerateRecipes(Categories[i].Category))
+                    foreach (var recipe in RecipeCatalog.RecipesFor(Categories[i].Category))
                     {
                         CreateRecipeRow(_listContainers[i], recipe);
                     }
                 }
             }
 
-            foreach (var (recipe, costText) in _recipeRows)
+            RefreshAllRecipeRows();
+            RebuildUpgradePanels();
+        }
+
+        private void RefreshAllRecipeRows()
+        {
+            foreach (var row in _recipeRows)
             {
-                costText.text = $"{DiscountedGoldCost(recipe)}g + {recipe.MaterialsCost} materials";
+                RefreshRecipeRow(row);
             }
+        }
+
+        private void RefreshRecipeRow((RecipeDefinition Recipe, Text CostText, Image RowBackground, Button RowButton) row)
+        {
+            var unlocked = _loadout.IsRecipeUnlocked(row.Recipe);
+            row.CostText.text = unlocked
+                ? $"{DiscountedGoldCost(row.Recipe)}g + {DescribeIngredients(row.Recipe)}"
+                : DescribeLockHint(row.Recipe);
+            row.RowBackground.color = unlocked ? UnlockedRowColor : LockedRowColor;
+            row.RowButton.interactable = unlocked;
+        }
+
+        // "2 Iron Ore, 1 Wood" — or "no materials" for a gold-only recipe (the Materials
+        // tab's own recipes, which craft a raw material for gold alone) or an
+        // unconfigured Empower/Reroll tier.
+        private static string DescribeIngredients(RecipeIngredient[] ingredients)
+        {
+            return ingredients is { Length: > 0 }
+                ? string.Join(", ", ingredients.Select(i => $"{i.count} {i.material.title}"))
+                : "no materials";
+        }
+
+        private static string DescribeIngredients(RecipeDefinition recipe) => DescribeIngredients(recipe.ingredients);
+
+        // What's still missing before a locked row becomes craftable — every
+        // undiscovered ingredient and every un-crafted prerequisite, joined together.
+        private string DescribeLockHint(RecipeDefinition recipe)
+        {
+            var parts = new List<string>();
+
+            var missingMaterials = (recipe.ingredients ?? Array.Empty<RecipeIngredient>())
+                .Where(i => i.material != null && !_loadout.HasDiscovered(i.material))
+                .Select(i => i.material.title)
+                .ToList();
+            if (missingMaterials.Count > 0)
+            {
+                parts.Add($"discover {string.Join(", ", missingMaterials)}");
+            }
+
+            var missingPrereqs = (recipe.prerequisiteRecipes ?? Array.Empty<RecipeDefinition>())
+                .Where(p => p != null && !_loadout.HasCrafted(p))
+                .Select(p => p.OutputTitle)
+                .ToList();
+            if (missingPrereqs.Count > 0)
+            {
+                parts.Add($"craft {string.Join(", ", missingPrereqs)} first");
+            }
+
+            return parts.Count > 0 ? $"Requires: {string.Join("; ", parts)}" : "Locked";
         }
 
         private void SelectCategoryTab(int index)
@@ -173,16 +354,163 @@ namespace DoomScroller.Encounters
             }
         }
 
+        // Unlike recipe rows (created once, refreshed in place — safe only because the
+        // recipe *list* itself never changes), the owned-weapon list can grow/shrink at
+        // any time, so both Upgrade sub-tabs rebuild from scratch on every loadout
+        // change — same destroy-and-recreate pattern as VillageMarketView.RebuildSellPanel.
+        private void RebuildUpgradePanels()
+        {
+            RebuildWeaponUpgradeList(_upgradeListContainers[0], isEmpower: true);
+            RebuildWeaponUpgradeList(_upgradeListContainers[1], isEmpower: false);
+        }
+
+        private void RebuildWeaponUpgradeList(Transform container, bool isEmpower)
+        {
+            for (var i = container.childCount - 1; i >= 0; i--)
+            {
+                Destroy(container.GetChild(i).gameObject);
+            }
+
+            var weapons = _loadout.GetAllInventory().Where(item => item.category == ItemCategory.Weapon).ToList();
+            if (weapons.Count == 0)
+            {
+                CreateLabel(container, "Empty", "No weapons owned yet.", 24, FontStyle.Italic);
+                return;
+            }
+
+            foreach (var weapon in weapons)
+            {
+                if (isEmpower)
+                {
+                    CreateEmpowerRow(container, weapon);
+                }
+                else
+                {
+                    CreateRerollRow(container, weapon);
+                }
+            }
+        }
+
+        private void CreateEmpowerRow(Transform parent, ItemData weapon)
+        {
+            var canEmpower = WeaponUpgrader.CanEmpower(weapon);
+            var costLabel = canEmpower
+                ? $"{DiscountedGoldCost(WeaponUpgrader.EmpowerGoldCost(weapon))}g + {DescribeIngredients(WeaponUpgrader.EmpowerIngredients(weapon))}  " +
+                  $"({weapon.rarity} → {weapon.rarity + 1})"
+                : "Already at max rarity";
+            CreateWeaponUpgradeRow(parent, weapon, canEmpower, costLabel, () => OnEmpowerTapped(weapon));
+        }
+
+        private void CreateRerollRow(Transform parent, ItemData weapon)
+        {
+            var costLabel = $"{DiscountedGoldCost(WeaponUpgrader.RerollGoldCost(weapon))}g + {DescribeIngredients(WeaponUpgrader.RerollIngredients())}  " +
+                             $"(reroll {weapon.rarity} skills)";
+            CreateWeaponUpgradeRow(parent, weapon, true, costLabel, () => OnRerollTapped(weapon));
+        }
+
+        // Same visual shape as CreateRecipeRow (icon/title/cost, tap-to-confirm), kept
+        // separate rather than unified with it since upgrade rows are fully recreated on
+        // every rebuild (no need to track/refresh them in place afterward the way recipe
+        // rows do).
+        private void CreateWeaponUpgradeRow(Transform parent, ItemData weapon, bool interactable, string costLabel, Action onTapped)
+        {
+            var rowGo = new GameObject($"Upgrade_{weapon.title}", typeof(RectTransform));
+            rowGo.transform.SetParent(parent, false);
+            SetFixedHeight(rowGo.AddComponent<LayoutElement>(), RowHeight);
+            var rowBackground = rowGo.AddComponent<Image>();
+            rowBackground.color = interactable ? UnlockedRowColor : LockedRowColor;
+            var button = rowGo.AddComponent<Button>();
+            button.interactable = interactable;
+            button.onClick.AddListener(() => onTapped());
+
+            var rowLayout = rowGo.AddComponent<HorizontalLayoutGroup>();
+            rowLayout.padding = new RectOffset(16, 16, 0, 0);
+            rowLayout.spacing = 16;
+            rowLayout.childAlignment = TextAnchor.MiddleLeft;
+            rowLayout.childForceExpandWidth = false;
+            rowLayout.childForceExpandHeight = false;
+            rowLayout.childControlWidth = true;
+            rowLayout.childControlHeight = true;
+
+            var (icon, border) = GearRowFactory.CreateIconFrame(rowGo.transform, 72);
+            GearRowFactory.SetIcon(icon, weapon.icon, weapon.itemColor);
+            GearRowFactory.SetRarityBorder(border, weapon.rarity);
+            icon.raycastTarget = false;
+
+            var nameText = CreateLabel(rowGo.transform, "Name", weapon.title, 28, FontStyle.Bold);
+            nameText.alignment = TextAnchor.MiddleLeft;
+            nameText.raycastTarget = false;
+            var nameLayout = nameText.GetComponent<LayoutElement>();
+            nameLayout.minWidth = 0;
+            nameLayout.preferredWidth = 0;
+            nameLayout.flexibleWidth = 1;
+
+            var costText = CreateLabel(rowGo.transform, "Cost", costLabel, 22, FontStyle.Italic);
+            costText.alignment = TextAnchor.MiddleRight;
+            costText.color = new Color(1f, 1f, 1f, 0.7f);
+            costText.raycastTarget = false;
+            var costLayout = costText.GetComponent<LayoutElement>();
+            costLayout.minWidth = 260;
+            costLayout.preferredWidth = 260;
+            costLayout.flexibleWidth = 0;
+        }
+
+        private void OnEmpowerTapped(ItemData weapon)
+        {
+            if (!WeaponUpgrader.CanEmpower(weapon))
+            {
+                return;
+            }
+
+            var goldCost = DiscountedGoldCost(WeaponUpgrader.EmpowerGoldCost(weapon));
+            var ingredients = WeaponUpgrader.EmpowerIngredients(weapon);
+            var canAfford = _wallet.Gold >= goldCost && _loadout.HasIngredients(ingredients);
+
+            _confirmMessageText.text = canAfford
+                ? $"Empower {weapon.title} to {weapon.rarity + 1} for {goldCost}g + {DescribeIngredients(ingredients)}?"
+                : $"Not enough gold or materials to empower {weapon.title}.";
+            _confirmCraftButtonGo.SetActive(canAfford);
+            _pendingConfirmAction = () =>
+            {
+                if (_loadout.TryEmpowerWeapon(weapon, _wallet, goldCost, ingredients))
+                {
+                    _statusText.text = $"Empowered {weapon.title}.";
+                }
+            };
+            _confirmDialogGo.SetActive(true);
+        }
+
+        private void OnRerollTapped(ItemData weapon)
+        {
+            var goldCost = DiscountedGoldCost(WeaponUpgrader.RerollGoldCost(weapon));
+            var ingredients = WeaponUpgrader.RerollIngredients();
+            var canAfford = _wallet.Gold >= goldCost && _loadout.HasIngredients(ingredients);
+
+            _confirmMessageText.text = canAfford
+                ? $"Reroll {weapon.title}'s skills for {goldCost}g + {DescribeIngredients(ingredients)}?"
+                : $"Not enough gold or materials to reroll {weapon.title}.";
+            _confirmCraftButtonGo.SetActive(canAfford);
+            _pendingConfirmAction = () =>
+            {
+                if (_loadout.TryRerollWeapon(weapon, _wallet, goldCost, ingredients))
+                {
+                    _statusText.text = $"Rerolled {weapon.title}.";
+                }
+            };
+            _confirmDialogGo.SetActive(true);
+        }
+
         // A custom row rather than GearRowFactory — icon far left, name taking the
         // remaining space, cost as its own trailing column on the right, per what was
         // asked for (GearRowFactory's stacked caption/title/stat shape doesn't match).
         // The whole row is one Button — tap anywhere on it to open the confirm dialog.
-        private void CreateRecipeRow(Transform parent, CraftingRecipe recipe)
+        private void CreateRecipeRow(Transform parent, RecipeDefinition recipe)
         {
-            var rowGo = new GameObject($"Recipe_{recipe.Item.title}", typeof(RectTransform));
+            var rowGo = new GameObject($"Recipe_{recipe.OutputTitle}", typeof(RectTransform));
             rowGo.transform.SetParent(parent, false);
             SetFixedHeight(rowGo.AddComponent<LayoutElement>(), RowHeight);
-            rowGo.AddComponent<Image>().color = new Color(1f, 1f, 1f, 0.06f);
+            var rowBackground = rowGo.AddComponent<Image>();
+            rowBackground.color = UnlockedRowColor;
             var button = rowGo.AddComponent<Button>();
             button.onClick.AddListener(() => OnRecipeTapped(recipe));
 
@@ -195,15 +523,12 @@ namespace DoomScroller.Encounters
             rowLayout.childControlWidth = true;
             rowLayout.childControlHeight = true;
 
-            var iconGo = new GameObject("Icon", typeof(RectTransform));
-            iconGo.transform.SetParent(rowGo.transform, false);
-            var iconLayout = iconGo.AddComponent<LayoutElement>();
-            SetFixedLayout(iconLayout, 72, 72);
-            var icon = iconGo.AddComponent<Image>();
-            icon.color = recipe.Item.itemColor;
+            var (icon, border) = GearRowFactory.CreateIconFrame(rowGo.transform, 72);
+            GearRowFactory.SetIcon(icon, recipe.OutputIcon, recipe.OutputColor);
+            GearRowFactory.SetRarityBorder(border, recipe.OutputRarity);
             icon.raycastTarget = false;
 
-            var nameText = CreateLabel(rowGo.transform, "Name", recipe.Item.title, 28, FontStyle.Bold);
+            var nameText = CreateLabel(rowGo.transform, "Name", recipe.OutputTitle, 28, FontStyle.Bold);
             nameText.alignment = TextAnchor.MiddleLeft;
             nameText.raycastTarget = false;
             var nameLayout = nameText.GetComponent<LayoutElement>();
@@ -211,8 +536,7 @@ namespace DoomScroller.Encounters
             nameLayout.preferredWidth = 0;
             nameLayout.flexibleWidth = 1;
 
-            var costText = CreateLabel(rowGo.transform, "Cost", $"{DiscountedGoldCost(recipe)}g + {recipe.MaterialsCost} materials",
-                22, FontStyle.Italic);
+            var costText = CreateLabel(rowGo.transform, "Cost", "", 22, FontStyle.Italic);
             costText.alignment = TextAnchor.MiddleRight;
             costText.color = new Color(1f, 1f, 1f, 0.7f);
             costText.raycastTarget = false;
@@ -221,31 +545,50 @@ namespace DoomScroller.Encounters
             costLayout.preferredWidth = 260;
             costLayout.flexibleWidth = 0;
 
-            _recipeRows.Add((recipe, costText));
+            _recipeRows.Add((recipe, costText, rowBackground, button));
         }
 
-        private int DiscountedGoldCost(CraftingRecipe recipe) => Mathf.RoundToInt(recipe.GoldCost * _attributes.GoldCostMultiplier);
+        // _attributes.GoldCostMultiplier (Expertise-based) discounts every Blacksmith
+        // price — recipes (whose goldCost is self-authored — see RecipeDefinition's own
+        // doc comment for why) and Empower/Reroll (whose base cost is
+        // weapon.goldValue-derived — see WeaponUpgrader) alike.
+        private int DiscountedGoldCost(int baseCost) => Mathf.RoundToInt(baseCost * _attributes.GoldCostMultiplier);
 
-        private void OnRecipeTapped(CraftingRecipe recipe)
+        private int DiscountedGoldCost(RecipeDefinition recipe) => DiscountedGoldCost(recipe.goldCost);
+
+        private void OnRecipeTapped(RecipeDefinition recipe)
         {
-            _pendingRecipe = recipe;
+            if (!_loadout.IsRecipeUnlocked(recipe))
+            {
+                return;
+            }
+
             var goldCost = DiscountedGoldCost(recipe);
-            var canAfford = _wallet.Gold >= goldCost && _loadout.CountMaterials() >= recipe.MaterialsCost;
+            var canAfford = _wallet.Gold >= goldCost && _loadout.HasIngredientsFor(recipe);
 
             _confirmMessageText.text = canAfford
-                ? $"Craft {recipe.Item.title} for {goldCost}g + {recipe.MaterialsCost} materials?"
-                : $"Not enough gold or materials to craft {recipe.Item.title}.";
+                ? $"Craft {recipe.OutputTitle} for {goldCost}g + {DescribeIngredients(recipe)}?"
+                : $"Not enough gold or materials to craft {recipe.OutputTitle}.";
             _confirmCraftButtonGo.SetActive(canAfford);
+            _pendingConfirmAction = () =>
+            {
+                if (_loadout.TryCraftRecipe(recipe, _wallet, goldCost))
+                {
+                    _statusText.text = $"Crafted {recipe.OutputTitle}.";
+                    // Redundant with the loadout.Changed subscription (TryCraftRecipe
+                    // already fired it), but keeps this success path self-contained/
+                    // obviously correct without relying on event-timing.
+                    RefreshAllRecipeRows();
+                }
+            };
             _confirmDialogGo.SetActive(true);
         }
 
-        private void OnCraftConfirmed()
+        // The shared confirm dialog's single button handler — invokes whichever of
+        // OnRecipeTapped/OnEmpowerTapped/OnRerollTapped last set _pendingConfirmAction.
+        private void OnConfirmButtonTapped()
         {
-            if (_loadout.TryCraftItem(_pendingRecipe.Item, _wallet, DiscountedGoldCost(_pendingRecipe), _pendingRecipe.MaterialsCost))
-            {
-                _statusText.text = $"Crafted {_pendingRecipe.Item.title}.";
-            }
-
+            _pendingConfirmAction?.Invoke();
             _confirmDialogGo.SetActive(false);
         }
 
@@ -299,20 +642,10 @@ namespace DoomScroller.Encounters
             CreateActionButton(buttonRowGo.transform, "CancelButton", "Cancel", 340, 90,
                 new Color(1f, 1f, 1f, 0.15f), () => view._confirmDialogGo.SetActive(false));
             view._confirmCraftButtonGo = CreateActionButton(buttonRowGo.transform, "CraftButton", "Craft", 340, 90,
-                new Color(0.2f, 0.55f, 0.3f, 0.7f), () => view.OnCraftConfirmed());
+                new Color(0.2f, 0.55f, 0.3f, 0.7f), () => view.OnConfirmButtonTapped());
 
             overlayGo.SetActive(false);
             return overlayGo;
-        }
-
-        private static void SetFixedLayout(LayoutElement layoutElement, float width, float height)
-        {
-            layoutElement.minWidth = width;
-            layoutElement.preferredWidth = width;
-            layoutElement.flexibleWidth = 0;
-            layoutElement.minHeight = height;
-            layoutElement.preferredHeight = height;
-            layoutElement.flexibleHeight = 0;
         }
 
         private static void SetFixedHeight(LayoutElement layoutElement, float height)

@@ -48,21 +48,21 @@ namespace DoomScroller.Inventory
         {
             if (lockedBy != null)
             {
-                _row.Icon.color = LockedIconColor;
+                GearRowFactory.SetIcon(_row, null, LockedIconColor, null);
                 _row.TitleText.text = "Locked";
                 _row.StatText.text = $"{lockedBy.title} (2H)";
                 _background.color = LockedBackgroundColor;
             }
             else if (equipped == null)
             {
-                _row.Icon.color = EmptyIconColor;
+                GearRowFactory.SetIcon(_row, null, EmptyIconColor, null);
                 _row.TitleText.text = "Empty";
                 _row.StatText.text = "tap to equip";
                 _background.color = EmptyBackgroundColor;
             }
             else
             {
-                _row.Icon.color = equipped.itemColor;
+                GearRowFactory.SetIcon(_row, equipped.icon, equipped.itemColor, equipped.rarity);
                 _row.TitleText.text = equipped.title;
                 _row.StatText.text = equipped.isTwoHanded
                     ? $"{equipped.StatLabel} {equipped.powerValue} (2H)"

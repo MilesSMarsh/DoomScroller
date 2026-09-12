@@ -15,8 +15,11 @@ MonoBehaviour:
   title: Arcane Staff
   slotType: 4
   category: 1
+  rarity: 2
   statSummary: +14 Magic Attack
   itemColor: {r: 0.3, g: 0.5, b: 0.9, a: 1}
+  weaponType: 2
+  damageType: 3
   goldValue: 30
   powerValue: 20
   abilities:

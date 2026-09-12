@@ -12,11 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 61d99f5d642a9f6b68bf4d9f3473d672, type: 3}
   m_Name: Material_Wood
   m_EditorClassIdentifier: Assembly-CSharp::DoomScroller.Inventory.ItemData
+  itemId: material_wood
   title: Wood
   slotType: 0
   category: 5
+  rarity: 0
   statSummary: Crafting material
   itemColor: {r: 0.45, g: 0.32, b: 0.18, a: 1}
+  icon: {fileID: 0}
+  weaponType: 0
+  damageType: 0
   goldValue: 5
   powerValue: 0
   abilities: []

@@ -23,6 +23,14 @@ namespace DoomScroller.Inventory
         private readonly List<ItemData> _knownPotionTypes;
         private const int BaseRefillCapacity = 3;
 
+        // Every Material-category item ever owned (not just currently held — "seen"
+        // survives spending it), and every RecipeDefinition.recipeId ever crafted — the
+        // two gates RecipeDefinition-based crafting checks (see IsRecipeUnlocked). Unlike
+        // _knownPotionTypes above, both grow live via AddToInventory/TryCraftRecipe, not
+        // just at construction — a material or recipe can be discovered mid-session.
+        private readonly HashSet<ItemData> _discoveredMaterials;
+        private readonly HashSet<string> _craftedRecipeIds = new();
+
         // The Alchemist's two upgrade tracks for a Revive potion, keyed by which potion
         // type (there's only ever one in practice today — see GetKnownRevivePotionType).
         // Never mutates the shared ItemData asset itself; both are read as a bonus layered
@@ -42,6 +50,7 @@ namespace DoomScroller.Inventory
         {
             _inventory = inventory.ToList();
             _knownPotionTypes = _inventory.Where(i => i.category == ItemCategory.Potion).Distinct().ToList();
+            _discoveredMaterials = new HashSet<ItemData>(_inventory.Where(i => i.category == ItemCategory.Material));
             PlayerSprite = playerSprite;
         }
 
@@ -55,6 +64,11 @@ namespace DoomScroller.Inventory
             }
 
             _inventory.Add(item);
+            if (item.category == ItemCategory.Material)
+            {
+                _discoveredMaterials.Add(item);
+            }
+
             Changed?.Invoke();
         }
 
@@ -334,7 +348,7 @@ namespace DoomScroller.Inventory
             return _inventory.Where(i => !_equipped.Values.Contains(i));
         }
 
-        // The Market's Sell tab action — mirrors TryCraftItem/TryUpgradeRevive*'s shape
+        // The Market's Sell tab action — mirrors TryCraftRecipe/TryUpgradeRevive*'s shape
         // (a combined inventory+wallet transaction living here, wallet passed in). Refuses
         // an equipped item the same way RemoveFromInventory already does.
         public bool SellItem(ItemData item, PlayerWallet wallet)
@@ -407,13 +421,64 @@ namespace DoomScroller.Inventory
             return true;
         }
 
-        // The Blacksmith's craft action — goldCost/materialsCost are its call (same split
-        // as every other Try* purchase here); on success the item lands straight in the
-        // inventory, same as any other reward (AddToInventory already fires Changed, so
-        // this doesn't fire it a second time).
-        public bool TryCraftItem(ItemData item, PlayerWallet wallet, int goldCost, int materialsCost)
+        public bool HasDiscovered(ItemData material) => _discoveredMaterials.Contains(material);
+
+        public bool HasCrafted(RecipeDefinition recipe) => recipe != null && _craftedRecipeIds.Contains(recipe.recipeId);
+
+        private int CountOfMaterial(ItemData material) => _inventory.Count(i => i == material);
+
+        // Whether the player currently holds enough of every named ingredient. Shared by
+        // recipes (HasIngredientsFor) and weapon upgrades (TryEmpowerWeapon/
+        // TryRerollWeapon's own checks) — distinct from IsRecipeUnlocked, which only
+        // checks discovery/prerequisites, not current stock, since a recipe stays known
+        // even after its materials are spent.
+        public bool HasIngredients(RecipeIngredient[] ingredients)
         {
-            if (item == null || CountMaterials() < materialsCost)
+            return (ingredients ?? Array.Empty<RecipeIngredient>()).All(i => CountOfMaterial(i.material) >= i.count);
+        }
+
+        // Exposed for the Blacksmith's confirm-dialog affordability check; TryCraftRecipe
+        // re-checks this itself rather than trusting the caller already did.
+        public bool HasIngredientsFor(RecipeDefinition recipe) => HasIngredients(recipe.ingredients);
+
+        // True once every named ingredient has been discovered (ever owned — see
+        // HasDiscovered) and every prerequisite recipe has already been crafted at least
+        // once (see HasCrafted). Doesn't check current stock — that's TryCraftRecipe's
+        // job, since a recipe stays "unlocked" (visible, known) even after its materials
+        // are spent.
+        public bool IsRecipeUnlocked(RecipeDefinition recipe)
+        {
+            if (recipe.ingredients != null && recipe.ingredients.Any(i => i.material == null || !HasDiscovered(i.material)))
+            {
+                return false;
+            }
+
+            return recipe.prerequisiteRecipes == null || recipe.prerequisiteRecipes.All(HasCrafted);
+        }
+
+        private void ConsumeNamedIngredients(RecipeIngredient[] ingredients)
+        {
+            if (ingredients == null)
+            {
+                return;
+            }
+
+            foreach (var ingredient in ingredients)
+            {
+                foreach (var owned in _inventory.Where(i => i == ingredient.material).Take(ingredient.count).ToList())
+                {
+                    _inventory.Remove(owned);
+                }
+            }
+        }
+
+        // The Blacksmith's recipe-tree craft action — named ingredients + discovery/
+        // prerequisite gating (see IsRecipeUnlocked), goldCost pre-discounted by the
+        // caller (same convention as TryUpgradeReviveCapacity/SellItem — pricing stays a
+        // view concern, not an inventory one).
+        public bool TryCraftRecipe(RecipeDefinition recipe, PlayerWallet wallet, int goldCost)
+        {
+            if (recipe == null || !IsRecipeUnlocked(recipe) || !HasIngredientsFor(recipe))
             {
                 return false;
             }
@@ -423,9 +488,66 @@ namespace DoomScroller.Inventory
                 return false;
             }
 
-            ConsumeMaterials(materialsCost);
-            AddToInventory(item);
+            ConsumeNamedIngredients(recipe.ingredients);
+            _craftedRecipeIds.Add(recipe.recipeId);
+            AddToInventory(CreateRecipeOutput(recipe));
             return true;
+        }
+
+        // The Blacksmith's Upgrade tab actions — goldCost/ingredients are pre-resolved by
+        // the caller (WeaponUpgrader.EmpowerGoldCost/EmpowerIngredients or their Reroll
+        // equivalents), same pricing-stays-a-view-concern split as TryCraftRecipe. Both
+        // mutate weapon in place via WeaponUpgrader rather than replacing the owned
+        // reference (see WeaponUpgrader's own doc comment for why) — Changed fires so any
+        // Blacksmith row/equip-slot display showing this weapon updates live.
+        public bool TryEmpowerWeapon(ItemData weapon, PlayerWallet wallet, int goldCost, RecipeIngredient[] ingredients)
+        {
+            if (!WeaponUpgrader.CanEmpower(weapon) || !HasIngredients(ingredients))
+            {
+                return false;
+            }
+
+            if (!wallet.TrySpendGold(goldCost))
+            {
+                return false;
+            }
+
+            ConsumeNamedIngredients(ingredients);
+            WeaponUpgrader.Empower(weapon);
+            Changed?.Invoke();
+            return true;
+        }
+
+        public bool TryRerollWeapon(ItemData weapon, PlayerWallet wallet, int goldCost, RecipeIngredient[] ingredients)
+        {
+            if (weapon == null || weapon.category != ItemCategory.Weapon || !HasIngredients(ingredients))
+            {
+                return false;
+            }
+
+            if (!wallet.TrySpendGold(goldCost))
+            {
+                return false;
+            }
+
+            ConsumeNamedIngredients(ingredients);
+            WeaponUpgrader.Reroll(weapon);
+            Changed?.Invoke();
+            return true;
+        }
+
+        // Builds the actual item a recipe grants — a fixed hand-authored ItemData as-is,
+        // or a fresh roll of the authored WeaponDefinition/EquipmentDefinition at the
+        // recipe's fixed outputRarity (see RecipeOutputKind's own doc comment for why
+        // that rarity isn't randomized at craft time).
+        private static ItemData CreateRecipeOutput(RecipeDefinition recipe)
+        {
+            return recipe.outputKind switch
+            {
+                RecipeOutputKind.Weapon => WeaponGenerator.GenerateFromDefinition(recipe.outputWeapon, recipe.outputRarity),
+                RecipeOutputKind.Equipment => EquipmentGenerator.GenerateFromDefinition(recipe.outputEquipment, recipe.outputRarity),
+                _ => recipe.outputItem
+            };
         }
 
         // Instant-use from the Potions tab — restores current max health right away,
@@ -483,6 +605,15 @@ namespace DoomScroller.Inventory
                 data.knownPotionTypes.Add(Intern(potion));
             }
 
+            data.discoveredMaterials.Clear();
+            foreach (var material in _discoveredMaterials)
+            {
+                data.discoveredMaterials.Add(Intern(material));
+            }
+
+            data.craftedRecipeIds.Clear();
+            data.craftedRecipeIds.AddRange(_craftedRecipeIds);
+
             data.reviveUpgrades.Clear();
             foreach (var potion in _reviveCapacityLevel.Keys.Union(_reviveQualityLevel.Keys))
             {
@@ -520,6 +651,18 @@ namespace DoomScroller.Inventory
             foreach (var index in data.knownPotionTypes)
             {
                 _knownPotionTypes.Add(pool[index]);
+            }
+
+            _discoveredMaterials.Clear();
+            foreach (var index in data.discoveredMaterials)
+            {
+                _discoveredMaterials.Add(pool[index]);
+            }
+
+            _craftedRecipeIds.Clear();
+            foreach (var recipeId in data.craftedRecipeIds)
+            {
+                _craftedRecipeIds.Add(recipeId);
             }
 
             _reviveCapacityLevel.Clear();

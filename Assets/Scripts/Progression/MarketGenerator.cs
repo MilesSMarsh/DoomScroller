@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using DoomScroller.Inventory;
 using UnityEngine;
 
@@ -22,17 +23,12 @@ namespace DoomScroller.Progression
     // yet, per the user's own call on this).
     public static class MarketGenerator
     {
+        private const string ItemsResourcesPath = "Items";
         private const int StockCount = 5;
         private static readonly int[] TierPrices = { 20, 45, 90 };
 
         private const float MaterialChance = 0.3f;
         private const int MaterialPrice = 15;
-        private const int MaterialSellValue = 5;
-        private static readonly string[] MaterialNames =
-        {
-            "Iron Ore", "Ancient Bone", "Enchanted Thread", "Dragon Scale Fragment"
-        };
-        private static readonly Color MaterialColor = new(0.6f, 0.5f, 0.35f, 1f);
 
         // Weapons and Potions aren't sold here — weapons come from combat, potions are
         // the Tavern's own thing (refills, not purchases).
@@ -57,7 +53,7 @@ namespace DoomScroller.Progression
         private static MarketEntry GenerateGear(System.Random rng)
         {
             var tier = rng.Next(TierPrices.Length);
-            var item = RewardGenerator.GenerateItem(tier, rng, GearCategories);
+            var item = RewardGenerator.GenerateItem((ItemRarity)tier, rng, GearCategories);
             return new MarketEntry(item, TierPrices[tier]);
         }
 
@@ -66,18 +62,19 @@ namespace DoomScroller.Progression
             return new MarketEntry(GenerateMaterialItem(rng), MaterialPrice);
         }
 
-        // Shared with CraftingGenerator (the Blacksmith's Materials tab) — the one place
-        // a Material ItemData is actually constructed, so both can't drift apart.
+        // Returns one of the singleton hand-authored Material ItemData assets (Iron Ore,
+        // Wood, Stone, ...) rather than a freshly-synthesized instance — this used to
+        // invent its own placeholder names/instances since materials cost was
+        // undifferentiated ("any N materials"), but RecipeDefinition ingredients now name
+        // a *specific* material asset, so what the Market hands out has to be the same
+        // reference a recipe can actually check for (see PlayerLoadout.HasDiscovered/
+        // ConsumeNamedIngredients, which both compare by reference).
         public static ItemData GenerateMaterialItem(System.Random rng)
         {
-            var item = ScriptableObject.CreateInstance<ItemData>();
-            item.title = MaterialNames[rng.Next(MaterialNames.Length)];
-            item.category = ItemCategory.Material;
-            item.statSummary = "Crafting material";
-            item.powerValue = 0;
-            item.itemColor = MaterialColor;
-            item.goldValue = MaterialSellValue;
-            return item;
+            var materials = Resources.LoadAll<ItemData>(ItemsResourcesPath)
+                .Where(i => i.category == ItemCategory.Material)
+                .ToArray();
+            return materials[rng.Next(materials.Length)];
         }
     }
 }

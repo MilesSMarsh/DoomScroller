@@ -22,6 +22,7 @@ namespace DoomScroller.Encounters
         private Image _icon;
         private Text _titleText;
         private Text _yieldText;
+        private Text _bonusText;
 
         public static ResourceEncounterView Create(Transform parent)
         {
@@ -59,6 +60,13 @@ namespace DoomScroller.Encounters
             view._yieldText = CreateLabel(rect, "Yield", "", 38, FontStyle.Italic);
             view._yieldText.color = new Color(0.7f, 1f, 0.75f, 0.95f);
 
+            // Hidden by default (SetActive(false)) rather than left as an empty string —
+            // an empty Text still reserves its LayoutElement's preferredHeight, which
+            // would leave a blank gap on every non-bonus visit otherwise.
+            view._bonusText = CreateLabel(rect, "Bonus", "", 32, FontStyle.Bold);
+            view._bonusText.color = new Color(1f, 0.85f, 0.3f, 0.95f);
+            view._bonusText.gameObject.SetActive(false);
+
             CreateButton(rect, "ReturnButton", "Return", () => view.ReturnToFeedRequested?.Invoke());
 
             go.SetActive(false);
@@ -77,9 +85,26 @@ namespace DoomScroller.Encounters
                 loadout.AddToInventory(data.resourceMaterial);
             }
 
+            // Independent roll, separate from the scaled primary yield above — a rarer
+            // bonus find, not something Expertise should inflate the odds or amount of.
+            var gotSecondary = data.secondaryResourceMaterial != null
+                                && new System.Random().NextDouble() < data.secondaryResourceChance;
+            if (gotSecondary)
+            {
+                for (var i = 0; i < data.secondaryResourceYield; i++)
+                {
+                    loadout.AddToInventory(data.secondaryResourceMaterial);
+                }
+            }
+
             _titleText.text = data.title;
             _icon.color = data.resourceMaterial.itemColor;
             _yieldText.text = $"+{yield} {data.resourceMaterial.title}";
+            _bonusText.gameObject.SetActive(gotSecondary);
+            if (gotSecondary)
+            {
+                _bonusText.text = $"Bonus! +{data.secondaryResourceYield} {data.secondaryResourceMaterial.title}";
+            }
 
             EncounterWon?.Invoke(data);
         }

@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d028f9cfb60c907859353caf36b56d5c, type: 3}
+  m_Name: ArcaneStaff
+  m_EditorClassIdentifier: Assembly-CSharp::DoomScroller.Inventory.WeaponDefinition
+  weaponName: Arcane Staff
+  weaponType: 2
+  damageType: 3
+  isTwoHanded: 1
+  attackSpeed: 0.7
+  itemColor: {r: 0.3, g: 0.5, b: 0.9, a: 1}
+  icon: {fileID: 0}
+  statsByRarity:
+  - baseDamage: 0
+    attributeScalingEntries: []
+  - baseDamage: 0
+    attributeScalingEntries: []
+  - baseDamage: 20
+    attributeScalingEntries:
+    - attribute: 2
+      coefficient: 1
+    - attribute: 0
+      coefficient: 0.2
+  - baseDamage: 0
+    attributeScalingEntries: []
+  - baseDamage: 0
+    attributeScalingEntries: []
+  possibleAbilities:
+  - {fileID: 11400000, guid: 23365d755500ebf06b87e071784bd31d, type: 2}
+  - {fileID: 11400000, guid: ac5a224ee24aa8b718c83569c330fd23, type: 2}
+  possiblePassives:
+  - {fileID: 11400000, guid: ffa96d0105a777176a9bf78082bcb854, type: 2}

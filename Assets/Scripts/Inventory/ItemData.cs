@@ -7,11 +7,37 @@ namespace DoomScroller.Inventory
     [CreateAssetMenu(menuName = "DoomScroller/Item Data", fileName = "NewItem")]
     public class ItemData : ScriptableObject
     {
+        [Tooltip("Stable identity for a hand-authored catalog asset — set this to restore " +
+                  "the ORIGINAL asset reference on load (see ItemSnapshot.Restore) instead " +
+                  "of a fresh deep-cloned instance. Leave blank for anything procedurally " +
+                  "rolled (WeaponGenerator/EquipmentGenerator output) — those are " +
+                  "genuinely unique per instance, so cloning on restore is correct for " +
+                  "them. Required for anything referenced by a static design-time asset " +
+                  "reference that must survive a save/reload — currently just " +
+                  "RecipeIngredient.material.")]
+        public string itemId;
+
         public string title;
         public EquipmentSlotType slotType;
         public ItemCategory category;
+        public ItemRarity rarity;
         public string statSummary;
         public Color itemColor = Color.gray;
+
+        [Tooltip("Real icon art, if any — falls back to a flat itemColor square when unset " +
+                  "(same convention as EncounterData.artwork/cardColor). See " +
+                  "GearRowFactory.SetIcon for how this is rendered.")]
+        public Sprite icon;
+
+        [Tooltip("Only relevant when category is Weapon — which archetype this is, gating " +
+                  "which AbilityDefinition/PassiveDefinition catalog entries can roll on it " +
+                  "(see WeaponGenerator).")]
+        public WeaponType weaponType;
+
+        [Tooltip("Only relevant when category is Weapon — which enemy weaknesses/" +
+                  "resistances (EncounterData.damageTypeModifiers) this weapon's damage " +
+                  "is checked against.")]
+        public DamageType damageType;
 
         [Tooltip("Flat gold granted by the Market's Sell tab — not discounted or scaled by " +
                   "anything (Expertise's GoldCostMultiplier only discounts spending). Exact " +

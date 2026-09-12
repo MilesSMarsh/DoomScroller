@@ -1,3 +1,5 @@
+using DoomScroller.Feed;
+using DoomScroller.Inventory;
 using UnityEngine;
 
 namespace DoomScroller.Encounters
@@ -18,11 +20,11 @@ namespace DoomScroller.Encounters
         public bool IsTreasureRoom { get; }
         public bool IsRestRoom { get; }
 
-        // Which reward rarity tier (RewardGenerator.GenerateItem) a fight step grants —
+        // Which reward rarity (RewardGenerator.GenerateItem) a fight step grants —
         // separate from DepthIndex so inserting a rest step can shift a later fight's
         // position without changing its intended rarity. Meaningless for rest/treasure
         // steps.
-        public int RewardTierIndex { get; }
+        public ItemRarity RewardRarity { get; }
 
         // Enemy combat stats for the Phase 8 simulation — meaningless when IsTreasureRoom
         // or IsRestRoom is true (both resolve instantly with a null CombatSimulator).
@@ -30,22 +32,27 @@ namespace DoomScroller.Encounters
         public int EnemyAttackDamage { get; }
         public float EnemyAttackSpeed { get; }
 
+        // Carried straight through from the dungeon's own EncounterData — the same
+        // weaknesses apply at every depth. Meaningless for rest/treasure steps.
+        public DamageTypeModifier[] EnemyWeaknesses { get; }
+
         // Placeholder "art" for this page — a flat color distinct per depth, greybox
         // convention, same as every other fallback-color visual in this project.
         public Color StepColor { get; }
 
-        public DungeonStep(int depthIndex, string label, string rewardSummary, int xpReward, int rewardTierIndex,
-            int enemyHealth, int enemyAttackDamage, float enemyAttackSpeed, bool isTreasureRoom, bool isRestRoom,
-            Color stepColor)
+        public DungeonStep(int depthIndex, string label, string rewardSummary, int xpReward, ItemRarity rewardRarity,
+            int enemyHealth, int enemyAttackDamage, float enemyAttackSpeed, DamageTypeModifier[] enemyWeaknesses,
+            bool isTreasureRoom, bool isRestRoom, Color stepColor)
         {
             DepthIndex = depthIndex;
             Label = label;
             RewardSummary = rewardSummary;
             XpReward = xpReward;
-            RewardTierIndex = rewardTierIndex;
+            RewardRarity = rewardRarity;
             EnemyHealth = enemyHealth;
             EnemyAttackDamage = enemyAttackDamage;
             EnemyAttackSpeed = enemyAttackSpeed;
+            EnemyWeaknesses = enemyWeaknesses;
             IsTreasureRoom = isTreasureRoom;
             IsRestRoom = isRestRoom;
             StepColor = stepColor;

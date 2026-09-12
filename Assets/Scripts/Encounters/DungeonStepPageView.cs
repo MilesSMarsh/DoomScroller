@@ -159,7 +159,7 @@ namespace DoomScroller.Encounters
                 {
                     var previousLevel = progression.Level;
                     progression.AddXp(_step.XpReward);
-                    var item = RewardGenerator.GenerateItem(_step.RewardTierIndex);
+                    var item = RewardGenerator.GenerateItem(_step.RewardRarity);
                     loadout.AddToInventory(item);
                     // Everything banked across the whole run, plus this room's own —
                     // opening this one chest is what actually grants all of it at once.
@@ -198,7 +198,7 @@ namespace DoomScroller.Encounters
                 {
                     var previousLevel = progression.Level;
                     progression.AddXp(_step.XpReward);
-                    var item = RewardGenerator.GenerateItem(_step.RewardTierIndex);
+                    var item = RewardGenerator.GenerateItem(_step.RewardRarity);
                     loadout.AddToInventory(item);
                     // Not granted here — it joins the running total DungeonView carries
                     // forward, only actually paid out when the treasure room's chest is

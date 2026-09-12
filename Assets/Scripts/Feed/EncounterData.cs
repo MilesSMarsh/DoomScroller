@@ -38,6 +38,12 @@ namespace DoomScroller.Feed
         [Tooltip("Enemy basic attacks per second.")]
         public float enemyAttackSpeed = 0.8f;
 
+        [Header("Damage Weaknesses")]
+        [Tooltip("How this enemy's incoming damage is scaled per weapon DamageType. " +
+                  "Unlisted types stay at a normal 1× — leave empty for no special " +
+                  "weaknesses/resistances at all.")]
+        public DamageTypeModifier[] damageTypeModifiers;
+
         [Header("Resource Encounter")]
         [Tooltip("Only relevant when type is Resource. The material instantly granted on entry.")]
         public ItemData resourceMaterial;
@@ -45,5 +51,21 @@ namespace DoomScroller.Feed
         [Tooltip("Only relevant when type is Resource. Units granted before scaling by the " +
                   "player's Expertise (PlayerAttributes.ResourceYieldMultiplier).")]
         public int baseResourceYield = 5;
+
+        [Tooltip("Only relevant when type is Resource. An optional rarer secondary " +
+                  "material with a small independent chance to also drop alongside " +
+                  "resourceMaterial each time this encounter is entered. Leave unset for " +
+                  "no secondary drop.")]
+        public ItemData secondaryResourceMaterial;
+
+        [Tooltip("Only relevant when secondaryResourceMaterial is set. Independent roll " +
+                  "chance (0-1) each time this encounter is entered.")]
+        [Range(0f, 1f)]
+        public float secondaryResourceChance = 0.1f;
+
+        [Tooltip("Only relevant when secondaryResourceMaterial is set. Units granted on a " +
+                  "successful roll — not scaled by Expertise (a bonus find, not the main " +
+                  "yield).")]
+        public int secondaryResourceYield = 1;
     }
 }

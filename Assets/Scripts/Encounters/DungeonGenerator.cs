@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using DoomScroller.Feed;
+using DoomScroller.Inventory;
 using UnityEngine;
 
 namespace DoomScroller.Encounters
@@ -7,7 +8,8 @@ namespace DoomScroller.Encounters
     // Plain C# so dungeon scaling is testable without a running scene.
     // Builds one dungeon run's step sequence: escalating enemy depths, an optional rest
     // stop, always capped by a guaranteed treasure room. Reward rarity per fight step is
-    // its RewardTierIndex (0/1/2), independent of the step's actual DepthIndex/list
+    // its RewardRarity (Common/Uncommon/Rare, one per EnemyDepthCount depth — never
+    // Legendary, dungeons cap at Rare), independent of the step's actual DepthIndex/list
     // position so inserting a rest step never shifts a later fight's intended rarity —
     // the treasure room's own reward always clamps to the best tier regardless.
     public static class DungeonGenerator
@@ -16,8 +18,6 @@ namespace DoomScroller.Encounters
         private const float StatGrowthPerDepth = 0.75f;
         private const float XpGrowthPerDepth = 0.75f;
         private const float RestRoomChance = 0.5f;
-
-        private static readonly string[] GearRarities = { "Common", "Uncommon", "Rare" };
 
         // One flat placeholder color per depth, deepening/reddening as the dungeon gets
         // harder — greybox "art," same convention as every other fallback-color visual
@@ -55,23 +55,24 @@ namespace DoomScroller.Encounters
                 // pacing sane at depth.
                 var enemyAttackSpeed = data.enemyAttackSpeed;
                 var xp = Mathf.RoundToInt(data.baseXpReward * (1f + i * XpGrowthPerDepth));
-                var rewardSummary = $"{xp} XP + {GearRarities[i]} Gear";
-                steps.Add(new DungeonStep(0, $"Depth {i + 1}", rewardSummary, xp, i,
-                    enemyHealth, enemyAttackDamage, enemyAttackSpeed, false, false, DepthColors[i]));
+                var rewardRarity = (ItemRarity)i;
+                var rewardSummary = $"{xp} XP + {rewardRarity} Gear";
+                steps.Add(new DungeonStep(0, $"Depth {i + 1}", rewardSummary, xp, rewardRarity,
+                    enemyHealth, enemyAttackDamage, enemyAttackSpeed, data.damageTypeModifiers, false, false, DepthColors[i]));
 
                 // Splice the rest step in right after whichever fight depth was chosen —
                 // never before the first fight, never after the treasure room.
                 if (i == restAfterDepth && rng.NextDouble() < RestRoomChance)
                 {
-                    steps.Add(new DungeonStep(0, "Rest", "Full HP restore, no combat", 0, 0,
-                        0, 0, 0f, false, true, RestColor));
+                    steps.Add(new DungeonStep(0, "Rest", "Full HP restore, no combat", 0, ItemRarity.Common,
+                        0, 0, 0f, null, false, true, RestColor));
                 }
             }
 
             var treasureXp = Mathf.RoundToInt(data.baseXpReward * (1f + EnemyDepthCount * XpGrowthPerDepth));
             var treasureReward = $"{treasureXp} XP + guaranteed Rare loot";
-            steps.Add(new DungeonStep(0, "Treasure Room", treasureReward, treasureXp, GearRarities.Length - 1,
-                0, 0, 0f, true, false, TreasureColor));
+            steps.Add(new DungeonStep(0, "Treasure Room", treasureReward, treasureXp, ItemRarity.Rare,
+                0, 0, 0f, null, true, false, TreasureColor));
 
             // Re-stamp DepthIndex to the step's real position — the placeholder 0s above
             // only exist because DungeonStep bakes DepthIndex in at construction, before
@@ -79,8 +80,9 @@ namespace DoomScroller.Encounters
             for (var i = 0; i < steps.Count; i++)
             {
                 var s = steps[i];
-                steps[i] = new DungeonStep(i, s.Label, s.RewardSummary, s.XpReward, s.RewardTierIndex,
-                    s.EnemyHealth, s.EnemyAttackDamage, s.EnemyAttackSpeed, s.IsTreasureRoom, s.IsRestRoom, s.StepColor);
+                steps[i] = new DungeonStep(i, s.Label, s.RewardSummary, s.XpReward, s.RewardRarity,
+                    s.EnemyHealth, s.EnemyAttackDamage, s.EnemyAttackSpeed, s.EnemyWeaknesses,
+                    s.IsTreasureRoom, s.IsRestRoom, s.StepColor);
             }
 
             return steps;

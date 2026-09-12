@@ -21,5 +21,9 @@ MonoBehaviour:
   enemyHealth: 80
   enemyAttackDamage: 10
   enemyAttackSpeed: 0.8
+  damageTypeModifiers: []
   resourceMaterial: {fileID: 11400000, guid: 297b208e32d837a97be87cc81fcf80f4, type: 2}
   baseResourceYield: 5
+  secondaryResourceMaterial: {fileID: 11400000, guid: 18746591024edc0dabd689d48249847f, type: 2}
+  secondaryResourceChance: 0.1
+  secondaryResourceYield: 1

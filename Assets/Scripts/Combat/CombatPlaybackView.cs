@@ -671,7 +671,7 @@ namespace DoomScroller.Combat
             iconLayout.flexibleWidth = 0;
             iconLayout.flexibleHeight = 0;
             var icon = iconGo.AddComponent<Image>();
-            icon.color = ability.iconColor;
+            GearRowFactory.SetIcon(icon, ability.icon, ability.iconColor);
 
             // Always present, but only ever interactable (and only ever tapped
             // meaningfully) in manual mode — CombatSimulator.CastManualAbility is a

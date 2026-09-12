@@ -217,7 +217,7 @@ namespace DoomScroller.Encounters
             infoLayout.flexibleHeight = 0;
 
             var row = GearRowFactory.Create(infoGo.transform, 64, 22, 30, 26);
-            row.Icon.color = entry.Item.itemColor;
+            GearRowFactory.SetIcon(row, entry.Item.icon, entry.Item.itemColor, entry.Item.rarity);
             row.CaptionText.text = entry.Item.category.ToString();
             row.TitleText.text = entry.Item.title;
             row.StatText.text = entry.Item.statSummary;
@@ -267,7 +267,7 @@ namespace DoomScroller.Encounters
             infoLayout.flexibleHeight = 0;
 
             var row = GearRowFactory.Create(infoGo.transform, 64, 22, 30, 26);
-            row.Icon.color = item.itemColor;
+            GearRowFactory.SetIcon(row, item.icon, item.itemColor, item.rarity);
             row.CaptionText.text = item.category.ToString();
             row.TitleText.text = count > 1 ? $"{item.title} (x{count} owned)" : item.title;
             row.StatText.text = item.statSummary;

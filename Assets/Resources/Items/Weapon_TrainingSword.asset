@@ -15,8 +15,11 @@ MonoBehaviour:
   title: Training Sword
   slotType: 5
   category: 1
+  rarity: 0
   statSummary: +6 Attack
   itemColor: {r: 0.55, g: 0.5, b: 0.45, a: 1}
+  weaponType: 0
+  damageType: 0
   goldValue: 9
   powerValue: 6
   abilities: []

@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a8294fed99c4ae1880d2e20e4ba7a0b, type: 3}
+  m_Name: Resource_LargeThicket
+  m_EditorClassIdentifier: Assembly-CSharp::DoomScroller.Feed.EncounterData
+  title: Large Thicket
+  type: 4
+  artwork: {fileID: 0}
+  cardColor: {r: 0.3, g: 0.45, b: 0.15, a: 1}
+  rewardSummary: "Gather Fibers \u2014 no combat required"
+  baseXpReward: 0
+  enemyHealth: 80
+  enemyAttackDamage: 10
+  enemyAttackSpeed: 0.8
+  damageTypeModifiers: []
+  resourceMaterial: {fileID: 11400000, guid: dac0ef6a6c6b678dd81dd20a206b4e1c, type: 2}
+  baseResourceYield: 5
+  secondaryResourceMaterial: {fileID: 11400000, guid: 984c6c091567ff4b395bb6f7a9a56627, type: 2}
+  secondaryResourceChance: 0.1
+  secondaryResourceYield: 1

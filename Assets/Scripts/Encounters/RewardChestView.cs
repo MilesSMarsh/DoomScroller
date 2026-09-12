@@ -166,7 +166,7 @@ namespace DoomScroller.Encounters
             _itemRow.CaptionText.text = "Item";
             _itemRow.TitleText.text = item.title;
             _itemRow.StatText.text = item.statSummary;
-            _itemRow.Icon.color = item.itemColor;
+            GearRowFactory.SetIcon(_itemRow, item.icon, item.itemColor, item.rarity);
 
             var note = "";
             if (wasCloseCall)

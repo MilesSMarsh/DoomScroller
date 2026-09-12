@@ -24,7 +24,7 @@ namespace DoomScroller.Combat
             }
 
             return new CombatSimulator(loadout, attributes, settings, playerStartHp, data.enemyHealth,
-                data.enemyAttackDamage, data.enemyAttackSpeed, rng ?? new Random());
+                data.enemyAttackDamage, data.enemyAttackSpeed, data.damageTypeModifiers, rng ?? new Random());
         }
 
         // One page of a dungeon run — enemy stats come from the generated step (scaled
@@ -41,7 +41,7 @@ namespace DoomScroller.Combat
             }
 
             return new CombatSimulator(loadout, attributes, settings, playerStartHp, step.EnemyHealth,
-                step.EnemyAttackDamage, step.EnemyAttackSpeed, rng ?? new Random());
+                step.EnemyAttackDamage, step.EnemyAttackSpeed, step.EnemyWeaknesses, rng ?? new Random());
         }
 
         // Time-to-kill race: how long the player would take to kill the enemy versus how
@@ -66,7 +66,7 @@ namespace DoomScroller.Combat
             }
 
             return ComputeWinChance(loadout, attributes, health.CurrentMaxHealth, data.enemyHealth, data.enemyAttackDamage,
-                data.enemyAttackSpeed);
+                data.enemyAttackSpeed, data.damageTypeModifiers);
         }
 
         public static float PredictCloseCallChance(PlayerLoadout loadout, PlayerAttributes attributes, PlayerHealth health, EncounterData data)
@@ -84,15 +84,15 @@ namespace DoomScroller.Combat
         }
 
         private static float ComputeWinChance(PlayerLoadout loadout, PlayerAttributes attributes, int playerHealth,
-            int enemyHealth, int enemyAttackDamage, float enemyAttackSpeed)
+            int enemyHealth, int enemyAttackDamage, float enemyAttackSpeed, DamageTypeModifier[] enemyWeaknesses)
         {
-            var playerDps = MathF.Max(MinDps, CombatSimulator.EstimatePlayerDps(loadout, attributes));
-            var playerDefense = CombatSimulator.EstimatePlayerDefense(loadout);
+            var playerDps = MathF.Max(MinDps, CombatSimulator.EstimatePlayerDps(loadout, attributes, enemyWeaknesses));
+            var playerDefense = CombatSimulator.EstimatePlayerDefense(loadout, attributes);
             // Passive WeakenDamage/SlowAttackSpeed weapons lower the enemy's own stats
             // here too — same multipliers the real fight applies in CombatSimulator's
             // constructor, so the badge can't drift from what the fight actually does.
-            var effectiveEnemyDamage = enemyAttackDamage * CombatSimulator.EstimateEnemyDamageMultiplier(loadout);
-            var effectiveEnemySpeed = enemyAttackSpeed * CombatSimulator.EstimateEnemySpeedMultiplier(loadout);
+            var effectiveEnemyDamage = enemyAttackDamage * CombatSimulator.EstimateEnemyDamageMultiplier(loadout, attributes);
+            var effectiveEnemySpeed = enemyAttackSpeed * CombatSimulator.EstimateEnemySpeedMultiplier(loadout, attributes);
             var enemyDps = MathF.Max(1, effectiveEnemyDamage - playerDefense) * MathF.Max(MinDps, effectiveEnemySpeed);
 
             var playerTimeToKill = enemyHealth / playerDps;

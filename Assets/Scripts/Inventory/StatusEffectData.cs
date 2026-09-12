@@ -1,4 +1,5 @@
 using System;
+using DoomScroller.Progression;
 using UnityEngine;
 
 namespace DoomScroller.Inventory
@@ -35,6 +36,23 @@ namespace DoomScroller.Inventory
 
         [Tooltip("DamageOverTime only: seconds between ticks.")]
         public float tickIntervalSeconds = 1f;
+
+        [Tooltip("Only meaningful on a weapon's passiveEffects (see WeaponGenerator/" +
+                  "PassiveDefinition) — when set, this passive's effective magnitude grows " +
+                  "with the chosen attribute, live in combat, the same way a weapon's own " +
+                  "AttributeScaling entries already do (never baked in at roll time).")]
+        public bool scalesWithAttribute;
+        public PlayerAttribute scalingAttribute;
+        public float scalingCoefficient;
+
+        // The magnitude CombatSimulator actually applies — base magnitude plus the live
+        // attribute bonus when scalesWithAttribute is set. Never used by Describe/
+        // DescribePassive below (their static base-magnitude text is enough for the
+        // Profile ability list; a scaled preview isn't in scope here).
+        public float EffectiveMagnitude(PlayerAttributes attributes)
+        {
+            return scalesWithAttribute ? magnitude + attributes.Get(scalingAttribute) * scalingCoefficient : magnitude;
+        }
 
         // Generated straight from the numbers above so Profile UI text can never drift
         // from what the effect actually does in CombatSimulator.

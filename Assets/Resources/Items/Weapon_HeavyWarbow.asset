@@ -15,8 +15,11 @@ MonoBehaviour:
   title: Heavy Warbow
   slotType: 5
   category: 1
+  rarity: 1
   statSummary: +12 Attack, scales off Dexterity and Strength
   itemColor: {r: 0.45, g: 0.35, b: 0.2, a: 1}
+  weaponType: 1
+  damageType: 2
   goldValue: 18
   powerValue: 12
   abilities:

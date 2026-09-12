@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d73333fdea3e2e0287e1804c779c369, type: 3}
+  m_Name: Ability_Bleed
+  m_EditorClassIdentifier: Assembly-CSharp::DoomScroller.Inventory.AbilityDefinition
+  data:
+    abilityName: Bleed
+    description: Applies damage over time
+    iconColor: {r: 0.85, g: 0.75, b: 0.35, a: 1}
+    powerBonus: 6
+    cooldownSeconds: 4
+    onCastEffects:
+    - effectType: 0
+      magnitude: 3
+      durationSeconds: 4
+      tickIntervalSeconds: 1
+      scalesWithAttribute: 0
+      scalingAttribute: 0
+      scalingCoefficient: 0
+  allowedWeaponTypes: 00000000

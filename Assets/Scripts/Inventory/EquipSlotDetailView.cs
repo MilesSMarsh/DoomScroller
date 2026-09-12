@@ -138,21 +138,21 @@ namespace DoomScroller.Inventory
 
             if (lockedBy != null)
             {
-                _equippedRow.Icon.color = new Color(1f, 1f, 1f, 0.06f);
+                GearRowFactory.SetIcon(_equippedRow, null, new Color(1f, 1f, 1f, 0.06f), null);
                 _equippedRow.TitleText.text = "Locked";
                 _equippedRow.StatText.text = $"{lockedBy.title} needs both hands";
                 _unequipButton.SetActive(false);
             }
             else if (equipped == null)
             {
-                _equippedRow.Icon.color = new Color(1f, 1f, 1f, 0.15f);
+                GearRowFactory.SetIcon(_equippedRow, null, new Color(1f, 1f, 1f, 0.15f), null);
                 _equippedRow.TitleText.text = "Empty";
                 _equippedRow.StatText.text = "pick one below";
                 _unequipButton.SetActive(false);
             }
             else
             {
-                _equippedRow.Icon.color = equipped.itemColor;
+                GearRowFactory.SetIcon(_equippedRow, equipped.icon, equipped.itemColor, equipped.rarity);
                 _equippedRow.TitleText.text = equipped.title;
                 _equippedRow.StatText.text = equipped.isTwoHanded
                     ? $"{equipped.StatLabel} {equipped.powerValue} (2H)"
@@ -227,7 +227,7 @@ namespace DoomScroller.Inventory
             });
 
             var row = GearRowFactory.Create(equipAreaGo.transform, IconSize, 24, 32, 28);
-            row.Icon.color = item.itemColor;
+            GearRowFactory.SetIcon(row, item.icon, item.itemColor, item.rarity);
             row.CaptionText.text = ItemCategoryInfo.SlotLabel(item.slotType);
             row.TitleText.text = item.title;
             row.StatText.text = item.isTwoHanded

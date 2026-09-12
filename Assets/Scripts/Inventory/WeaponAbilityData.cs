@@ -12,9 +12,13 @@ namespace DoomScroller.Inventory
         public string description;
 
         [Tooltip("Greybox placeholder identity for this ability — same convention as " +
-                  "ItemData.itemColor (a plain colored square, no sprite art yet). Shown " +
-                  "on its Profile row and on its cooldown-bar widget in the combat sim.")]
+                  "ItemData.itemColor. Shown on its Profile row and on its cooldown-bar " +
+                  "widget in the combat sim whenever icon (below) isn't assigned.")]
         public Color iconColor = new(0.85f, 0.75f, 0.35f);
+
+        [Tooltip("Real icon art, if any — falls back to iconColor when unset. See " +
+                  "GearRowFactory.SetIcon for how this is rendered.")]
+        public Sprite icon;
 
         [Tooltip("Added on top of the owning weapon's own scaled basic-attack damage " +
                   "(powerValue + stat scaling) when this ability casts — not the whole " +

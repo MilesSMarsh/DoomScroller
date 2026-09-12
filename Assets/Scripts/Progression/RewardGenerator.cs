@@ -8,18 +8,18 @@ namespace DoomScroller.Progression
     // so what the encounter-detail screen promised is exactly what gets granted.
     public static class RewardGenerator
     {
-        private static readonly string[] RarityNames = { "Common", "Uncommon", "Rare" };
-        private static readonly int[] RarityPower = { 8, 14, 22 };
+        private static readonly string[] RarityNames = { "Common", "Uncommon", "Rare", "Legendary", "Mythic" };
+
+        // Shared across every category — WeaponGenerator reuses this same table for a
+        // rolled weapon's base damage (the user's own call: base damage comes from
+        // rarity alone, not weapon type).
+        public static readonly int[] RarityPower = { 8, 14, 22, 34, 50 };
 
         // Sell price at the Market's Sell tab — a placeholder scale parallel to
-        // RarityPower, tuned later per the user's own call on this.
-        private static readonly int[] RarityGoldValue = { 12, 20, 35 };
-        private static readonly Color[] RarityColors =
-        {
-            new(0.7f, 0.7f, 0.7f, 1f),
-            new(0.3f, 0.6f, 0.9f, 1f),
-            new(0.8f, 0.6f, 0.15f, 1f)
-        };
+        // RarityPower, tuned later per the user's own call on this. Internal (not
+        // private) so WeaponGenerator/WeaponUpgrader can price weapons off the same
+        // table instead of leaving item.goldValue at ItemData's bare default.
+        internal static readonly int[] RarityGoldValue = { 12, 20, 35, 55, 85 };
 
         // Gold granted alongside XP for a combat win — one source of truth so
         // CombatResolutionView and DungeonStepPageView can't drift out of sync on how
@@ -34,11 +34,10 @@ namespace DoomScroller.Progression
 
         // allowedCategories restricts the roll (the Market uses this to sell only
         // Armor/Shield/Talisman) — null means today's default pool.
-        public static ItemData GenerateItem(int rarityTierIndex, System.Random rng = null,
+        public static ItemData GenerateItem(ItemRarity rarity, System.Random rng = null,
             ItemCategory[] allowedCategories = null)
         {
             rng ??= new System.Random();
-            rarityTierIndex = Mathf.Clamp(rarityTierIndex, 0, RarityNames.Length - 1);
 
             // Potion and Material are excluded from the default pool — a randomly-generated
             // "Common Potion" doesn't mean anything the way "Common Head" does (potions are
@@ -48,39 +47,30 @@ namespace DoomScroller.Progression
                 .Where(c => c != ItemCategory.Potion && c != ItemCategory.Material)
                 .ToArray();
             var category = categories[rng.Next(categories.Length)];
+
+            // Weapons get their own richer generation (type, ability/passive rolls,
+            // attribute scaling that grows with rarity) — see WeaponGenerator.
+            if (category == ItemCategory.Weapon)
+            {
+                return WeaponGenerator.Generate(rarity, rng);
+            }
+
             var slots = ItemCategoryInfo.SlotsFor(category);
             var slot = slots[rng.Next(slots.Length)];
 
-            var rarityName = RarityNames[rarityTierIndex];
-            var power = RarityPower[rarityTierIndex];
+            var rarityIndex = (int)rarity;
+            var rarityName = RarityNames[rarityIndex];
+            var power = RarityPower[rarityIndex];
 
             var item = ScriptableObject.CreateInstance<ItemData>();
             item.title = $"{rarityName} {slot}";
             item.slotType = slot;
             item.category = category;
+            item.rarity = rarity;
             item.statSummary = $"+{power} {ItemCategoryInfo.Label(category)}";
             item.powerValue = power;
-            item.itemColor = RarityColors[rarityTierIndex];
-            item.goldValue = RarityGoldValue[rarityTierIndex];
-
-            if (category == ItemCategory.Weapon)
-            {
-                item.abilities = new[]
-                {
-                    new WeaponAbilityData
-                    {
-                        abilityName = "Strike",
-                        description = "A reliable basic attack",
-                        powerBonus = power / 2
-                    },
-                    new WeaponAbilityData
-                    {
-                        abilityName = "Honed Edge",
-                        description = "A quiet, always-on edge to your attacks",
-                        powerBonus = power / 4
-                    }
-                };
-            }
+            item.itemColor = ItemRarityInfo.ColorFor(rarity);
+            item.goldValue = RarityGoldValue[rarityIndex];
 
             return item;
         }
