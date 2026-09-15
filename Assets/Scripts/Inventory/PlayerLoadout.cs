@@ -74,10 +74,16 @@ namespace DoomScroller.Inventory
 
         public IReadOnlyList<ItemData> GetInventory(EquipmentSlotType slot)
         {
-            // Potions never have a meaningful slotType (they're never equipped to a
-            // body slot — see GetPotions) so they're excluded here regardless of
-            // whatever default value that field happens to carry.
-            return _inventory.Where(i => i.slotType == slot && i.category != ItemCategory.Potion).ToList();
+            // Potions and Materials never have a meaningful slotType (neither is ever
+            // equipped to a body slot — see GetPotions/GetMaterials) so both are
+            // excluded here regardless of whatever default value that field happens to
+            // carry — Material in particular defaults to Head (EquipmentSlotType's
+            // ordinal 0), since nothing ever sets it, which without this check would
+            // wrongly surface every owned Material when browsing the Head slot.
+            // ItemCategoryInfo.SlotsFor's own default case is empty for exactly these
+            // two categories, so this one check covers both (and any future
+            // non-equippable category) instead of hardcoding each by name.
+            return _inventory.Where(i => i.slotType == slot && ItemCategoryInfo.SlotsFor(i.category).Length > 0).ToList();
         }
 
         // Unfiltered — the bottom-sheet inventory grid shows everything the player owns,
@@ -201,15 +207,17 @@ namespace DoomScroller.Inventory
             }
         }
 
-        // Every passive effect on any currently-equipped weapon, across both hands — same
-        // pairing convention as GetEquippedWeaponAbilities(), just for the always-on
-        // (no cast required) side of a weapon's kit.
-        public IEnumerable<StatusEffectData> GetEquippedPassiveWeaponEffects()
+        // Every passive effect on any currently-equipped item, across every slot — not
+        // weapon-only: EquipmentGenerator rolls the same passiveEffects field onto
+        // Armor/Talismans, so a Talisman sitting in Talisman1/2 counts here too, same as
+        // a weapon in either hand. Abilities (cast skills) stay weapon-only — see
+        // GetEquippedWeaponAbilities() — this is only the always-on, no-cast side.
+        public IEnumerable<StatusEffectData> GetEquippedPassiveEffects()
         {
-            foreach (var slot in HandSlots)
+            foreach (EquipmentSlotType slot in Enum.GetValues(typeof(EquipmentSlotType)))
             {
                 var item = GetEquipped(slot);
-                if (item != null && item.category == ItemCategory.Weapon && item.passiveEffects != null)
+                if (item != null && item.passiveEffects != null)
                 {
                     foreach (var effect in item.passiveEffects)
                     {

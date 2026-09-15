@@ -102,6 +102,7 @@ namespace DoomScroller.Progression.Editor
         private bool _showAddNewAbility;
         private bool _showAddNewPassive;
         private string _newAbilityName = "";
+        private string _newPassiveName = "";
         private readonly HashSet<WeaponType> _newAbilityTypes = new();
         private readonly HashSet<WeaponType> _newPassiveTypes = new();
 
@@ -499,19 +500,14 @@ namespace DoomScroller.Progression.Editor
 
         private static void DrawPassivePool(WeaponDefinition definition)
         {
-            EditorGUILayout.LabelField("Passive Pool (independent roll chance, not guaranteed)", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Passive Pool (rolled from, not guaranteed)", EditorStyles.boldLabel);
 
             var pool = definition.possiblePassives?.ToList() ?? new List<PassiveDefinition>();
             for (var i = 0; i < pool.Count; i++)
             {
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    var label = pool[i] != null
-                        ? (pool[i].effect.scalesWithAttribute
-                            ? $"{pool[i].effect.effectType} (scales w/ {pool[i].effect.scalingAttribute})"
-                            : $"{pool[i].effect.effectType} (flat)")
-                        : "(missing)";
-                    EditorGUILayout.LabelField(label);
+                    EditorGUILayout.LabelField(pool[i] != null ? PassiveLabel(pool[i]) : "(missing)");
                     if (GUILayout.Button("Remove", GUILayout.Width(70)))
                     {
                         Undo.RecordObject(definition, "Remove Passive");
@@ -538,10 +534,7 @@ namespace DoomScroller.Progression.Editor
 
                 foreach (var passive in all)
                 {
-                    var label = passive.effect.scalesWithAttribute
-                        ? $"{passive.effect.effectType} (scales w/ {passive.effect.scalingAttribute})"
-                        : $"{passive.effect.effectType} (flat)";
-                    menu.AddItem(new GUIContent(label), false, () =>
+                    menu.AddItem(new GUIContent(PassiveLabel(passive)), false, () =>
                     {
                         Undo.RecordObject(definition, "Add Passive");
                         var updated = definition.possiblePassives?.ToList() ?? new List<PassiveDefinition>();
@@ -578,10 +571,12 @@ namespace DoomScroller.Progression.Editor
                 var abilities = result.abilities is { Length: > 0 }
                     ? string.Join(", ", result.abilities.Select(a => a.abilityName))
                     : "none";
-                var passive = result.passiveEffects is { Length: > 0 } ? result.passiveEffects[0].DescribePassive() : "none";
+                var passives = result.passiveEffects is { Length: > 0 }
+                    ? string.Join(", ", result.passiveEffects.Select(PassivePreviewLabel))
+                    : "none";
 
                 EditorGUILayout.HelpBox(
-                    $"Power {result.powerValue}   Scaling: {scaling}\nAbilities: {abilities}\nPassive: {passive}",
+                    $"Power {result.powerValue}   Scaling: {scaling}\nAbilities: {abilities}\nPassives: {passives}",
                     MessageType.None);
             }
         }
@@ -791,19 +786,14 @@ namespace DoomScroller.Progression.Editor
         // (a weapon-specific concept), so every authored PassiveDefinition is eligible.
         private static void DrawEquipmentEffectPool(EquipmentDefinition definition)
         {
-            EditorGUILayout.LabelField("Effect Pool (independent roll chance, not guaranteed)", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Effect Pool (rolled from, not guaranteed)", EditorStyles.boldLabel);
 
             var pool = definition.possiblePassives?.ToList() ?? new List<PassiveDefinition>();
             for (var i = 0; i < pool.Count; i++)
             {
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    var label = pool[i] != null
-                        ? (pool[i].effect.scalesWithAttribute
-                            ? $"{pool[i].effect.effectType} (scales w/ {pool[i].effect.scalingAttribute})"
-                            : $"{pool[i].effect.effectType} (flat)")
-                        : "(missing)";
-                    EditorGUILayout.LabelField(label);
+                    EditorGUILayout.LabelField(pool[i] != null ? PassiveLabel(pool[i]) : "(missing)");
                     if (GUILayout.Button("Remove", GUILayout.Width(70)))
                     {
                         Undo.RecordObject(definition, "Remove Effect");
@@ -830,10 +820,7 @@ namespace DoomScroller.Progression.Editor
 
                 foreach (var passive in all)
                 {
-                    var label = passive.effect.scalesWithAttribute
-                        ? $"{passive.effect.effectType} (scales w/ {passive.effect.scalingAttribute})"
-                        : $"{passive.effect.effectType} (flat)";
-                    menu.AddItem(new GUIContent(label), false, () =>
+                    menu.AddItem(new GUIContent(PassiveLabel(passive)), false, () =>
                     {
                         Undo.RecordObject(definition, "Add Effect");
                         var updated = definition.possiblePassives?.ToList() ?? new List<PassiveDefinition>();
@@ -864,8 +851,10 @@ namespace DoomScroller.Progression.Editor
 
             if (_equipPreviewResult.TryGetValue(definition, out var result) && result != null)
             {
-                var passive = result.passiveEffects is { Length: > 0 } ? result.passiveEffects[0].DescribePassive() : "none";
-                EditorGUILayout.HelpBox($"Power {result.powerValue}   Effect: {passive}", MessageType.None);
+                var passives = result.passiveEffects is { Length: > 0 }
+                    ? string.Join(", ", result.passiveEffects.Select(PassivePreviewLabel))
+                    : "none";
+                EditorGUILayout.HelpBox($"Power {result.powerValue}   Effects: {passives}", MessageType.None);
             }
         }
 
@@ -1513,12 +1502,16 @@ namespace DoomScroller.Progression.Editor
 
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
+                _newPassiveName = EditorGUILayout.TextField("Passive Name", _newPassiveName);
                 EditorGUILayout.HelpBox("Effect type, magnitude, and scaling are filled in below after creation.", MessageType.None);
                 DrawWeaponTypeToggleSet(_newPassiveTypes);
 
-                if (GUILayout.Button("Create"))
+                using (new EditorGUI.DisabledScope(string.IsNullOrWhiteSpace(_newPassiveName)))
                 {
-                    CreatePassiveDefinition();
+                    if (GUILayout.Button("Create"))
+                    {
+                        CreatePassiveDefinition();
+                    }
                 }
             }
         }
@@ -1533,6 +1526,8 @@ namespace DoomScroller.Progression.Editor
             var passive = CreateInstance<PassiveDefinition>();
             passive.effect = new StatusEffectData
             {
+                passiveName = _newPassiveName,
+                description = "",
                 effectType = StatusEffectType.EmpowerDamage,
                 magnitude = 0.1f,
                 durationSeconds = 5f,
@@ -1540,12 +1535,13 @@ namespace DoomScroller.Progression.Editor
             };
             passive.allowedWeaponTypes = _newPassiveTypes.ToArray();
 
-            var path = AssetDatabase.GenerateUniqueAssetPath($"{AbilitiesResourcesPath}/Passive_New.asset");
+            var path = AssetDatabase.GenerateUniqueAssetPath($"{AbilitiesResourcesPath}/Passive_{SanitizeFileName(_newPassiveName)}.asset");
             AssetDatabase.CreateAsset(passive, path);
             AssetDatabase.SaveAssets();
 
             _passiveExpanded[passive] = true;
             _showAbilityCatalog = true;
+            _newPassiveName = "";
             _newPassiveTypes.Clear();
             Selection.activeObject = passive;
             RefreshCaches();
@@ -1609,6 +1605,30 @@ namespace DoomScroller.Progression.Editor
             }
         }
 
+        // Shared by every place a PassiveDefinition needs a one-line label — its own name
+        // when authored, falling back to the raw effect shape for anything created
+        // before naming existed.
+        private static string PassiveLabel(PassiveDefinition passive)
+        {
+            if (!string.IsNullOrEmpty(passive.effect.passiveName))
+            {
+                return $"◆ {passive.effect.passiveName}";
+            }
+
+            return passive.effect.scalesWithAttribute
+                ? $"◆ {passive.effect.effectType} (scales w/ {passive.effect.scalingAttribute})"
+                : $"◆ {passive.effect.effectType} (flat, {passive.effect.magnitude:0.##})";
+        }
+
+        // For a rolled StatusEffectData (Roll Preview panels) rather than the catalog
+        // asset that produced it — same naming fallback as PassiveLabel above.
+        private static string PassivePreviewLabel(StatusEffectData effect)
+        {
+            return !string.IsNullOrEmpty(effect.passiveName)
+                ? $"{effect.passiveName} ({effect.DescribePassive()})"
+                : effect.DescribePassive();
+        }
+
         private void DrawPassiveRow(PassiveDefinition passive)
         {
             _passiveExpanded.TryGetValue(passive, out var expanded);
@@ -1616,13 +1636,9 @@ namespace DoomScroller.Progression.Editor
 
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
-                var label = passive.effect.scalesWithAttribute
-                    ? $"◆ {passive.effect.effectType} (scales w/ {passive.effect.scalingAttribute})"
-                    : $"◆ {passive.effect.effectType} (flat, {passive.effect.magnitude:0.##})";
-
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    expanded = EditorGUILayout.Foldout(expanded, $"{label}  [{string.Join("/", types)}]", true);
+                    expanded = EditorGUILayout.Foldout(expanded, $"{PassiveLabel(passive)}  [{string.Join("/", types)}]", true);
                     if (GUILayout.Button("Delete", GUILayout.Width(60)))
                     {
                         if (EditorUtility.DisplayDialog("Delete Passive", "Delete this passive? This can't be undone.",
@@ -1640,6 +1656,17 @@ namespace DoomScroller.Progression.Editor
                 if (!expanded)
                 {
                     return;
+                }
+
+                EditorGUI.BeginChangeCheck();
+                var name = EditorGUILayout.TextField("Passive Name", passive.effect.passiveName);
+                var description = EditorGUILayout.TextField("Description", passive.effect.description);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    Undo.RecordObject(passive, "Edit Passive");
+                    passive.effect.passiveName = name;
+                    passive.effect.description = description;
+                    EditorUtility.SetDirty(passive);
                 }
 
                 DrawStatusEffectFields(passive, passive.effect);

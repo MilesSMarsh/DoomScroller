@@ -367,7 +367,7 @@ namespace DoomScroller.Inventory
             }
 
             var abilities = _loadout.GetEquippedWeaponAbilities().ToList();
-            var passives = _loadout.GetEquippedPassiveWeaponEffects().ToList();
+            var passives = _loadout.GetEquippedPassiveEffects().ToList();
             if (abilities.Count == 0 && passives.Count == 0)
             {
                 CreateLabel(_abilitiesContainer, "NoWeapon", "No weapon equipped", 32, FontStyle.Normal);
@@ -392,7 +392,10 @@ namespace DoomScroller.Inventory
             // above — nothing needs to be cast for these to be in effect.
             foreach (var passive in passives)
             {
-                CreateAbilityIconRow(_abilitiesContainer, PassiveIconColor, null, $"Passive — {passive.DescribePassive()}");
+                var label = !string.IsNullOrEmpty(passive.passiveName)
+                    ? $"{passive.passiveName} — {passive.description} ({passive.DescribePassive()})"
+                    : $"Passive — {passive.DescribePassive()}";
+                CreateAbilityIconRow(_abilitiesContainer, PassiveIconColor, null, label);
             }
         }
 

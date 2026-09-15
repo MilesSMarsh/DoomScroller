@@ -25,11 +25,12 @@ namespace DoomScroller.Inventory
                   "Common/Uncommon/Rare/Legendary/Mythic.")]
         public int[] powerByRarity = new int[5];
 
-        [Tooltip("The pool this piece can roll a passive \"effect\" from when generated " +
-                  "(same independent-chance roll WeaponGenerator uses, and the same " +
-                  "PassiveDefinition catalog weapons draw from — not gated by " +
-                  "allowedWeaponTypes, which is a weapon-specific concept). Not yet read " +
-                  "by combat math; authored/rolled only for now.")]
+        [Tooltip("The pool this piece can roll passives from when generated (same " +
+                  "rarity-scaled roll WeaponGenerator.SkillCountByRarity uses, and the " +
+                  "same PassiveDefinition catalog weapons draw from — not gated by " +
+                  "allowedWeaponTypes, which is a weapon-specific concept). Read by combat " +
+                  "the same as a weapon's passiveEffects — see " +
+                  "PlayerLoadout.GetEquippedPassiveEffects.")]
         public PassiveDefinition[] possiblePassives;
     }
 }

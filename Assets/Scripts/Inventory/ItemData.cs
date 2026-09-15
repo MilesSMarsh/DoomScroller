@@ -1,3 +1,4 @@
+using System.Linq;
 using UnityEngine;
 
 namespace DoomScroller.Inventory
@@ -52,8 +53,9 @@ namespace DoomScroller.Inventory
         [Tooltip("Only relevant when category is Weapon.")]
         public WeaponAbilityData[] abilities;
 
-        [Tooltip("Only relevant when category is Weapon. Always active for the whole fight " +
-                  "while this weapon is equipped — no cast or cooldown needed, unlike abilities.")]
+        [Tooltip("Weapons, Armor, and Talismans can all carry this — always active for the " +
+                  "whole fight while the item is equipped, no cast or cooldown needed. " +
+                  "See PlayerLoadout.GetEquippedPassiveEffects.")]
         public StatusEffectData[] passiveEffects;
 
         [Tooltip("Only relevant when category is Weapon. Equipping a two-handed weapon " +
@@ -83,8 +85,26 @@ namespace DoomScroller.Inventory
                   "weapon concept just author different coefficients.")]
         public AttributeScaling[] attributeScalingEntries;
 
+        [Tooltip("Only relevant when category is Weapon. Set by " +
+                  "WeaponGenerator.GenerateFromDefinition to the specific WeaponDefinition " +
+                  "this instance was rolled from — WeaponUpgrader.Empower/Reroll use it to " +
+                  "restrict further rolls to that weapon's own curated pool instead of the " +
+                  "type-wide catalog. Null for an archetype-rolled weapon " +
+                  "(WeaponGenerator.Generate), which has no curated pool of its own.")]
+        public WeaponDefinition sourceDefinition;
+
         // Not persisted — a display-only lookup so combat math never has to know
         // "defence" and "damage" are the same field under different labels.
         public string StatLabel => ItemCategoryInfo.Label(category);
+
+        // "1.1/s" or "1.1/s · Cleave, Bleed" — attack speed plus this weapon's actual,
+        // already-rolled abilities. Complements the existing damage line (StatLabel +
+        // powerValue) shown alongside it; doesn't repeat it. Null for non-weapons — see
+        // GearRowFactory.SetWeaponDetail for how this is rendered/hidden.
+        public string WeaponDetailSummary => category != ItemCategory.Weapon
+            ? null
+            : abilities is { Length: > 0 }
+                ? $"{attackSpeed:0.0}/s · {string.Join(", ", abilities.Select(a => a.abilityName))}"
+                : $"{attackSpeed:0.0}/s";
     }
 }

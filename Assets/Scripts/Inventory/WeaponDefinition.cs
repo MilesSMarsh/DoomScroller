@@ -49,9 +49,9 @@ namespace DoomScroller.Inventory
                   "(Common 0, Uncommon 1, Rare 2, Legendary 3, Mythic 4) at random from here.")]
         public AbilityDefinition[] possibleAbilities;
 
-        [Tooltip("The pool this weapon can roll a passive from when generated (independent " +
-                  "chance, same as the archetype-based generator) — again a pool, not a " +
-                  "guaranteed final passive.")]
+        [Tooltip("The pool this weapon can roll passives from when generated — a " +
+                  "rarity-sized subset (same SkillCountByRarity table abilities use), not " +
+                  "a fixed final list.")]
         public PassiveDefinition[] possiblePassives;
     }
 }

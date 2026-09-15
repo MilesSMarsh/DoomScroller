@@ -11,19 +11,13 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2d73333fdea3e2e0287e1804c779c369, type: 3}
   m_Name: Ability_Slash
-  m_EditorClassIdentifier: Assembly-CSharp::DoomScroller.Inventory.AbilityDefinition
+  m_EditorClassIdentifier: DoomScroller::DoomScroller.Inventory.AbilityDefinition
   data:
     abilityName: Slash
-    description: A quick basic strike
+    description: Strong Single Attack
     iconColor: {r: 0.85, g: 0.75, b: 0.35, a: 1}
+    icon: {fileID: 0}
     powerBonus: 5
-    cooldownSeconds: 2
-    onCastEffects:
-    - effectType: 3
-      magnitude: 0.15
-      durationSeconds: 3
-      tickIntervalSeconds: 1
-      scalesWithAttribute: 0
-      scalingAttribute: 0
-      scalingCoefficient: 0
+    cooldownSeconds: 3
+    onCastEffects: []
   allowedWeaponTypes: 00000000

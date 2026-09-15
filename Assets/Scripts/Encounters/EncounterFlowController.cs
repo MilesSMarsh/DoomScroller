@@ -20,6 +20,7 @@ namespace DoomScroller.Encounters
         private DungeonView _dungeonView;
         private VillageView _villageView;
         private ResourceEncounterView _resourceEncounterView;
+        private WanderingMerchantView _wanderingMerchantView;
 
         private void Awake()
         {
@@ -28,6 +29,7 @@ namespace DoomScroller.Encounters
             _dungeonView = DungeonView.Create(rect);
             _villageView = VillageView.Create(rect);
             _resourceEncounterView = ResourceEncounterView.Create(rect);
+            _wanderingMerchantView = WanderingMerchantView.Create(rect);
 
             feedController.EncounterSelected += OnEncounterSelected;
 
@@ -46,6 +48,10 @@ namespace DoomScroller.Encounters
 
             _resourceEncounterView.ReturnToFeedRequested += OnBackToFeed;
             _resourceEncounterView.EncounterWon += feedController.MarkWon;
+
+            // Never locked (no Won/Lost/Abandoned wiring), same as the Village — the
+            // whole point is you can leave and come back.
+            _wanderingMerchantView.ReturnToFeedRequested += OnBackToFeed;
         }
 
         private void OnEncounterSelected(EncounterData data)
@@ -66,6 +72,10 @@ namespace DoomScroller.Encounters
             {
                 _resourceEncounterView.Show(data, profileController.Loadout, profileController.Attributes);
             }
+            else if (data.type == EncounterType.WanderingMerchant)
+            {
+                _wanderingMerchantView.Show(data, profileController.Loadout, profileController.Wallet, profileController.Attributes);
+            }
             else
             {
                 _resolutionView.Show(data, profileController.Loadout, profileController.Progression,
@@ -79,6 +89,7 @@ namespace DoomScroller.Encounters
             _dungeonView.Hide();
             _villageView.Hide();
             _resourceEncounterView.Hide();
+            _wanderingMerchantView.Hide();
             feedController.gameObject.SetActive(true);
         }
     }

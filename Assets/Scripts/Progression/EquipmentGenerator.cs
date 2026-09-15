@@ -27,7 +27,8 @@ namespace DoomScroller.Progression
             item.powerValue = power;
             item.statSummary = $"+{power} {ItemCategoryInfo.Label(definition.category)}";
 
-            item.passiveEffects = WeaponGenerator.RollPassive(definition.possiblePassives, rng);
+            item.passiveEffects = WeaponGenerator.RollPassives(definition.possiblePassives,
+                WeaponGenerator.SkillCountByRarity[rarityIndex], rng);
 
             return item;
         }

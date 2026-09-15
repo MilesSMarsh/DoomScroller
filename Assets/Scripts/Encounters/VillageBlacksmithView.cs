@@ -22,7 +22,7 @@ namespace DoomScroller.Encounters
     // which weapons are owned (not just their lock state) can change at any time.
     public class VillageBlacksmithView : MonoBehaviour
     {
-        private const float RowHeight = 130f;
+        private const float RowHeight = 160f;
 
         private static readonly (string Label, ItemCategory Category)[] Categories =
         {
@@ -412,6 +412,38 @@ namespace DoomScroller.Encounters
         // separate rather than unified with it since upgrade rows are fully recreated on
         // every rebuild (no need to track/refresh them in place afterward the way recipe
         // rows do).
+        // A small 2-line vertical stack (title over a smaller italic stat line) — the
+        // same idea as GearRowFactory's own text column, inlined here since these rows
+        // aren't built through GearRowFactory (a different overall shape: icon + name +
+        // trailing cost, no caption line). Shared by CreateRecipeRow and
+        // CreateWeaponUpgradeRow, which differ only in what they pass as `stat`.
+        private static void CreateNameColumn(Transform parent, string title, string stat)
+        {
+            var columnGo = new GameObject("NameColumn", typeof(RectTransform));
+            columnGo.transform.SetParent(parent, false);
+            var columnLayoutElement = columnGo.AddComponent<LayoutElement>();
+            columnLayoutElement.minWidth = 0;
+            columnLayoutElement.preferredWidth = 0;
+            columnLayoutElement.flexibleWidth = 1;
+            columnLayoutElement.flexibleHeight = 0;
+
+            var columnGroup = columnGo.AddComponent<VerticalLayoutGroup>();
+            columnGroup.childAlignment = TextAnchor.MiddleLeft;
+            columnGroup.childForceExpandWidth = true;
+            columnGroup.childForceExpandHeight = false;
+            columnGroup.childControlWidth = true;
+            columnGroup.childControlHeight = true;
+
+            var nameText = CreateLabel(columnGo.transform, "Name", title, 28, FontStyle.Bold);
+            nameText.alignment = TextAnchor.MiddleLeft;
+            nameText.raycastTarget = false;
+
+            var statText = CreateLabel(columnGo.transform, "Stat", stat, 22, FontStyle.Italic);
+            statText.alignment = TextAnchor.MiddleLeft;
+            statText.color = new Color(1f, 1f, 1f, 0.7f);
+            statText.raycastTarget = false;
+        }
+
         private void CreateWeaponUpgradeRow(Transform parent, ItemData weapon, bool interactable, string costLabel, Action onTapped)
         {
             var rowGo = new GameObject($"Upgrade_{weapon.title}", typeof(RectTransform));
@@ -437,13 +469,9 @@ namespace DoomScroller.Encounters
             GearRowFactory.SetRarityBorder(border, weapon.rarity);
             icon.raycastTarget = false;
 
-            var nameText = CreateLabel(rowGo.transform, "Name", weapon.title, 28, FontStyle.Bold);
-            nameText.alignment = TextAnchor.MiddleLeft;
-            nameText.raycastTarget = false;
-            var nameLayout = nameText.GetComponent<LayoutElement>();
-            nameLayout.minWidth = 0;
-            nameLayout.preferredWidth = 0;
-            nameLayout.flexibleWidth = 1;
+            // Full detail including actual abilities — Empower/Reroll operate on real
+            // owned instances, same "nothing to hide" treatment as a shop/inventory row.
+            CreateNameColumn(rowGo.transform, weapon.title, weapon.WeaponDetailSummary);
 
             var costText = CreateLabel(rowGo.transform, "Cost", costLabel, 22, FontStyle.Italic);
             costText.alignment = TextAnchor.MiddleRight;
@@ -528,13 +556,10 @@ namespace DoomScroller.Encounters
             GearRowFactory.SetRarityBorder(border, recipe.OutputRarity);
             icon.raycastTarget = false;
 
-            var nameText = CreateLabel(rowGo.transform, "Name", recipe.OutputTitle, 28, FontStyle.Bold);
-            nameText.alignment = TextAnchor.MiddleLeft;
-            nameText.raycastTarget = false;
-            var nameLayout = nameText.GetComponent<LayoutElement>();
-            nameLayout.minWidth = 0;
-            nameLayout.preferredWidth = 0;
-            nameLayout.flexibleWidth = 1;
+            // Damage + speed, deliberately no abilities — nothing's been rolled yet for
+            // a not-yet-crafted recipe (see OnRecipeTapped/DescribePossibleAbilities for
+            // the tap-to-reveal possible pool instead).
+            CreateNameColumn(rowGo.transform, recipe.OutputTitle, recipe.OutputStatSummary);
 
             var costText = CreateLabel(rowGo.transform, "Cost", "", 22, FontStyle.Italic);
             costText.alignment = TextAnchor.MiddleRight;
@@ -566,9 +591,9 @@ namespace DoomScroller.Encounters
             var goldCost = DiscountedGoldCost(recipe);
             var canAfford = _wallet.Gold >= goldCost && _loadout.HasIngredientsFor(recipe);
 
-            _confirmMessageText.text = canAfford
+            _confirmMessageText.text = (canAfford
                 ? $"Craft {recipe.OutputTitle} for {goldCost}g + {DescribeIngredients(recipe)}?"
-                : $"Not enough gold or materials to craft {recipe.OutputTitle}.";
+                : $"Not enough gold or materials to craft {recipe.OutputTitle}.") + DescribePossibleAbilities(recipe);
             _confirmCraftButtonGo.SetActive(canAfford);
             _pendingConfirmAction = () =>
             {
@@ -582,6 +607,42 @@ namespace DoomScroller.Encounters
                 }
             };
             _confirmDialogGo.SetActive(true);
+        }
+
+        // Weapon-kind recipes haven't been rolled yet — abilities/passives are chosen at
+        // craft time (WeaponGenerator.GenerateFromDefinition), so the row itself never
+        // shows a specific list (see CreateNameColumn's stat argument in
+        // CreateRecipeRow). Tapping the row still tells you what's *possible*, clearly
+        // framed as such.
+        private static string DescribePossibleAbilities(RecipeDefinition recipe)
+        {
+            if (recipe.outputKind != RecipeOutputKind.Weapon || recipe.outputWeapon == null)
+            {
+                return "";
+            }
+
+            var text = "";
+            if (recipe.outputWeapon.possibleAbilities is { Length: > 0 } abilityPool)
+            {
+                var names = abilityPool.Where(a => a != null).Select(a => a.data.abilityName).ToList();
+                if (names.Count > 0)
+                {
+                    text += $"\nPossible abilities: {string.Join(", ", names)}";
+                }
+            }
+
+            if (recipe.outputWeapon.possiblePassives is { Length: > 0 } passivePool)
+            {
+                var names = passivePool.Where(p => p != null)
+                    .Select(p => string.IsNullOrEmpty(p.effect.passiveName) ? p.effect.effectType.ToString() : p.effect.passiveName)
+                    .ToList();
+                if (names.Count > 0)
+                {
+                    text += $"\nPossible passives: {string.Join(", ", names)}";
+                }
+            }
+
+            return text;
         }
 
         // The shared confirm dialog's single button handler — invokes whichever of
@@ -614,7 +675,7 @@ namespace DoomScroller.Encounters
             boxRect.anchorMin = new Vector2(0.5f, 0.5f);
             boxRect.anchorMax = new Vector2(0.5f, 0.5f);
             boxRect.pivot = new Vector2(0.5f, 0.5f);
-            boxRect.sizeDelta = new Vector2(800, 360);
+            boxRect.sizeDelta = new Vector2(800, 400);
             boxGo.AddComponent<Image>().color = new Color(0.14f, 0.14f, 0.16f, 1f);
 
             var boxLayout = boxGo.AddComponent<VerticalLayoutGroup>();
@@ -627,7 +688,7 @@ namespace DoomScroller.Encounters
             boxLayout.childControlHeight = true;
 
             view._confirmMessageText = CreateLabel(boxRect, "Message", "", 30, FontStyle.Normal);
-            SetFixedHeight(view._confirmMessageText.GetComponent<LayoutElement>(), 150);
+            SetFixedHeight(view._confirmMessageText.GetComponent<LayoutElement>(), 190);
 
             var buttonRowGo = new GameObject("ButtonRow", typeof(RectTransform));
             buttonRowGo.transform.SetParent(boxRect, false);

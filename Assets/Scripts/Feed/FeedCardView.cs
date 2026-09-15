@@ -229,27 +229,34 @@ namespace DoomScroller.Feed
 
             _titleText.text = data.title;
             _badgeText.text = BaseBadgeText(data);
-            _rewardText.text = data.rewardSummary;
+            _rewardText.text = data.description;
             _rewardDetailText.text = ExpectedRewardText(data);
 
             _actionBannerText.text = ActionLabel(data.type).ToUpperInvariant();
             _actionBannerImage.color = ActionColor(data.type);
         }
 
-        // A concrete, always-accurate expectation on top of the free-text rewardSummary
-        // above (whose hand-authored wording doesn't always spell out the XP number —
-        // e.g. Treasure's "guaranteed loot" line never states one). Every non-Dungeon
-        // win grants the same tier-0 "Common" item (see CombatResolutionView/
-        // RewardGenerator.GenerateItem(0)); Dungeon spans Common up to a guaranteed Rare
-        // treasure room (see DungeonGenerator); Tavern never grants anything.
+        // A concrete, always-accurate expectation on top of the hand-authored flavor
+        // description above (whose wording doesn't always spell out the XP number — e.g.
+        // Treasure's "guaranteed loot" line never states one). Enemy/Ambush/Treasure pull
+        // their odds straight from the encounter's own authored loot table (see
+        // RewardGenerator.DescribeLootTable) — an all-zero table (every card authored
+        // before loot tables existed) reads identically to the old hardcoded "Common
+        // Gear" default. Dungeon spans Common up to a guaranteed Rare treasure room (see
+        // DungeonGenerator, which keeps its own hardcoded per-depth progression); Tavern
+        // never grants anything.
         private static string ExpectedRewardText(EncounterData data)
         {
             return data.type switch
             {
                 EncounterType.Tavern => "No combat — shop, chat, and upgrade",
                 EncounterType.Dungeon => $"+{data.baseXpReward}+ XP · Common → Rare Gear",
-                EncounterType.Resource => $"+{data.baseResourceYield}+ {data.resourceMaterial.title}",
+                EncounterType.Resource => data.resourceMaterial != null
+                    ? $"+{data.baseResourceYield}+ {data.resourceMaterial.title}"
+                    : "(misconfigured — no resource material set)",
                 EncounterType.Landing => "",
+                EncounterType.Enemy or EncounterType.Ambush or EncounterType.Treasure =>
+                    DoomScroller.Progression.RewardGenerator.DescribeLootTable(data.lootTablePercentByRarity, data.baseXpReward),
                 _ => $"+{data.baseXpReward} XP · Common Gear"
             };
         }
@@ -266,6 +273,7 @@ namespace DoomScroller.Feed
                 EncounterType.Tavern => "Enter",
                 EncounterType.Resource => "Gather",
                 EncounterType.Landing => "",
+                EncounterType.Ambush => "Ambush!",
                 _ => "Enter"
             };
         }
@@ -280,6 +288,9 @@ namespace DoomScroller.Feed
                 EncounterType.Tavern => new Color(0.5f, 0.35f, 0.2f, 0.9f),
                 EncounterType.Resource => new Color(0.35f, 0.55f, 0.25f, 0.9f),
                 EncounterType.Landing => new Color(1f, 1f, 1f, 0.08f),
+                // More saturated/urgent than Enemy's own combat red — a warning color,
+                // distinct at a glance before the player even tries to scroll past it.
+                EncounterType.Ambush => new Color(0.85f, 0.15f, 0.1f, 0.95f),
                 _ => new Color(1f, 1f, 1f, 0.15f)
             };
         }
@@ -294,7 +305,7 @@ namespace DoomScroller.Feed
             {
                 EncounterType.Dungeon => "Dungeon Door",
                 EncounterType.Tavern => "The Village",
-                EncounterType.Resource => $"{data.resourceMaterial.title} Node",
+                EncounterType.Resource => data.resourceMaterial != null ? $"{data.resourceMaterial.title} Node" : "Resource Node",
                 EncounterType.Landing => "",
                 _ => $"{data.type} · {EntryDifficultyLabel}"
             };

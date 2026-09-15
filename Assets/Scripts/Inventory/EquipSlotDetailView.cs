@@ -67,7 +67,7 @@ namespace DoomScroller.Inventory
 
             var equippedRowGo = new GameObject("EquippedRow", typeof(RectTransform));
             equippedRowGo.transform.SetParent(content, false);
-            SetFixedSize(equippedRowGo.AddComponent<LayoutElement>(), -1, 172);
+            SetFixedSize(equippedRowGo.AddComponent<LayoutElement>(), -1, 208);
             var equippedRowLayout = equippedRowGo.AddComponent<HorizontalLayoutGroup>();
             equippedRowLayout.spacing = 12;
             equippedRowLayout.childForceExpandWidth = false;
@@ -82,12 +82,12 @@ namespace DoomScroller.Inventory
             equippedContentLayout.minWidth = 0;
             equippedContentLayout.preferredWidth = 0;
             equippedContentLayout.flexibleWidth = 1;
-            equippedContentLayout.minHeight = 172;
-            equippedContentLayout.preferredHeight = 172;
+            equippedContentLayout.minHeight = 208;
+            equippedContentLayout.preferredHeight = 208;
             equippedContentLayout.flexibleHeight = 0;
             view._equippedRow = GearRowFactory.Create(equippedContentGo.transform, IconSize, 26, 40, 32);
 
-            view._unequipButton = CreateActionButton(equippedRowGo.transform, "UnequipButton", "Unequip", 200, 172,
+            view._unequipButton = CreateActionButton(equippedRowGo.transform, "UnequipButton", "Unequip", 200, 208,
                 new Color(0.5f, 0.2f, 0.2f, 0.5f), () =>
                 {
                     view._loadout.Unequip(view._slotType);
@@ -153,6 +153,7 @@ namespace DoomScroller.Inventory
             else
             {
                 GearRowFactory.SetIcon(_equippedRow, equipped.icon, equipped.itemColor, equipped.rarity);
+                GearRowFactory.SetWeaponDetail(_equippedRow, equipped);
                 _equippedRow.TitleText.text = equipped.title;
                 _equippedRow.StatText.text = equipped.isTwoHanded
                     ? $"{equipped.StatLabel} {equipped.powerValue} (2H)"
@@ -197,7 +198,7 @@ namespace DoomScroller.Inventory
         {
             var rowGo = new GameObject($"Option_{item.title}", typeof(RectTransform));
             rowGo.transform.SetParent(parent, false);
-            SetFixedSize(rowGo.AddComponent<LayoutElement>(), -1, 150);
+            SetFixedSize(rowGo.AddComponent<LayoutElement>(), -1, 186);
             var rowLayout = rowGo.AddComponent<HorizontalLayoutGroup>();
             rowLayout.spacing = 12;
             rowLayout.childForceExpandWidth = false;
@@ -214,8 +215,8 @@ namespace DoomScroller.Inventory
             equipAreaLayout.minWidth = 0;
             equipAreaLayout.preferredWidth = 0;
             equipAreaLayout.flexibleWidth = 1;
-            equipAreaLayout.minHeight = 150;
-            equipAreaLayout.preferredHeight = 150;
+            equipAreaLayout.minHeight = 186;
+            equipAreaLayout.preferredHeight = 186;
             equipAreaLayout.flexibleHeight = 0;
             var equipButton = equipAreaGo.AddComponent<Button>();
             equipButton.onClick.AddListener(() =>
@@ -228,13 +229,14 @@ namespace DoomScroller.Inventory
 
             var row = GearRowFactory.Create(equipAreaGo.transform, IconSize, 24, 32, 28);
             GearRowFactory.SetIcon(row, item.icon, item.itemColor, item.rarity);
+            GearRowFactory.SetWeaponDetail(row, item);
             row.CaptionText.text = ItemCategoryInfo.SlotLabel(item.slotType);
             row.TitleText.text = item.title;
             row.StatText.text = item.isTwoHanded
                 ? $"{item.StatLabel} {item.powerValue} (2H) — tap to equip"
                 : $"{item.StatLabel} {item.powerValue} — tap to equip";
 
-            CreateActionButton(rowGo.transform, "DeleteButton", "Delete", 160, 150,
+            CreateActionButton(rowGo.transform, "DeleteButton", "Delete", 160, 186,
                 new Color(0.5f, 0.15f, 0.15f, 0.6f), () => ShowDeleteConfirm(item));
         }
 

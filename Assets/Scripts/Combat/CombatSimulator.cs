@@ -109,7 +109,7 @@ namespace DoomScroller.Combat
 
             // A passive DoT never expires and needs no trigger — just a permanent
             // ticking timer seeded alongside the basic-attack/enemy timers above.
-            foreach (var effect in loadout.GetEquippedPassiveWeaponEffects())
+            foreach (var effect in loadout.GetEquippedPassiveEffects())
             {
                 if (effect.effectType == StatusEffectType.DamageOverTime)
                 {
@@ -206,7 +206,7 @@ namespace DoomScroller.Combat
             var enemySpeedPenalty = 0f;
             var enemyDotDps = 0f;
 
-            foreach (var effect in loadout.GetEquippedPassiveWeaponEffects())
+            foreach (var effect in loadout.GetEquippedPassiveEffects())
             {
                 var magnitude = effect.EffectiveMagnitude(attributes);
                 switch (effect.effectType)

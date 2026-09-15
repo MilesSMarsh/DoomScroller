@@ -186,7 +186,13 @@ namespace DoomScroller.Encounters
                 var pageLayoutGroup = pageGo.AddComponent<VerticalLayoutGroup>();
                 pageLayoutGroup.padding = new RectOffset(48, 48, 24, 24);
                 pageLayoutGroup.spacing = 20;
-                pageLayoutGroup.childAlignment = TextAnchor.UpperCenter;
+                // Middle, not Upper: an establishment's own content (Tavern/Inn/Alchemist/
+                // QuestBoard especially) is nowhere near tall enough to reach the bottom of
+                // the page on most screens — UpperCenter left a large dead gap of bare
+                // background below it, reading as "doesn't fill the window." Centering
+                // distributes that same gap above and below instead, which is the same fix
+                // ResourceEncounterView already uses for its own single-purpose screen.
+                pageLayoutGroup.childAlignment = TextAnchor.MiddleCenter;
                 pageLayoutGroup.childForceExpandWidth = true;
                 pageLayoutGroup.childForceExpandHeight = false;
                 pageLayoutGroup.childControlWidth = true;

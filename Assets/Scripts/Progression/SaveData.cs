@@ -41,6 +41,13 @@ namespace DoomScroller.Progression
         public int potionAmount;
         public AttributeScaling[] attributeScalingEntries;
 
+        // ItemData.sourceDefinition is a UnityEngine.Object reference — JsonUtility can't
+        // carry that across a save, so it's captured by WeaponDefinition.weaponName
+        // instead (same "look it up by a stable string" convention as itemId above) and
+        // re-resolved against the live WeaponDefinitions catalog on Restore. Blank for an
+        // archetype-rolled weapon, which never had a source definition to begin with.
+        public string sourceWeaponName;
+
         public static ItemSnapshot Capture(ItemData item)
         {
             return new ItemSnapshot
@@ -63,7 +70,8 @@ namespace DoomScroller.Progression
                 isRanged = item.isRanged,
                 potionEffect = item.potionEffect,
                 potionAmount = item.potionAmount,
-                attributeScalingEntries = item.attributeScalingEntries
+                attributeScalingEntries = item.attributeScalingEntries,
+                sourceWeaponName = item.sourceDefinition != null ? item.sourceDefinition.weaponName : null
             };
         }
 
@@ -98,6 +106,12 @@ namespace DoomScroller.Progression
             item.potionEffect = potionEffect;
             item.potionAmount = potionAmount;
             item.attributeScalingEntries = attributeScalingEntries;
+            if (!string.IsNullOrEmpty(sourceWeaponName))
+            {
+                item.sourceDefinition = Resources.LoadAll<WeaponDefinition>("WeaponDefinitions")
+                    .FirstOrDefault(d => d.weaponName == sourceWeaponName);
+            }
+
             return item;
         }
     }

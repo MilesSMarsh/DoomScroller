@@ -182,7 +182,10 @@ namespace DoomScroller.Encounters
             _data = data;
             _health = health;
 
-            var isFight = data.type == EncounterType.Enemy;
+            // Ambush is combat-wise identical to Enemy (see EncounterType.Ambush) — both
+            // get the full animated beat-by-beat playback, only Treasure/other non-combat
+            // types reveal straight to an outcome with no fight to show.
+            var isFight = data.type == EncounterType.Enemy || data.type == EncounterType.Ambush;
             _playback.gameObject.SetActive(isFight);
 
             // Always enter at full of whatever CurrentMaxHealth currently is — the
@@ -193,7 +196,9 @@ namespace DoomScroller.Encounters
             _outcomeText.text = "";
             _rewardText.text = "";
             _hintText.gameObject.SetActive(false);
-            _leaveButtonGo.SetActive(true);
+            // No voluntary way out of an ambush — it has to actually resolve to a win or
+            // a loss, not just an early self-inflicted one (see OnLeaveClicked).
+            _leaveButtonGo.SetActive(data.type != EncounterType.Ambush);
 
             // Reset the pager to the fight page and re-lock the reward page — a fresh
             // Show() reuses this same instance (see EncounterFlowController.Awake). A
@@ -255,7 +260,7 @@ namespace DoomScroller.Encounters
         private IEnumerator RevealSequence(CombatSimulator sim, int xpReward, PlayerLoadout loadout,
             PlayerProgression progression, GameSettings settings, PlayerWallet wallet)
         {
-            yield return StartCoroutine(_playback.Play(sim, loadout, settings, _data.artwork, _data.cardColor));
+            yield return StartCoroutine(_playback.Play(sim, loadout, settings, _data.foregroundArt, _data.cardColor));
 
             var isVictory = _playback.LastOutcomeWasVictory;
             _outcomeText.text = isVictory ? "VICTORY" : "DEFEAT";
@@ -266,17 +271,22 @@ namespace DoomScroller.Encounters
                 var previousLevel = progression.Level;
                 progression.AddXp(xpReward);
 
-                // No difficulty choice any more on a plain encounter — always the base
-                // (Common) reward tier; Dungeons are the vehicle for better loot now.
-                var item = RewardGenerator.GenerateItem(DoomScroller.Inventory.ItemRarity.Common);
+                // Rarity now comes from the encounter's own authored loot table (all-zero
+                // on anything created before loot tables existed, which RollRarity treats
+                // as "always Common" — the exact behavior this replaced).
+                var rarity = RewardGenerator.RollRarity(_data.lootTablePercentByRarity);
+                var item = RewardGenerator.GenerateItem(rarity);
                 loadout.AddToInventory(item);
 
                 // Not granted here — RewardChestView.Show only stores it, and actually
                 // adds it to the wallet once the chest is opened.
                 var goldReward = RewardGenerator.ComputeGoldReward(xpReward);
 
+                // A Treasure card's own chest art; a Combat win keeps the generic chest —
+                // _data.foregroundArt there is the creature portrait, not a chest.
+                var chestSprite = _data.type == EncounterType.Treasure ? _data.foregroundArt : null;
                 _rewardChest.Show(xpReward, goldReward, item, progression.Level > previousLevel, progression.Level,
-                    _playback.WasCloseCall, wallet);
+                    _playback.WasCloseCall, wallet, chestSprite);
                 // Already sitting on the reward page for a Treasure card (see Show()) —
                 // no swipe needed, so no hint to swipe.
                 _hintText.gameObject.SetActive(_data.type != EncounterType.Treasure);
@@ -293,6 +303,13 @@ namespace DoomScroller.Encounters
                 _rewardText.text = $"No reward this time — your gear held you back. Your max HP drops to " +
                     $"{_health.CurrentMaxHealth}/{_health.TrueMaxHealth}, regenerating over time. " +
                     "This one's lost for good; gear up and look for the next one.";
+
+                // An Ambush hides this button for the whole fight (see Show()) to block
+                // an early voluntary loss — but the fight has now actually resolved, so
+                // there needs to be a way back to the feed. Without this, a lost Ambush
+                // was a soft-lock: no Leave button, and no reward chest to open either.
+                _leaveButtonGo.SetActive(true);
+
                 EncounterLost?.Invoke(_data);
             }
 

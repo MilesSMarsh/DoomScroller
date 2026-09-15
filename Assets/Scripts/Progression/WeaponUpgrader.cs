@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using DoomScroller.Inventory;
 using UnityEngine;
@@ -53,12 +54,33 @@ namespace DoomScroller.Progression
             return config != null ? config.rerollIngredients : System.Array.Empty<RecipeIngredient>();
         }
 
+        // A named weapon (rolled via GenerateFromDefinition, sourceDefinition set) only
+        // ever draws from its own curated pool — the whole point of authoring one. An
+        // archetype-rolled weapon (WeaponGenerator.Generate, sourceDefinition null) has
+        // no pool of its own, so it falls back to the type-wide catalog, same as its
+        // initial roll did.
+        private static IEnumerable<AbilityDefinition> AbilityPoolFor(ItemData weapon)
+        {
+            return weapon.sourceDefinition != null
+                ? weapon.sourceDefinition.possibleAbilities ?? System.Array.Empty<AbilityDefinition>()
+                : WeaponGenerator.TypeAbilityPool(weapon.weaponType);
+        }
+
+        private static IEnumerable<PassiveDefinition> PassivePoolFor(ItemData weapon)
+        {
+            return weapon.sourceDefinition != null
+                ? weapon.sourceDefinition.possiblePassives ?? System.Array.Empty<PassiveDefinition>()
+                : WeaponGenerator.TypePassivePool(weapon.weaponType);
+        }
+
         // Raises rarity by one tier and recomputes power/scaling/goldValue for it via the
         // same archetype formula WeaponGenerator.Generate itself uses — a higher rarity
-        // always allows one more ability than before (see
-        // WeaponGenerator.AbilityCountByRarity), so this also rolls one additional
-        // ability from the type-wide pool if one's available that the weapon doesn't
-        // already carry. Silently skips the ability roll if the pool has nothing new to
+        // always allows one more TOTAL skill than before (see
+        // WeaponGenerator.SkillCountByRarity — abilities and passives combined, not
+        // each independently), so this also rolls one additional skill — ability or
+        // passive, whichever — from the weapon's own pool (see
+        // AbilityPoolFor/PassivePoolFor) if one's available that the weapon doesn't
+        // already carry. Silently skips the roll if neither pool has anything new to
         // offer (a thin pool, same "yields fewer, not an error" convention as an initial
         // roll) — rarity/stats still advance either way.
         public static void Empower(ItemData weapon, System.Random rng = null)
@@ -74,35 +96,47 @@ namespace DoomScroller.Progression
             weapon.attributeScalingEntries = scaling;
             weapon.goldValue = RewardGenerator.RarityGoldValue[(int)newRarity];
 
-            var current = weapon.abilities ?? System.Array.Empty<WeaponAbilityData>();
-            var desiredCount = WeaponGenerator.AbilityCountByRarity[(int)newRarity];
-            if (current.Length >= desiredCount)
+            var desiredCount = WeaponGenerator.SkillCountByRarity[(int)newRarity];
+            var currentAbilities = weapon.abilities ?? System.Array.Empty<WeaponAbilityData>();
+            var currentPassives = weapon.passiveEffects ?? System.Array.Empty<StatusEffectData>();
+            if (currentAbilities.Length + currentPassives.Length >= desiredCount)
             {
                 return;
             }
 
-            var candidates = WeaponGenerator.TypeAbilityPool(weapon.weaponType)
-                .Where(a => a != null && !current.Contains(a.data))
-                .ToList();
-            if (candidates.Count == 0)
+            var abilityCandidates = AbilityPoolFor(weapon).Where(a => a != null && !currentAbilities.Contains(a.data)).ToList();
+            var passiveCandidates = PassivePoolFor(weapon).Where(p => p != null && !currentPassives.Contains(p.effect)).ToList();
+            var totalCandidates = abilityCandidates.Count + passiveCandidates.Count;
+            if (totalCandidates == 0)
             {
                 return;
             }
 
-            var chosen = candidates[rng.Next(candidates.Count)];
-            weapon.abilities = current.Append(chosen.data).ToArray();
+            // One combined draw across both pools — an ability and a passive are equally
+            // likely candidates for this one new slot, weighted by how many of each are
+            // actually still available.
+            var pick = rng.Next(totalCandidates);
+            if (pick < abilityCandidates.Count)
+            {
+                weapon.abilities = currentAbilities.Append(abilityCandidates[pick].data).ToArray();
+            }
+            else
+            {
+                weapon.passiveEffects = currentPassives.Append(passiveCandidates[pick - abilityCandidates.Count].effect).ToArray();
+            }
         }
 
-        // Fresh draw of both the ability list (same count as the weapon's current
-        // rarity) and the independent-chance passive effect, from the type-wide pools —
-        // rarity itself is untouched.
+        // Fresh draw of the weapon's full skill set (same TOTAL count — abilities and
+        // passives combined — as the weapon's current rarity allows), from the weapon's
+        // own pool (see AbilityPoolFor/PassivePoolFor) — rarity itself is untouched.
         public static void Reroll(ItemData weapon, System.Random rng = null)
         {
             rng ??= new System.Random();
 
-            var desiredCount = WeaponGenerator.AbilityCountByRarity[(int)weapon.rarity];
-            weapon.abilities = WeaponGenerator.RollAbilities(WeaponGenerator.TypeAbilityPool(weapon.weaponType), desiredCount, rng);
-            weapon.passiveEffects = WeaponGenerator.RollPassive(WeaponGenerator.TypePassivePool(weapon.weaponType), rng);
+            var desiredCount = WeaponGenerator.SkillCountByRarity[(int)weapon.rarity];
+            var (abilities, passives) = WeaponGenerator.RollSkills(AbilityPoolFor(weapon), PassivePoolFor(weapon), desiredCount, rng);
+            weapon.abilities = abilities;
+            weapon.passiveEffects = passives;
         }
     }
 }

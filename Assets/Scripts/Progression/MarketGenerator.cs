@@ -30,11 +30,13 @@ namespace DoomScroller.Progression
         private const float MaterialChance = 0.3f;
         private const int MaterialPrice = 15;
 
-        // Weapons and Potions aren't sold here — weapons come from combat, potions are
-        // the Tavern's own thing (refills, not purchases).
+        // Potions aren't sold here — that's the Tavern's own thing (refills, not
+        // purchases). Weapons ARE now in the rotation (per the user's own call), rolled
+        // from the authored WeaponDefinition catalog (see GenerateGear) rather than
+        // RewardGenerator.GenerateItem's own generic-archetype Weapon handling.
         private static readonly ItemCategory[] GearCategories =
         {
-            ItemCategory.Armor, ItemCategory.Shield, ItemCategory.Talisman
+            ItemCategory.Armor, ItemCategory.Weapon, ItemCategory.Shield, ItemCategory.Talisman
         };
 
         public static IReadOnlyList<MarketEntry> GenerateStock(System.Random rng = null)
@@ -53,7 +55,11 @@ namespace DoomScroller.Progression
         private static MarketEntry GenerateGear(System.Random rng)
         {
             var tier = rng.Next(TierPrices.Length);
-            var item = RewardGenerator.GenerateItem((ItemRarity)tier, rng, GearCategories);
+            var rarity = (ItemRarity)tier;
+            var category = GearCategories[rng.Next(GearCategories.Length)];
+            var item = category == ItemCategory.Weapon
+                ? WeaponGenerator.GenerateFromRandomDefinition(rarity, rng)
+                : RewardGenerator.GenerateItem(rarity, rng, new[] { category });
             return new MarketEntry(item, TierPrices[tier]);
         }
 

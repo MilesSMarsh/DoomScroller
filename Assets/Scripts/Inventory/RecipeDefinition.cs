@@ -83,5 +83,30 @@ namespace DoomScroller.Inventory
             RecipeOutputKind.Weapon or RecipeOutputKind.Equipment => outputRarity,
             _ => outputItem != null ? outputItem.rarity : ItemRarity.Common
         };
+
+        // "+22 Dmg · 1.1/s" / "+18 Defence" — the Blacksmith Craft tab's damage/speed
+        // line. Unlike ItemData.WeaponDetailSummary this DOES include damage (a recipe
+        // row shows no damage figure otherwise) but never abilities — nothing's been
+        // rolled yet for a Weapon-kind recipe (see DescribePossibleAbilities in
+        // VillageBlacksmithView for the tap-to-reveal possible pool instead).
+        public string OutputStatSummary
+        {
+            get
+            {
+                var rarityIndex = (int)outputRarity;
+                return outputKind switch
+                {
+                    RecipeOutputKind.Weapon => outputWeapon != null && outputWeapon.statsByRarity != null
+                                                && rarityIndex < outputWeapon.statsByRarity.Length
+                        ? $"+{outputWeapon.statsByRarity[rarityIndex].baseDamage} Dmg · {outputWeapon.attackSpeed:0.0}/s"
+                        : "",
+                    RecipeOutputKind.Equipment => outputEquipment != null && outputEquipment.powerByRarity != null
+                                                   && rarityIndex < outputEquipment.powerByRarity.Length
+                        ? $"+{outputEquipment.powerByRarity[rarityIndex]} {ItemCategoryInfo.Label(outputEquipment.category)}"
+                        : "",
+                    _ => outputItem != null ? outputItem.statSummary : ""
+                };
+            }
+        }
     }
 }

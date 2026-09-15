@@ -23,6 +23,15 @@ namespace DoomScroller.Inventory
     [Serializable]
     public class StatusEffectData
     {
+        [Tooltip("Only meaningful on a PassiveDefinition's top-level effect (see " +
+                  "PassiveDefinition.effect) — blank on an ability's onCastEffects entries, " +
+                  "which borrow their owning ability's own name/description instead.")]
+        public string passiveName;
+
+        [Tooltip("Same scope as passiveName above — the Equipment Menu only edits this " +
+                  "for a PassiveDefinition's top-level effect.")]
+        public string description;
+
         public StatusEffectType effectType;
 
         [Tooltip("Meaning depends on effectType: DamageOverTime = flat damage per tick; " +

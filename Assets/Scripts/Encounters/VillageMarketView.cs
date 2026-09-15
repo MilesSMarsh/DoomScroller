@@ -18,7 +18,7 @@ namespace DoomScroller.Encounters
     // VillageBlacksmithView.
     public class VillageMarketView : MonoBehaviour
     {
-        private const float RowHeight = 150f;
+        private const float RowHeight = 186f;
         private const int PanelRowCapacity = 5;
 
         private static readonly Color SelectedTabColor = new(1f, 1f, 1f, 0.25f);
@@ -218,6 +218,7 @@ namespace DoomScroller.Encounters
 
             var row = GearRowFactory.Create(infoGo.transform, 64, 22, 30, 26);
             GearRowFactory.SetIcon(row, entry.Item.icon, entry.Item.itemColor, entry.Item.rarity);
+            GearRowFactory.SetWeaponDetail(row, entry.Item);
             row.CaptionText.text = entry.Item.category.ToString();
             row.TitleText.text = entry.Item.title;
             row.StatText.text = entry.Item.statSummary;
@@ -268,6 +269,7 @@ namespace DoomScroller.Encounters
 
             var row = GearRowFactory.Create(infoGo.transform, 64, 22, 30, 26);
             GearRowFactory.SetIcon(row, item.icon, item.itemColor, item.rarity);
+            GearRowFactory.SetWeaponDetail(row, item);
             row.CaptionText.text = item.category.ToString();
             row.TitleText.text = count > 1 ? $"{item.title} (x{count} owned)" : item.title;
             row.StatText.text = item.statSummary;

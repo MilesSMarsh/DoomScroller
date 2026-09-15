@@ -1,5 +1,6 @@
 using DoomScroller.Inventory;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace DoomScroller.Feed
 {
@@ -18,15 +19,36 @@ namespace DoomScroller.Feed
                   "distort. Leave empty to fall back to a flat cardColor tile.")]
         public Sprite artwork;
 
-        [Tooltip("Flat fallback color used when no artwork is assigned.")]
+        [Tooltip("The creature portrait (Combat) or chest art (Treasure) shown INSIDE the " +
+                  "encounter itself — see CombatPlaybackView's enemy portrait and " +
+                  "RewardChestView's chest image. Distinct from artwork above, which is only " +
+                  "ever the feed card's own background. Falls back to cardColor when unset, " +
+                  "same convention as artwork.")]
+        public Sprite foregroundArt;
+
+        [Tooltip("Flat fallback color used when no artwork/foregroundArt is assigned.")]
         public Color cardColor = Color.gray;
 
-        [Tooltip("Reward text shown on the feed card, e.g. \"80 XP + Gear\".")]
-        public string rewardSummary;
+        [FormerlySerializedAs("rewardSummary")]
+        [Tooltip("Hand-authored flavor text shown on the feed card, e.g. \"Bandits close in " +
+                  "from both sides — no escape.\" Not reward info — see " +
+                  "FeedCardView.ExpectedRewardText/RewardGenerator.DescribeLootTable for the " +
+                  "separate, auto-generated reward-expectation text.")]
+        public string description;
 
         [Tooltip("Base XP for the entry-level variant shown in the feed; harder in-encounter " +
                   "variants (Phase 3 sideways swipe) scale up from this.")]
         public int baseXpReward = 50;
+
+        [Header("Loot Table (Combat / Treasure only)")]
+        [Tooltip("Drop chance per ItemRarity tier (index 0..4 = Common/Uncommon/Rare/" +
+                  "Legendary/Mythic) — doesn't need to sum to exactly 100, RewardGenerator." +
+                  "RollRarity normalizes against whatever the total actually is. All-zero " +
+                  "(the default on every pre-existing asset) always rolls Common, matching " +
+                  "this project's original behavior before loot tables existed. Not read at " +
+                  "all for Dungeon (keeps its own hardcoded per-depth progression) or " +
+                  "Resource (grants a fixed resourceMaterial instead of a rarity roll).")]
+        public float[] lootTablePercentByRarity = new float[5];
 
         [Header("Combat Simulation (Phase 8)")]
         [Tooltip("Enemy HP for the live combat simulation. Ignored for Treasure.")]

@@ -33,6 +33,7 @@ namespace DoomScroller.Encounters
 
         private RectTransform _chestRect;
         private Image _chestImage;
+        private Sprite _chestSprite;
         private Button _chestButton;
         private Text _promptText;
         private Transform _rewardsContainer;
@@ -110,10 +111,13 @@ namespace DoomScroller.Encounters
 
             var row = GearRowFactory.Create(rewardsGo.transform, 64, 22, 30, 24);
             view._itemRow = row;
-            // GearRowFactory's row root has no LayoutElement of its own (it just stretches
-            // to whatever parent gives it) — add one so it gets a sane height here.
-            var rowLayoutElement = row.Icon.transform.parent.gameObject.AddComponent<LayoutElement>();
-            SetFixedHeight(rowLayoutElement, 90);
+            // GearRowFactory's row root (Icon -> IconFrame -> row root, two levels up
+            // from Icon) has no LayoutElement of its own (it just stretches to whatever
+            // parent gives it) — add one so it gets a sane height here. Tall enough for
+            // the weapon detail line (GearRowFactory.SetWeaponDetail) to show without
+            // clipping when this reward turns out to be a weapon.
+            var rowLayoutElement = row.Icon.transform.parent.parent.gameObject.AddComponent<LayoutElement>();
+            SetFixedHeight(rowLayoutElement, 126);
 
             view._noteText = CreateLabel(rewardsGo.transform, "Note", "", 26, FontStyle.Italic);
             view._noteText.color = new Color(0.6f, 0.9f, 1f, 0.95f);
@@ -137,7 +141,7 @@ namespace DoomScroller.Encounters
         // the chest is opened (see ShakeThenOpen), which is the whole point of this
         // parameter existing here instead of being applied by the caller up front.
         public void Show(int xpReward, int goldReward, ItemData item, bool leveledUp, int newLevel, bool wasCloseCall,
-            PlayerWallet wallet)
+            PlayerWallet wallet, Sprite chestSprite = null)
         {
             _wallet = wallet;
             _pendingGoldReward = goldReward;
@@ -152,7 +156,12 @@ namespace DoomScroller.Encounters
             _chestButton.interactable = true;
             _chestRect.localRotation = Quaternion.identity;
             _chestRect.localScale = Vector3.one;
-            _chestImage.color = ClosedColor;
+            // A custom chest sprite stays untinted through the whole open animation —
+            // the brown-to-gold Closed/Open lerp below only applies to the flat-color
+            // placeholder.
+            _chestSprite = chestSprite;
+            _chestImage.sprite = chestSprite;
+            _chestImage.color = chestSprite != null ? Color.white : ClosedColor;
 
             _promptText.gameObject.SetActive(true);
             _rewardsContainer.gameObject.SetActive(false);
@@ -167,6 +176,7 @@ namespace DoomScroller.Encounters
             _itemRow.TitleText.text = item.title;
             _itemRow.StatText.text = item.statSummary;
             GearRowFactory.SetIcon(_itemRow, item.icon, item.itemColor, item.rarity);
+            GearRowFactory.SetWeaponDetail(_itemRow, item);
 
             var note = "";
             if (wasCloseCall)
@@ -215,13 +225,13 @@ namespace DoomScroller.Encounters
                 var t = elapsed / OpenPunchDuration;
                 var scale = 1f + Mathf.Sin(t * Mathf.PI) * 0.25f;
                 _chestRect.localScale = new Vector3(scale, scale, 1f);
-                _chestImage.color = Color.Lerp(ClosedColor, OpenColor, t);
+                _chestImage.color = _chestSprite != null ? Color.white : Color.Lerp(ClosedColor, OpenColor, t);
                 elapsed += Time.unscaledDeltaTime;
                 yield return null;
             }
 
             _chestRect.localScale = Vector3.one;
-            _chestImage.color = OpenColor;
+            _chestImage.color = _chestSprite != null ? Color.white : OpenColor;
 
             _promptText.gameObject.SetActive(false);
             _rewardsContainer.gameObject.SetActive(true);

@@ -21,14 +21,16 @@ namespace DoomScroller.Inventory
             public readonly Text CaptionText;
             public readonly Text TitleText;
             public readonly Text StatText;
+            public readonly Text DetailText;
 
-            public Row(Image icon, Image border, Text captionText, Text titleText, Text statText)
+            public Row(Image icon, Image border, Text captionText, Text titleText, Text statText, Text detailText)
             {
                 Icon = icon;
                 Border = border;
                 CaptionText = captionText;
                 TitleText = titleText;
                 StatText = statText;
+                DetailText = detailText;
             }
         }
 
@@ -76,7 +78,18 @@ namespace DoomScroller.Inventory
             var title = CreateText(textColumnGo.transform, titleSize, FontStyle.Bold, Color.white);
             var stat = CreateText(textColumnGo.transform, statSize, FontStyle.Normal, new Color(1f, 1f, 1f, 0.7f));
 
-            return new Row(icon, border, caption, title, stat);
+            // Hidden by default (SetWeaponDetail reveals it for weapons) — a distinct
+            // pale-blue tint so it doesn't read as another damage number, and allowed to
+            // wrap to two lines (a longer ability list) instead of Truncate's single-line
+            // clip, since this is the one line that can genuinely run long.
+            var detail = CreateText(textColumnGo.transform, statSize, FontStyle.Italic, new Color(0.75f, 0.9f, 1f, 0.85f));
+            detail.verticalOverflow = VerticalWrapMode.Overflow;
+            var detailLayout = detail.GetComponent<LayoutElement>();
+            detailLayout.minHeight = statSize * 2 + 4;
+            detailLayout.preferredHeight = statSize * 2 + 4;
+            detail.gameObject.SetActive(false);
+
+            return new Row(icon, border, caption, title, stat, detail);
         }
 
         // A rarity-colored frame behind an icon square, inset by BorderThickness on
@@ -128,6 +141,21 @@ namespace DoomScroller.Inventory
         public static void SetRarityBorder(Image border, ItemRarity? rarity)
         {
             border.color = rarity.HasValue ? ItemRarityInfo.ColorFor(rarity.Value) : Color.clear;
+        }
+
+        // Shows attack speed + this weapon's actual rolled abilities (ItemData.
+        // WeaponDetailSummary) on rows that can display a real weapon instance —
+        // no-ops (hides the line) for anything else, so calling this unconditionally at
+        // a shop/inventory row is always safe. Inactive children don't count toward a
+        // VerticalLayoutGroup's size, so non-weapon rows are completely unaffected.
+        public static void SetWeaponDetail(Row row, ItemData item)
+        {
+            var isWeapon = item != null && item.category == ItemCategory.Weapon;
+            row.DetailText.gameObject.SetActive(isWeapon);
+            if (isWeapon)
+            {
+                row.DetailText.text = item.WeaponDetailSummary;
+            }
         }
 
         private static void SetFixedLayout(LayoutElement layoutElement, float width, float height)

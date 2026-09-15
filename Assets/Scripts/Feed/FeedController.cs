@@ -43,6 +43,13 @@ namespace DoomScroller.Feed
         private int _windowStartIndex;
         private int _windowEndIndex;
 
+        // Which absolute index the player is currently settled on — tracked explicitly
+        // (rather than derived from ScrollRect.content.anchoredPosition.y) so
+        // OnPageRequested can tell whether the player is sitting on an unresolved Ambush
+        // and scan the path to a requested page for one in between. Initialized in
+        // BuildFeed once the initial window exists.
+        private int _currentAbsoluteIndex;
+
         private void Start()
         {
             // Deferred to Start(): BuildFeed() needs profileController.Loadout to compute
@@ -65,7 +72,13 @@ namespace DoomScroller.Feed
         {
             var loaded = Resources.LoadAll<EncounterData>(PoolResourcesPath);
             _landingCard = Array.Find(loaded, e => e.type == EncounterType.Landing);
-            _pool = Array.FindAll(loaded, e => e.type != EncounterType.Landing);
+            // A Resource card with no resourceMaterial set (e.g. one left dangling by a
+            // deleted Material asset) can't grant anything and crashes FeedCardView the
+            // moment it needs to render — excluded here rather than left to blow up mid-
+            // scroll. Self-healing: re-pointing resourceMaterial at a real asset brings
+            // the card straight back into rotation with no further code change.
+            _pool = Array.FindAll(loaded, e => e.type != EncounterType.Landing
+                && (e.type != EncounterType.Resource || e.resourceMaterial != null));
             Array.Sort(_pool, (a, b) => string.CompareOrdinal(a.title, b.title));
 
             if (_pool.Length == 0)
@@ -150,6 +163,10 @@ namespace DoomScroller.Feed
                 // instead of 0 when one's present.
                 EnsureFilledThrough(_windowEndIndex + AheadBuffer);
             }
+
+            // Content starts scrolled to local page 0, which is always _windowStartIndex
+            // in absolute terms.
+            _currentAbsoluteIndex = _windowStartIndex;
 
             // Content's height is only computed lazily by VerticalLayoutGroup/ContentSizeFitter;
             // force it to resolve now so ScrollRect sees the true scrollable range from frame one.
@@ -248,9 +265,11 @@ namespace DoomScroller.Feed
         }
 
         // Invoked by FeedPager with the drag's raw destination page (local to the
-        // currently attached window) before it commits to a snap target. Grows the
-        // window ahead and trims it behind, then returns the local page to actually
-        // snap to (unchanged unless trimming just re-based the window's coordinates).
+        // currently attached window) before it commits to a snap target — whatever this
+        // returns is what the pager actually snaps to (see FeedPager.OnEndDrag), which
+        // is also how an unresolved Ambush refuses to let the player past it (see
+        // ResolveAmbushBlockedDestination). Grows the window ahead and trims it behind
+        // for wherever we're actually ending up, then returns the local page to snap to.
         private int OnPageRequested(int desiredLocalPage)
         {
             if (_pool.Length == 0)
@@ -260,13 +279,56 @@ namespace DoomScroller.Feed
 
             var desiredAbsolute = _windowStartIndex + desiredLocalPage;
 
-            EnsureFilledThrough(desiredAbsolute + AheadBuffer);
-            TrimBehind(desiredAbsolute);
+            // Cards between here and there must exist before scanning the path for an
+            // ambush — backing up only ever revisits already-live cards, so this only
+            // actually grows anything when advancing.
+            EnsureFilledThrough(Mathf.Max(desiredAbsolute, _currentAbsoluteIndex) + AheadBuffer);
+
+            var finalAbsolute = ResolveAmbushBlockedDestination(desiredAbsolute);
+
+            TrimBehind(finalAbsolute);
 
             Canvas.ForceUpdateCanvases();
             _pager.Configure(_pageHeight, _windowEndIndex - _windowStartIndex);
 
-            return desiredAbsolute - _windowStartIndex;
+            _currentAbsoluteIndex = finalAbsolute;
+            return finalAbsolute - _windowStartIndex;
+        }
+
+        // An unresolved Ambush (EncounterType.Ambush, not yet locked by MarkWon/MarkLost)
+        // refuses to let the player scroll away in either direction: sitting on one
+        // blocks any move at all, and scrolling toward one stops exactly there instead of
+        // skipping past it (a multi-page flick can't jump clean over one sitting between
+        // the current and requested page).
+        private int ResolveAmbushBlockedDestination(int desiredAbsolute)
+        {
+            if (IsUnresolvedAmbush(_currentAbsoluteIndex))
+            {
+                return _currentAbsoluteIndex;
+            }
+
+            var step = desiredAbsolute.CompareTo(_currentAbsoluteIndex);
+            for (var i = _currentAbsoluteIndex + step; step != 0 && i != desiredAbsolute + step; i += step)
+            {
+                if (IsUnresolvedAmbush(i))
+                {
+                    return i;
+                }
+            }
+
+            return desiredAbsolute;
+        }
+
+        private bool IsUnresolvedAmbush(int absoluteIndex)
+        {
+            var localIndex = absoluteIndex - _windowStartIndex;
+            if (localIndex < 0 || localIndex >= _liveCards.Count)
+            {
+                return false;
+            }
+
+            var card = _liveCards[localIndex];
+            return card.Data.type == EncounterType.Ambush && !card.IsLocked;
         }
 
         private void EnsureFilledThrough(int absoluteIndexInclusive)
@@ -274,6 +336,18 @@ namespace DoomScroller.Feed
             while (_windowEndIndex <= absoluteIndexInclusive)
             {
                 var encounter = DrawNext();
+                if (encounter.type == EncounterType.WanderingMerchant)
+                {
+                    // A fresh runtime instance per sighting — WanderingMerchantView keys
+                    // its generated stock by this reference, so two different sightings
+                    // (even clones of the same static template asset, redrawn later from
+                    // the shuffle bag) never accidentally share a "same merchant" stock
+                    // cache. This card's Data reference never changes for its lifetime
+                    // (see TrimBehind), so leaving and returning to THIS sighting still
+                    // round-trips the same instance and its stock survives.
+                    encounter = Instantiate(encounter);
+                }
+
                 var winChance = CombatResolver.PredictWinChance(profileController.Loadout, profileController.Attributes,
                     profileController.Health, encounter);
                 var closeCallChance = CombatResolver.PredictCloseCallChance(profileController.Loadout,

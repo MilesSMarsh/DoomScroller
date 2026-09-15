@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using DoomScroller.Inventory;
 using UnityEngine;
@@ -30,6 +31,61 @@ namespace DoomScroller.Progression
         public static int ComputeGoldReward(int xpReward)
         {
             return Mathf.RoundToInt(xpReward * GoldPerXpRatio);
+        }
+
+        // EncounterData.lootTablePercentByRarity's roll — normalizes against whatever the
+        // table's own total actually is, so an author doesn't have to hit exactly 100.
+        // Null/empty/all-zero (every pre-existing encounter, before loot tables existed)
+        // always rolls Common, matching this project's original hardcoded behavior.
+        public static ItemRarity RollRarity(float[] percentByRarity, System.Random rng = null)
+        {
+            rng ??= new System.Random();
+            var total = percentByRarity?.Sum() ?? 0f;
+            if (total <= 0f)
+            {
+                return ItemRarity.Common;
+            }
+
+            var roll = rng.NextDouble() * total;
+            var cumulative = 0f;
+            for (var i = 0; i < percentByRarity.Length; i++)
+            {
+                cumulative += percentByRarity[i];
+                if (roll < cumulative)
+                {
+                    return (ItemRarity)i;
+                }
+            }
+
+            return (ItemRarity)(percentByRarity.Length - 1);
+        }
+
+        // "+50 XP · 70% Common, 25% Uncommon, 5% Rare Gear" — generated straight from the
+        // same table RollRarity itself rolls against, so the feed card's stated odds can
+        // never drift from what actually drops. Deliberately never names a specific
+        // weapon/item, only rarity (the user's own call). Falls back to the original
+        // generic default when the table is unset, matching every card authored before
+        // loot tables existed.
+        public static string DescribeLootTable(float[] percentByRarity, int xpReward)
+        {
+            var total = percentByRarity?.Sum() ?? 0f;
+            if (total <= 0f)
+            {
+                return $"+{xpReward} XP · Common Gear";
+            }
+
+            var parts = new List<string>();
+            for (var i = 0; i < percentByRarity.Length; i++)
+            {
+                if (percentByRarity[i] <= 0f)
+                {
+                    continue;
+                }
+
+                parts.Add($"{Mathf.RoundToInt(percentByRarity[i] / total * 100f)}% {(ItemRarity)i}");
+            }
+
+            return $"+{xpReward} XP · {string.Join(", ", parts)} Gear";
         }
 
         // allowedCategories restricts the roll (the Market uses this to sell only
