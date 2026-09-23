@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using DoomScroller.Inventory;
 using DoomScroller.Progression;
 using UnityEngine;
@@ -39,7 +40,8 @@ namespace DoomScroller.Encounters
         private Transform _rewardsContainer;
         private Text _xpText;
         private Text _goldText;
-        private GearRowFactory.Row _itemRow;
+        private Transform _itemRowsContainer;
+        private readonly List<GearRowFactory.Row> _itemRows = new();
         private Text _noteText;
         private GameObject _returnButtonGo;
 
@@ -109,15 +111,19 @@ namespace DoomScroller.Encounters
             view._goldText.color = new Color(1f, 0.85f, 0.4f, 1f);
             SetFixedHeight(view._goldText.GetComponent<LayoutElement>(), 50);
 
-            var row = GearRowFactory.Create(rewardsGo.transform, 64, 22, 30, 24);
-            view._itemRow = row;
-            // GearRowFactory's row root (Icon -> IconFrame -> row root, two levels up
-            // from Icon) has no LayoutElement of its own (it just stretches to whatever
-            // parent gives it) — add one so it gets a sane height here. Tall enough for
-            // the weapon detail line (GearRowFactory.SetWeaponDetail) to show without
-            // clipping when this reward turns out to be a weapon.
-            var rowLayoutElement = row.Icon.transform.parent.parent.gameObject.AddComponent<LayoutElement>();
-            SetFixedHeight(rowLayoutElement, 126);
+            // Populated fresh per Show() call with one GearRowFactory row per rolled
+            // item — a table's default min/maxItemCount of 1 means this is almost always
+            // exactly one row, same look as before multi-item loot tables existed.
+            var itemRowsGo = new GameObject("ItemRows", typeof(RectTransform));
+            itemRowsGo.transform.SetParent(rewardsGo.transform, false);
+            var itemRowsLayout = itemRowsGo.AddComponent<VerticalLayoutGroup>();
+            itemRowsLayout.spacing = 10;
+            itemRowsLayout.childAlignment = TextAnchor.MiddleCenter;
+            itemRowsLayout.childForceExpandWidth = true;
+            itemRowsLayout.childForceExpandHeight = false;
+            itemRowsLayout.childControlWidth = true;
+            itemRowsLayout.childControlHeight = true;
+            view._itemRowsContainer = itemRowsGo.transform;
 
             view._noteText = CreateLabel(rewardsGo.transform, "Note", "", 26, FontStyle.Italic);
             view._noteText.color = new Color(0.6f, 0.9f, 1f, 0.95f);
@@ -140,7 +146,7 @@ namespace DoomScroller.Encounters
         // immediate on victory) — gold is not: it's only actually added to wallet once
         // the chest is opened (see ShakeThenOpen), which is the whole point of this
         // parameter existing here instead of being applied by the caller up front.
-        public void Show(int xpReward, int goldReward, ItemData item, bool leveledUp, int newLevel, bool wasCloseCall,
+        public void Show(int xpReward, int goldReward, ItemData[] items, bool leveledUp, int newLevel, bool wasCloseCall,
             PlayerWallet wallet, Sprite chestSprite = null)
         {
             _wallet = wallet;
@@ -172,11 +178,23 @@ namespace DoomScroller.Encounters
 
             _xpText.text = $"+{xpReward} XP";
             _goldText.text = $"+{goldReward} Gold";
-            _itemRow.CaptionText.text = "Item";
-            _itemRow.TitleText.text = item.title;
-            _itemRow.StatText.text = item.statSummary;
-            GearRowFactory.SetIcon(_itemRow, item.icon, item.itemColor, item.rarity);
-            GearRowFactory.SetWeaponDetail(_itemRow, item);
+
+            for (var i = _itemRowsContainer.childCount - 1; i >= 0; i--)
+            {
+                Destroy(_itemRowsContainer.GetChild(i).gameObject);
+            }
+
+            _itemRows.Clear();
+            for (var i = 0; i < items.Length; i++)
+            {
+                var row = CreateItemRow();
+                row.CaptionText.text = items.Length > 1 ? $"Item {i + 1}" : "Item";
+                row.TitleText.text = items[i].title;
+                row.StatText.text = items[i].statSummary;
+                GearRowFactory.SetIcon(row, items[i].icon, items[i].itemColor, items[i].rarity);
+                GearRowFactory.SetWeaponDetail(row, items[i]);
+                _itemRows.Add(row);
+            }
 
             var note = "";
             if (wasCloseCall)
@@ -191,6 +209,19 @@ namespace DoomScroller.Encounters
 
             _noteText.text = note;
             _noteText.gameObject.SetActive(note.Length > 0);
+        }
+
+        private GearRowFactory.Row CreateItemRow()
+        {
+            var row = GearRowFactory.Create(_itemRowsContainer, 64, 22, 30, 24);
+            // GearRowFactory's row root (Icon -> IconFrame -> row root, two levels up
+            // from Icon) has no LayoutElement of its own (it just stretches to whatever
+            // parent gives it) — add one so it gets a sane height here. Tall enough for
+            // the weapon detail line (GearRowFactory.SetWeaponDetail) to show without
+            // clipping when this reward turns out to be a weapon.
+            var rowLayoutElement = row.Icon.transform.parent.parent.gameObject.AddComponent<LayoutElement>();
+            SetFixedHeight(rowLayoutElement, 126);
+            return row;
         }
 
         private void OnChestTapped()

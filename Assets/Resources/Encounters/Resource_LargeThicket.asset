@@ -15,15 +15,36 @@ MonoBehaviour:
   title: Large Thicket
   type: 4
   artwork: {fileID: 0}
+  foregroundArt: {fileID: 0}
   cardColor: {r: 0.3, g: 0.45, b: 0.15, a: 1}
-  rewardSummary: "Gather Fibers \u2014 no combat required"
+  description: "Gather Fibers \u2014 no combat required"
   baseXpReward: 0
+  goldReward: 0
+  lootTable:
+    percentByRarity:
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    minItemCount: 1
+    maxItemCount: 1
+    weapons: []
+    equipment: []
+    materials: []
   enemyHealth: 80
   enemyAttackDamage: 10
   enemyAttackSpeed: 0.8
   damageTypeModifiers: []
-  resourceMaterial: {fileID: 11400000, guid: dac0ef6a6c6b678dd81dd20a206b4e1c, type: 2}
-  baseResourceYield: 5
-  secondaryResourceMaterial: {fileID: 11400000, guid: 984c6c091567ff4b395bb6f7a9a56627, type: 2}
-  secondaryResourceChance: 0.1
-  secondaryResourceYield: 1
+  dungeonRooms: []
+  resourceTimerSeconds: 10
+  resourceWeaknesses: []
+  resourceThresholds:
+  - damageRequired: 20
+    rewardMaterial: {fileID: 11400000, guid: 72c7d605fc3829b4899f1ed6f0194bf9, type: 2}
+    rewardRarity: 0
+    rewardAmount: 5
+  - damageRequired: 60
+    rewardMaterial: {fileID: 11400000, guid: b19ce57e120ebb5c7827ba8c7f32c082, type: 2}
+    rewardRarity: 0
+    rewardAmount: 1

@@ -29,6 +29,7 @@ namespace DoomScroller.Progression.Editor
         private const string AbilitiesResourcesPath = "Assets/Resources/Abilities";
         private const string RecipeDefinitionsResourcesPath = "Assets/Resources/RecipeDefinitions";
         private const string ItemsResourcesPath = "Assets/Resources/Items";
+        private const string MaterialDefinitionsResourcesPath = "Assets/Resources/MaterialDefinitions";
         private const string WeaponUpgradeConfigAssetPath = "Assets/Resources/WeaponUpgradeConfig.asset";
 
         private Vector2 _scroll;
@@ -75,6 +76,7 @@ namespace DoomScroller.Progression.Editor
             public ItemData Item;
             public WeaponDefinition Weapon;
             public EquipmentDefinition Equipment;
+            public MaterialDefinition Material;
             public ItemRarity Rarity;
             public int GoldCost = 20;
         }
@@ -93,7 +95,7 @@ namespace DoomScroller.Progression.Editor
         }
 
         private readonly MaterialDraft _newMaterialDraft = new();
-        private readonly Dictionary<ItemData, bool> _materialExpanded = new();
+        private readonly Dictionary<MaterialDefinition, bool> _materialExpanded = new();
 
         // --- Weapon Upgrades (Empower/Reroll cost) state ---
         private bool _showWeaponUpgrades;
@@ -125,7 +127,7 @@ namespace DoomScroller.Progression.Editor
         private List<RecipeDefinition> _recipeCache = new();
         private List<AbilityDefinition> _abilityCache = new();
         private List<PassiveDefinition> _passiveCache = new();
-        private List<ItemData> _materialCache = new();
+        private List<MaterialDefinition> _materialCache = new();
 
         private void OnEnable()
         {
@@ -163,10 +165,10 @@ namespace DoomScroller.Progression.Editor
                 .Where(p => p != null)
                 .ToList();
 
-            _materialCache = AssetDatabase.FindAssets("t:ItemData")
-                .Select(guid => AssetDatabase.LoadAssetAtPath<ItemData>(AssetDatabase.GUIDToAssetPath(guid)))
-                .Where(i => i != null && i.category == ItemCategory.Material)
-                .OrderBy(i => i.title)
+            _materialCache = AssetDatabase.FindAssets("t:MaterialDefinition")
+                .Select(guid => AssetDatabase.LoadAssetAtPath<MaterialDefinition>(AssetDatabase.GUIDToAssetPath(guid)))
+                .Where(m => m != null)
+                .OrderBy(m => m.materialName)
                 .ToList();
 
             Repaint();
@@ -885,15 +887,17 @@ namespace DoomScroller.Progression.Editor
         // persist it (direct field writes for a draft with no asset yet, vs.
         // Undo.RecordObject + SetDirty for a live RecipeDefinition).
         private static bool DrawRecipeOutputFields(RecipeOutputKind kind, ItemData item, WeaponDefinition weapon,
-            EquipmentDefinition equipment, ItemRarity rarity, int goldCost,
+            EquipmentDefinition equipment, MaterialDefinition material, ItemRarity rarity, int goldCost,
             out RecipeOutputKind newKind, out ItemData newItem, out WeaponDefinition newWeapon,
-            out EquipmentDefinition newEquipment, out ItemRarity newRarity, out int newGoldCost)
+            out EquipmentDefinition newEquipment, out MaterialDefinition newMaterial, out ItemRarity newRarity,
+            out int newGoldCost)
         {
             EditorGUI.BeginChangeCheck();
             newKind = (RecipeOutputKind)EditorGUILayout.EnumPopup("Output Kind", kind);
             newItem = item;
             newWeapon = weapon;
             newEquipment = equipment;
+            newMaterial = material;
             newRarity = rarity;
 
             switch (newKind)
@@ -904,6 +908,10 @@ namespace DoomScroller.Progression.Editor
                     break;
                 case RecipeOutputKind.Equipment:
                     newEquipment = (EquipmentDefinition)EditorGUILayout.ObjectField("Equipment", equipment, typeof(EquipmentDefinition), false);
+                    newRarity = (ItemRarity)EditorGUILayout.EnumPopup("Rarity", rarity);
+                    break;
+                case RecipeOutputKind.Material:
+                    newMaterial = (MaterialDefinition)EditorGUILayout.ObjectField("Material", material, typeof(MaterialDefinition), false);
                     newRarity = (ItemRarity)EditorGUILayout.EnumPopup("Rarity", rarity);
                     break;
                 default:
@@ -926,13 +934,14 @@ namespace DoomScroller.Progression.Editor
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
                 var draft = _newRecipeDraft;
-                DrawRecipeOutputFields(draft.Kind, draft.Item, draft.Weapon, draft.Equipment, draft.Rarity, draft.GoldCost,
-                    out draft.Kind, out draft.Item, out draft.Weapon, out draft.Equipment, out draft.Rarity, out draft.GoldCost);
+                DrawRecipeOutputFields(draft.Kind, draft.Item, draft.Weapon, draft.Equipment, draft.Material, draft.Rarity, draft.GoldCost,
+                    out draft.Kind, out draft.Item, out draft.Weapon, out draft.Equipment, out draft.Material, out draft.Rarity, out draft.GoldCost);
 
                 var hasValidOutput = draft.Kind switch
                 {
                     RecipeOutputKind.Weapon => draft.Weapon != null,
                     RecipeOutputKind.Equipment => draft.Equipment != null,
+                    RecipeOutputKind.Material => draft.Material != null,
                     _ => draft.Item != null
                 };
 
@@ -959,6 +968,7 @@ namespace DoomScroller.Progression.Editor
             recipe.outputItem = draft.Item;
             recipe.outputWeapon = draft.Weapon;
             recipe.outputEquipment = draft.Equipment;
+            recipe.outputMaterial = draft.Material;
             recipe.outputRarity = draft.Rarity;
             recipe.goldCost = draft.GoldCost;
             recipe.ingredients = System.Array.Empty<RecipeIngredient>();
@@ -968,6 +978,7 @@ namespace DoomScroller.Progression.Editor
             {
                 RecipeOutputKind.Weapon => draft.Weapon != null ? draft.Weapon.weaponName : "Weapon",
                 RecipeOutputKind.Equipment => draft.Equipment != null ? draft.Equipment.equipmentName : "Equipment",
+                RecipeOutputKind.Material => draft.Material != null ? draft.Material.materialName : "Material",
                 _ => draft.Item != null ? draft.Item.title : "Item"
             };
 
@@ -981,6 +992,7 @@ namespace DoomScroller.Progression.Editor
             draft.Item = null;
             draft.Weapon = null;
             draft.Equipment = null;
+            draft.Material = null;
             draft.Rarity = default;
             draft.GoldCost = 20;
             Selection.activeObject = recipe;
@@ -992,7 +1004,7 @@ namespace DoomScroller.Progression.Editor
             _recipeExpanded.TryGetValue(recipe, out var expanded);
 
             var ingredientSummary = recipe.ingredients is { Length: > 0 }
-                ? string.Join(", ", recipe.ingredients.Select(i => i.material != null ? $"{i.count}x {i.material.title}" : "?"))
+                ? string.Join(", ", recipe.ingredients.Select(i => i.material != null ? $"{i.count}x {i.material.materialName}" : "?"))
                 : "no materials";
 
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
@@ -1020,15 +1032,16 @@ namespace DoomScroller.Progression.Editor
                 }
 
                 if (DrawRecipeOutputFields(recipe.outputKind, recipe.outputItem, recipe.outputWeapon, recipe.outputEquipment,
-                        recipe.outputRarity, recipe.goldCost,
+                        recipe.outputMaterial, recipe.outputRarity, recipe.goldCost,
                         out var outputKind, out var outputItem, out var outputWeapon, out var outputEquipment,
-                        out var outputRarity, out var goldCost))
+                        out var outputMaterial, out var outputRarity, out var goldCost))
                 {
                     Undo.RecordObject(recipe, "Edit Recipe Output");
                     recipe.outputKind = outputKind;
                     recipe.outputItem = outputItem;
                     recipe.outputWeapon = outputWeapon;
                     recipe.outputEquipment = outputEquipment;
+                    recipe.outputMaterial = outputMaterial;
                     recipe.outputRarity = outputRarity;
                     recipe.goldCost = goldCost;
                     EditorUtility.SetDirty(recipe);
@@ -1045,10 +1058,11 @@ namespace DoomScroller.Progression.Editor
         }
 
         // Add/Remove pattern matching the weapon ability/passive pools, but with a
-        // per-entry count IntField (material + how many) instead of a bare reference —
-        // the GenericMenu picker is filtered to Material-category items only, since an
-        // ingredient that isn't a material would never be discoverable (see
-        // PlayerLoadout.HasDiscovered).
+        // per-entry count IntField (material family + how many) instead of a bare
+        // reference — the GenericMenu picker is over MaterialDefinition assets, so
+        // there's nothing else it could ever list. Which RARITY tier is actually
+        // required is never authored here — it's resolved at craft/upgrade time from
+        // context (see PlayerLoadout's material-counting methods).
         private static void DrawIngredientList(RecipeDefinition recipe)
         {
             EditorGUILayout.LabelField("Ingredients", EditorStyles.boldLabel);
@@ -1071,7 +1085,7 @@ namespace DoomScroller.Progression.Editor
             {
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    var label = list[i].material != null ? list[i].material.title : "(missing)";
+                    var label = list[i].material != null ? list[i].material.materialName : "(missing)";
                     EditorGUILayout.LabelField(label);
 
                     EditorGUI.BeginChangeCheck();
@@ -1098,11 +1112,10 @@ namespace DoomScroller.Progression.Editor
             if (GUILayout.Button("+ Add Ingredient", GUILayout.Width(160)))
             {
                 var menu = new GenericMenu();
-                var all = AssetDatabase.FindAssets("t:ItemData")
-                    .Select(guid => AssetDatabase.LoadAssetAtPath<ItemData>(AssetDatabase.GUIDToAssetPath(guid)))
-                    .Where(item => item != null && item.category == ItemCategory.Material
-                                   && list.All(i => i.material != item))
-                    .OrderBy(item => item.title)
+                var all = AssetDatabase.FindAssets("t:MaterialDefinition")
+                    .Select(guid => AssetDatabase.LoadAssetAtPath<MaterialDefinition>(AssetDatabase.GUIDToAssetPath(guid)))
+                    .Where(material => material != null && list.All(i => i.material != material))
+                    .OrderBy(material => material.materialName)
                     .ToList();
 
                 if (all.Count == 0)
@@ -1112,7 +1125,7 @@ namespace DoomScroller.Progression.Editor
 
                 foreach (var material in all)
                 {
-                    menu.AddItem(new GUIContent(material.title), false, () =>
+                    menu.AddItem(new GUIContent(material.materialName), false, () =>
                     {
                         Undo.RecordObject(owner, "Add Ingredient");
                         var updated = get()?.ToList() ?? new List<RecipeIngredient>();
@@ -1229,27 +1242,25 @@ namespace DoomScroller.Progression.Editor
             }
         }
 
+        // Creates one MaterialDefinition asset — the whole family, forever. Rarity is
+        // never authored here (see MaterialDefinition's own doc comment): an owned copy
+        // at any rarity is generated on demand from this same asset
+        // (MaterialGenerator.GenerateFromDefinition), scaling goldValue by the shared
+        // RewardGenerator.RarityGoldValue ratios.
         private void CreateMaterialItem(MaterialDraft draft)
         {
-            if (!AssetDatabase.IsValidFolder(ItemsResourcesPath))
+            if (!AssetDatabase.IsValidFolder(MaterialDefinitionsResourcesPath))
             {
-                AssetDatabase.CreateFolder("Assets/Resources", "Items");
+                AssetDatabase.CreateFolder("Assets/Resources", "MaterialDefinitions");
             }
 
-            var material = CreateInstance<ItemData>();
-            // Auto-assigned, unlike every material authored before this section existed
-            // — closes the "must remember to set this by hand or it can't survive a
-            // save/reload as a recipe/upgrade ingredient" gap (see ItemData.itemId's own
-            // doc comment).
-            material.itemId = System.Guid.NewGuid().ToString();
-            material.title = draft.Name;
-            material.category = ItemCategory.Material;
+            var material = CreateInstance<MaterialDefinition>();
+            material.materialName = draft.Name;
             material.icon = draft.Icon;
             material.itemColor = draft.Color;
             material.goldValue = draft.GoldValue;
-            material.statSummary = "Crafting material";
 
-            var path = AssetDatabase.GenerateUniqueAssetPath($"{ItemsResourcesPath}/Material_{SanitizeFileName(draft.Name)}.asset");
+            var path = AssetDatabase.GenerateUniqueAssetPath($"{MaterialDefinitionsResourcesPath}/{SanitizeFileName(draft.Name)}.asset");
             AssetDatabase.CreateAsset(material, path);
             AssetDatabase.SaveAssets();
 
@@ -1261,7 +1272,7 @@ namespace DoomScroller.Progression.Editor
             RefreshCaches();
         }
 
-        private void DrawMaterialRow(ItemData material)
+        private void DrawMaterialRow(MaterialDefinition material)
         {
             _materialExpanded.TryGetValue(material, out var expanded);
 
@@ -1269,10 +1280,10 @@ namespace DoomScroller.Progression.Editor
             {
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    expanded = EditorGUILayout.Foldout(expanded, $"{material.title}  (sell {material.goldValue}g)", true);
+                    expanded = EditorGUILayout.Foldout(expanded, $"{material.materialName}  (base {material.goldValue}g)", true);
                     if (GUILayout.Button("Delete", GUILayout.Width(60)))
                     {
-                        if (EditorUtility.DisplayDialog("Delete Material", $"Delete \"{material.title}\"? This can't be undone.",
+                        if (EditorUtility.DisplayDialog("Delete Material", $"Delete \"{material.materialName}\"? This can't be undone.",
                                 "Delete", "Cancel"))
                         {
                             _materialExpanded.Remove(material);
@@ -1290,21 +1301,19 @@ namespace DoomScroller.Progression.Editor
                 }
 
                 EditorGUI.BeginChangeCheck();
-                var name = EditorGUILayout.TextField("Name", material.title);
+                var name = EditorGUILayout.TextField("Name", material.materialName);
                 var icon = (Sprite)EditorGUILayout.ObjectField("Icon", material.icon, typeof(Sprite), false);
                 var color = EditorGUILayout.ColorField("Item Color", material.itemColor);
-                var goldValue = EditorGUILayout.IntField("Gold Value", material.goldValue);
+                var goldValue = EditorGUILayout.IntField("Gold Value (Common)", material.goldValue);
                 if (EditorGUI.EndChangeCheck())
                 {
                     Undo.RecordObject(material, "Edit Material");
-                    material.title = name;
+                    material.materialName = name;
                     material.icon = icon;
                     material.itemColor = color;
                     material.goldValue = goldValue;
                     EditorUtility.SetDirty(material);
                 }
-
-                EditorGUILayout.LabelField("Item ID", material.itemId);
             }
         }
 

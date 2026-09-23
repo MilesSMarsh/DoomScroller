@@ -15,7 +15,24 @@ MonoBehaviour:
   title: Glittering Chest
   type: 0
   artwork: {fileID: 21300000, guid: 43cbb74d7cdd0d845a6055bb90d3d669, type: 3}
+  foregroundArt: {fileID: 0}
   cardColor: {r: 0.85, g: 0.7, b: 0.2, a: 1}
-  rewardSummary: 'Guaranteed loot: no combat required'
+  description: 'Guaranteed loot: no combat required'
   baseXpReward: 80
-  baseChallenge: 0
+  goldReward: 30
+  lootTablePercentByRarity:
+  - 100
+  - 0
+  - 0
+  - 0
+  - 0
+  enemyHealth: 80
+  enemyAttackDamage: 10
+  enemyAttackSpeed: 0.8
+  damageTypeModifiers: []
+  dungeonRooms: []
+  resourceMaterial: {fileID: 0}
+  baseResourceYield: 5
+  secondaryResourceMaterial: {fileID: 0}
+  secondaryResourceChance: 0.1
+  secondaryResourceYield: 1

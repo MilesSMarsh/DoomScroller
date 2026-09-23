@@ -72,13 +72,12 @@ namespace DoomScroller.Feed
         {
             var loaded = Resources.LoadAll<EncounterData>(PoolResourcesPath);
             _landingCard = Array.Find(loaded, e => e.type == EncounterType.Landing);
-            // A Resource card with no resourceMaterial set (e.g. one left dangling by a
-            // deleted Material asset) can't grant anything and crashes FeedCardView the
-            // moment it needs to render — excluded here rather than left to blow up mid-
-            // scroll. Self-healing: re-pointing resourceMaterial at a real asset brings
-            // the card straight back into rotation with no further code change.
+            // A Resource card with no reward thresholds authored can't grant anything —
+            // excluded here rather than left to render a pointless timed window with no
+            // possible payoff. Self-healing: authoring at least one threshold brings the
+            // card straight back into rotation with no further code change.
             _pool = Array.FindAll(loaded, e => e.type != EncounterType.Landing
-                && (e.type != EncounterType.Resource || e.resourceMaterial != null));
+                && (e.type != EncounterType.Resource || (e.resourceThresholds != null && e.resourceThresholds.Length > 0)));
             Array.Sort(_pool, (a, b) => string.CompareOrdinal(a.title, b.title));
 
             if (_pool.Length == 0)

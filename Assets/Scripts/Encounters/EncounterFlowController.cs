@@ -70,7 +70,7 @@ namespace DoomScroller.Encounters
             }
             else if (data.type == EncounterType.Resource)
             {
-                _resourceEncounterView.Show(data, profileController.Loadout, profileController.Attributes);
+                _resourceEncounterView.Show(data, profileController.Loadout, profileController.Attributes, profileController.Settings);
             }
             else if (data.type == EncounterType.WanderingMerchant)
             {

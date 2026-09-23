@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using DoomScroller.Inventory;
 using UnityEngine;
 
@@ -23,7 +22,7 @@ namespace DoomScroller.Progression
     // yet, per the user's own call on this).
     public static class MarketGenerator
     {
-        private const string ItemsResourcesPath = "Items";
+        private const string MaterialDefinitionsResourcesPath = "MaterialDefinitions";
         private const int StockCount = 5;
         private static readonly int[] TierPrices = { 20, 45, 90 };
 
@@ -63,24 +62,32 @@ namespace DoomScroller.Progression
             return new MarketEntry(item, TierPrices[tier]);
         }
 
+        // Falls back to a gear slot on the (should-never-happen) chance the
+        // MaterialDefinitions catalog is empty — losing one stock slot's variety beats
+        // an unauthored/emptied catalog silently taking down the rest of VillageView.Show()
+        // (materials are called before Blacksmith/the page-width fix-up, so an uncaught
+        // exception here used to abort those too — see GenerateMaterialItem).
         private static MarketEntry GenerateMaterial(System.Random rng)
         {
-            return new MarketEntry(GenerateMaterialItem(rng), MaterialPrice);
+            var item = GenerateMaterialItem(rng);
+            return item != null ? new MarketEntry(item, MaterialPrice) : GenerateGear(rng);
         }
 
-        // Returns one of the singleton hand-authored Material ItemData assets (Iron Ore,
-        // Wood, Stone, ...) rather than a freshly-synthesized instance — this used to
-        // invent its own placeholder names/instances since materials cost was
-        // undifferentiated ("any N materials"), but RecipeDefinition ingredients now name
-        // a *specific* material asset, so what the Market hands out has to be the same
-        // reference a recipe can actually check for (see PlayerLoadout.HasDiscovered/
-        // ConsumeNamedIngredients, which both compare by reference).
+        // Rolls a random authored MaterialDefinition and generates a fresh Common-rarity
+        // instance from it (MaterialGenerator.GenerateFromDefinition) — materials are
+        // generated instances now, same as weapons/equipment, not shared singleton
+        // ItemData assets (see MaterialDefinition's own doc comment). Null if the
+        // catalog is empty.
         public static ItemData GenerateMaterialItem(System.Random rng)
         {
-            var materials = Resources.LoadAll<ItemData>(ItemsResourcesPath)
-                .Where(i => i.category == ItemCategory.Material)
-                .ToArray();
-            return materials[rng.Next(materials.Length)];
+            var definitions = Resources.LoadAll<MaterialDefinition>(MaterialDefinitionsResourcesPath);
+            if (definitions.Length == 0)
+            {
+                return null;
+            }
+
+            var definition = definitions[rng.Next(definitions.Length)];
+            return MaterialGenerator.GenerateFromDefinition(definition, ItemRarity.Common);
         }
     }
 }

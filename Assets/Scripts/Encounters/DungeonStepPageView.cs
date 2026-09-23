@@ -39,6 +39,11 @@ namespace DoomScroller.Encounters
         private DungeonStep _step;
         private bool _lastResultWasVictory;
         private Coroutine _revealCoroutine;
+        // Stashed in Resolve() for RevealSequence's bonus-treasure branch — a bonus
+        // pickup has no fight to change the player's HP, so it must carry forward
+        // exactly what the player entered the room with, not reset to full like Rest
+        // does.
+        private int _playerStartHp;
 
         public bool IsResolved { get; private set; }
         public bool LastResultWasVictory => IsResolved && _lastResultWasVictory;
@@ -124,8 +129,9 @@ namespace DoomScroller.Encounters
         {
             _step = step;
             _depthLabelText.text = step.Label;
+            _playerStartHp = playerStartHp;
 
-            var isFight = !step.IsTreasureRoom && !step.IsRestRoom;
+            var isFight = !step.IsFinalTreasureRoom && !step.IsBonusTreasureRoom && !step.IsRestRoom;
             _playback.gameObject.SetActive(isFight);
 
             var sim = CombatResolver.CreateSimulatorForStep(loadout, attributes, settings, step, playerStartHp);
@@ -147,7 +153,7 @@ namespace DoomScroller.Encounters
             PlayerProgression progression, PlayerHealth health, GameSettings settings, PlayerWallet wallet,
             int accumulatedGold)
         {
-            yield return StartCoroutine(_playback.Play(sim, loadout, settings, null, _step.StepColor));
+            yield return StartCoroutine(_playback.Play(sim, loadout, settings, _step.EnemySprite, _step.StepColor));
 
             var isVictory = _playback.LastOutcomeWasVictory;
             _outcomeText.text = isVictory ? "VICTORY" : "DEFEAT";
@@ -155,34 +161,40 @@ namespace DoomScroller.Encounters
 
             if (isVictory)
             {
-                if (_step.IsTreasureRoom)
+                if (_step.IsFinalTreasureRoom)
                 {
                     var previousLevel = progression.Level;
                     progression.AddXp(_step.XpReward);
-                    var item = RewardGenerator.GenerateItem(_step.RewardRarity);
-                    loadout.AddToInventory(item);
+                    foreach (var item in _step.RewardItems)
+                    {
+                        loadout.AddToInventory(item);
+                    }
                     // Everything banked across the whole run, plus this room's own —
                     // opening this one chest is what actually grants all of it at once.
-                    AccumulatedGold = accumulatedGold + RewardGenerator.ComputeGoldReward(_step.XpReward);
+                    AccumulatedGold = accumulatedGold + _step.GoldReward;
 
-                    // The dungeon's finale gets the same tap-to-open reward chest a
-                    // plain encounter does — every other step keeps its inline text.
-                    if (_rewardChest == null)
-                    {
-                        _rewardChest = RewardChestView.Create(transform, includeReturnButton: false);
-                        // Slot it right after AdvanceHint (index 3) and before the first
-                        // Spacer, instead of trailing after the (hidden, for this step)
-                        // CombatPlaybackView.
-                        _rewardChest.transform.SetSiblingIndex(4);
-                        _rewardChest.ChestOpened += () => RewardClaimed?.Invoke();
-                    }
-
-                    _rewardChest.Show(_step.XpReward, AccumulatedGold, item, progression.Level > previousLevel,
-                        progression.Level, _playback.WasCloseCall, wallet);
+                    ShowRewardChest(_step.XpReward, AccumulatedGold, _step.RewardItems, progression, previousLevel, wallet);
                     _advanceHintText.text = "";
                     // The run ends here regardless, so this doesn't feed a next step —
                     // set for consistency only.
                     EndingPlayerHp = health.CurrentMaxHealth;
+                }
+                else if (_step.IsBonusTreasureRoom)
+                {
+                    // A mid-run pickup — gold + item(s), never XP (that's reserved for
+                    // actually finishing the run) — and the run continues afterward, so
+                    // this doesn't touch progression.Level/AddXp at all.
+                    foreach (var item in _step.RewardItems)
+                    {
+                        loadout.AddToInventory(item);
+                    }
+                    AccumulatedGold = accumulatedGold + _step.GoldReward;
+
+                    ShowRewardChest(0, AccumulatedGold, _step.RewardItems, progression, progression.Level, wallet);
+                    _advanceHintText.text = "◂ Swipe left to press deeper into the dungeon";
+                    // No fight happened here, so HP carries through exactly as it was
+                    // entering this room — unlike Rest, a treasure pickup doesn't heal.
+                    EndingPlayerHp = _playerStartHp;
                 }
                 else if (_step.IsRestRoom)
                 {
@@ -196,32 +208,13 @@ namespace DoomScroller.Encounters
                 }
                 else
                 {
-                    var previousLevel = progression.Level;
-                    progression.AddXp(_step.XpReward);
-                    var item = RewardGenerator.GenerateItem(_step.RewardRarity);
-                    loadout.AddToInventory(item);
-                    // Not granted here — it joins the running total DungeonView carries
-                    // forward, only actually paid out when the treasure room's chest is
-                    // opened at the end of the run (or lost entirely on a loss before then).
-                    var goldReward = RewardGenerator.ComputeGoldReward(_step.XpReward);
-                    AccumulatedGold = accumulatedGold + goldReward;
-
-                    var rewardLine = $"Reward: {_step.XpReward} XP + {item.title} (equip it from Profile)" +
-                        $"\n+{goldReward} Gold banked for the treasure room";
-                    if (_playback.WasCloseCall)
-                    {
-                        rewardLine += "\nClose call — that one nearly had you.";
-                    }
-
-                    _rewardText.text = progression.Level > previousLevel
-                        ? $"{rewardLine}\nLevel up! You're now level {progression.Level}."
-                        : rewardLine;
-
-                    // The only indicator that there's more dungeon ahead.
+                    // A Fight room grants nothing on its own any more — only the
+                    // guaranteed end-of-run room pays out. Gold/HP simply carry through
+                    // (HP reflecting whatever damage this fight actually cost).
+                    _rewardText.text = _playback.WasCloseCall ? "Close call — that one nearly had you." : "";
                     _advanceHintText.text = "◂ Swipe left to press deeper into the dungeon";
-                    // Carries forward into the next step — this is the whole point of
-                    // the "no free heal between fights" change.
                     EndingPlayerHp = _playback.FinalPlayerHp;
+                    AccumulatedGold = accumulatedGold;
                 }
             }
             else
@@ -235,6 +228,27 @@ namespace DoomScroller.Encounters
             _lastResultWasVictory = isVictory;
             _revealCoroutine = null;
             Resolved?.Invoke(_step, isVictory);
+        }
+
+        // Shared by the final and bonus treasure branches above — both get the same
+        // tap-to-open reward chest a plain encounter does (every other step kind keeps
+        // its inline text instead). Lazily created once per page instance; a page only
+        // ever resolves as one specific step kind, so it's never needed twice.
+        private void ShowRewardChest(int xpReward, int totalGold, ItemData[] items, PlayerProgression progression,
+            int previousLevel, PlayerWallet wallet)
+        {
+            if (_rewardChest == null)
+            {
+                _rewardChest = RewardChestView.Create(transform, includeReturnButton: false);
+                // Slot it right after AdvanceHint (index 3) and before the first
+                // Spacer, instead of trailing after the (hidden, for this step)
+                // CombatPlaybackView.
+                _rewardChest.transform.SetSiblingIndex(4);
+                _rewardChest.ChestOpened += () => RewardClaimed?.Invoke();
+            }
+
+            _rewardChest.Show(xpReward, totalGold, items, progression.Level > previousLevel, progression.Level,
+                _playback.WasCloseCall, wallet);
         }
 
         private static Text CreateLabel(Transform parent, string name, int fontSize, FontStyle style, float preferredHeight)

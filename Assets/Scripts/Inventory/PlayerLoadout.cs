@@ -23,12 +23,14 @@ namespace DoomScroller.Inventory
         private readonly List<ItemData> _knownPotionTypes;
         private const int BaseRefillCapacity = 3;
 
-        // Every Material-category item ever owned (not just currently held — "seen"
-        // survives spending it), and every RecipeDefinition.recipeId ever crafted — the
-        // two gates RecipeDefinition-based crafting checks (see IsRecipeUnlocked). Unlike
-        // _knownPotionTypes above, both grow live via AddToInventory/TryCraftRecipe, not
-        // just at construction — a material or recipe can be discovered mid-session.
-        private readonly HashSet<ItemData> _discoveredMaterials;
+        // Every (MaterialDefinition, ItemRarity) pair ever owned (not just currently held
+        // — "seen" survives spending it), and every RecipeDefinition.recipeId ever
+        // crafted — the two gates RecipeDefinition-based crafting checks (see
+        // IsRecipeUnlocked). Unlike _knownPotionTypes above, both grow live via
+        // AddToInventory/TryCraftRecipe, not just at construction — a material or recipe
+        // can be discovered mid-session. Keyed by the pair, never family alone — owning
+        // Common Wood doesn't discover Rare Wood.
+        private readonly HashSet<(MaterialDefinition Material, ItemRarity Rarity)> _discoveredMaterials;
         private readonly HashSet<string> _craftedRecipeIds = new();
 
         // The Alchemist's two upgrade tracks for a Revive potion, keyed by which potion
@@ -50,7 +52,9 @@ namespace DoomScroller.Inventory
         {
             _inventory = inventory.ToList();
             _knownPotionTypes = _inventory.Where(i => i.category == ItemCategory.Potion).Distinct().ToList();
-            _discoveredMaterials = new HashSet<ItemData>(_inventory.Where(i => i.category == ItemCategory.Material));
+            _discoveredMaterials = new HashSet<(MaterialDefinition, ItemRarity)>(_inventory
+                .Where(i => i.category == ItemCategory.Material && i.materialSource != null)
+                .Select(i => (i.materialSource, i.rarity)));
             PlayerSprite = playerSprite;
         }
 
@@ -64,9 +68,9 @@ namespace DoomScroller.Inventory
             }
 
             _inventory.Add(item);
-            if (item.category == ItemCategory.Material)
+            if (item.category == ItemCategory.Material && item.materialSource != null)
             {
-                _discoveredMaterials.Add(item);
+                _discoveredMaterials.Add((item.materialSource, item.rarity));
             }
 
             Changed?.Invoke();
@@ -74,6 +78,17 @@ namespace DoomScroller.Inventory
 
         public IReadOnlyList<ItemData> GetInventory(EquipmentSlotType slot)
         {
+            if (IsHandSlot(slot))
+            {
+                // A weapon/shield isn't pinned to a specific hand — every owned item
+                // whose category can occupy a hand slot at all is a candidate for
+                // either hand, including one currently worn in the *other* hand
+                // (equipping it here moves it — see Equip — rather than duplicating
+                // it). Filtering by the item's own slotType here is what used to hide
+                // roughly half the player's collection when browsing a single hand.
+                return _inventory.Where(i => ItemCategoryInfo.SlotsFor(i.category).Contains(slot)).ToList();
+            }
+
             // Potions and Materials never have a meaningful slotType (neither is ever
             // equipped to a body slot — see GetPotions/GetMaterials) so both are
             // excluded here regardless of whatever default value that field happens to
@@ -118,7 +133,23 @@ namespace DoomScroller.Inventory
             return removed;
         }
 
+        // Convenience overload for callers with no slot context of their own (the
+        // starter-weapon grant, test fixtures) — equips into whatever slot the item's
+        // own slotType already names. Hand-slot items browsed through
+        // EquipSlotDetailView always go through the explicit-target overload below
+        // instead, since a weapon/shield's slotType is no longer a reliable signal of
+        // which hand the player actually wants (see GetInventory).
         public void Equip(ItemData item)
+        {
+            if (item == null)
+            {
+                return;
+            }
+
+            Equip(item, item.slotType);
+        }
+
+        public void Equip(ItemData item, EquipmentSlotType targetSlot)
         {
             // Potions are never equipped to a body slot — they're drunk (MaxHealthRestore)
             // or spent automatically on defeat (Revive, see GetBestRevivePotion).
@@ -130,17 +161,27 @@ namespace DoomScroller.Inventory
             // A two-handed weapon in the other hand locks this slot — refuse the equip
             // rather than letting it silently coexist with a weapon that's supposed to
             // occupy both hands.
-            if (GetLockingTwoHandedWeapon(item.slotType) != null)
+            if (GetLockingTwoHandedWeapon(targetSlot) != null)
             {
                 return;
             }
 
-            _equipped[item.slotType] = item;
-            if (IsHandSlot(item.slotType) && IsTwoHanded(item))
+            // Both hands now browse the same weapon/shield pool (see GetInventory), so
+            // this same item can appear as an option while it's still worn in the
+            // other hand — tapping it there is a "move it to this hand" gesture, not a
+            // duplicate-equip bug.
+            if (IsHandSlot(targetSlot) && GetEquipped(OtherHandSlot(targetSlot)) == item)
+            {
+                _equipped.Remove(OtherHandSlot(targetSlot));
+            }
+
+            _equipped[targetSlot] = item;
+            item.slotType = targetSlot;
+            if (IsHandSlot(targetSlot) && IsTwoHanded(item))
             {
                 // Equipping a two-hander clears whatever was in the other hand — it
                 // can't coexist with anything else.
-                _equipped.Remove(OtherHandSlot(item.slotType));
+                _equipped.Remove(OtherHandSlot(targetSlot));
             }
 
             Changed?.Invoke();
@@ -429,34 +470,40 @@ namespace DoomScroller.Inventory
             return true;
         }
 
-        public bool HasDiscovered(ItemData material) => _discoveredMaterials.Contains(material);
+        public bool HasDiscovered(MaterialDefinition material, ItemRarity rarity) =>
+            _discoveredMaterials.Contains((material, rarity));
 
         public bool HasCrafted(RecipeDefinition recipe) => recipe != null && _craftedRecipeIds.Contains(recipe.recipeId);
 
-        private int CountOfMaterial(ItemData material) => _inventory.Count(i => i == material);
+        private int CountOfMaterial(MaterialDefinition material, ItemRarity rarity) =>
+            _inventory.Count(i => i.category == ItemCategory.Material && i.materialSource == material && i.rarity == rarity);
 
-        // Whether the player currently holds enough of every named ingredient. Shared by
-        // recipes (HasIngredientsFor) and weapon upgrades (TryEmpowerWeapon/
-        // TryRerollWeapon's own checks) — distinct from IsRecipeUnlocked, which only
-        // checks discovery/prerequisites, not current stock, since a recipe stays known
-        // even after its materials are spent.
-        public bool HasIngredients(RecipeIngredient[] ingredients)
+        // Whether the player currently holds enough of every named ingredient, AT the
+        // given rarity — the same rarity that will actually be consumed (see
+        // ConsumeNamedIngredients). Shared by recipes (HasIngredientsFor) and weapon
+        // upgrades (TryEmpowerWeapon/TryRerollWeapon's own checks) — distinct from
+        // IsRecipeUnlocked, which only checks discovery/prerequisites, not current
+        // stock, since a recipe stays known even after its materials are spent.
+        public bool HasIngredients(RecipeIngredient[] ingredients, ItemRarity rarity)
         {
-            return (ingredients ?? Array.Empty<RecipeIngredient>()).All(i => CountOfMaterial(i.material) >= i.count);
+            return (ingredients ?? Array.Empty<RecipeIngredient>()).All(i => CountOfMaterial(i.material, rarity) >= i.count);
         }
 
         // Exposed for the Blacksmith's confirm-dialog affordability check; TryCraftRecipe
-        // re-checks this itself rather than trusting the caller already did.
-        public bool HasIngredientsFor(RecipeDefinition recipe) => HasIngredients(recipe.ingredients);
+        // re-checks this itself rather than trusting the caller already did. Crafting a
+        // weapon/equipment of rarity X requires materials of rarity X (recipe.OutputRarity
+        // — Common for a FixedItem recipe, which has no rarity of its own to match).
+        public bool HasIngredientsFor(RecipeDefinition recipe) => HasIngredients(recipe.ingredients, recipe.OutputRarity);
 
-        // True once every named ingredient has been discovered (ever owned — see
-        // HasDiscovered) and every prerequisite recipe has already been crafted at least
-        // once (see HasCrafted). Doesn't check current stock — that's TryCraftRecipe's
-        // job, since a recipe stays "unlocked" (visible, known) even after its materials
-        // are spent.
+        // True once every named ingredient has been discovered AT the recipe's own
+        // output rarity (ever owned at that rarity — see HasDiscovered) and every
+        // prerequisite recipe has already been crafted at least once (see HasCrafted).
+        // Doesn't check current stock — that's TryCraftRecipe's job, since a recipe
+        // stays "unlocked" (visible, known) even after its materials are spent.
         public bool IsRecipeUnlocked(RecipeDefinition recipe)
         {
-            if (recipe.ingredients != null && recipe.ingredients.Any(i => i.material == null || !HasDiscovered(i.material)))
+            if (recipe.ingredients != null &&
+                recipe.ingredients.Any(i => i.material == null || !HasDiscovered(i.material, recipe.OutputRarity)))
             {
                 return false;
             }
@@ -464,7 +511,7 @@ namespace DoomScroller.Inventory
             return recipe.prerequisiteRecipes == null || recipe.prerequisiteRecipes.All(HasCrafted);
         }
 
-        private void ConsumeNamedIngredients(RecipeIngredient[] ingredients)
+        private void ConsumeNamedIngredients(RecipeIngredient[] ingredients, ItemRarity rarity)
         {
             if (ingredients == null)
             {
@@ -473,9 +520,13 @@ namespace DoomScroller.Inventory
 
             foreach (var ingredient in ingredients)
             {
-                foreach (var owned in _inventory.Where(i => i == ingredient.material).Take(ingredient.count).ToList())
+                var owned = _inventory
+                    .Where(i => i.category == ItemCategory.Material && i.materialSource == ingredient.material && i.rarity == rarity)
+                    .Take(ingredient.count)
+                    .ToList();
+                foreach (var item in owned)
                 {
-                    _inventory.Remove(owned);
+                    _inventory.Remove(item);
                 }
             }
         }
@@ -496,7 +547,7 @@ namespace DoomScroller.Inventory
                 return false;
             }
 
-            ConsumeNamedIngredients(recipe.ingredients);
+            ConsumeNamedIngredients(recipe.ingredients, recipe.OutputRarity);
             _craftedRecipeIds.Add(recipe.recipeId);
             AddToInventory(CreateRecipeOutput(recipe));
             return true;
@@ -510,7 +561,9 @@ namespace DoomScroller.Inventory
         // Blacksmith row/equip-slot display showing this weapon updates live.
         public bool TryEmpowerWeapon(ItemData weapon, PlayerWallet wallet, int goldCost, RecipeIngredient[] ingredients)
         {
-            if (!WeaponUpgrader.CanEmpower(weapon) || !HasIngredients(ingredients))
+            // Costs materials at the weapon's CURRENT rarity — empowering a Rare weapon
+            // costs Rare materials, same rule as crafting a Rare weapon from scratch.
+            if (!WeaponUpgrader.CanEmpower(weapon) || !HasIngredients(ingredients, weapon.rarity))
             {
                 return false;
             }
@@ -520,7 +573,7 @@ namespace DoomScroller.Inventory
                 return false;
             }
 
-            ConsumeNamedIngredients(ingredients);
+            ConsumeNamedIngredients(ingredients, weapon.rarity);
             WeaponUpgrader.Empower(weapon);
             Changed?.Invoke();
             return true;
@@ -528,7 +581,7 @@ namespace DoomScroller.Inventory
 
         public bool TryRerollWeapon(ItemData weapon, PlayerWallet wallet, int goldCost, RecipeIngredient[] ingredients)
         {
-            if (weapon == null || weapon.category != ItemCategory.Weapon || !HasIngredients(ingredients))
+            if (weapon == null || weapon.category != ItemCategory.Weapon || !HasIngredients(ingredients, weapon.rarity))
             {
                 return false;
             }
@@ -538,7 +591,7 @@ namespace DoomScroller.Inventory
                 return false;
             }
 
-            ConsumeNamedIngredients(ingredients);
+            ConsumeNamedIngredients(ingredients, weapon.rarity);
             WeaponUpgrader.Reroll(weapon);
             Changed?.Invoke();
             return true;
@@ -554,6 +607,7 @@ namespace DoomScroller.Inventory
             {
                 RecipeOutputKind.Weapon => WeaponGenerator.GenerateFromDefinition(recipe.outputWeapon, recipe.outputRarity),
                 RecipeOutputKind.Equipment => EquipmentGenerator.GenerateFromDefinition(recipe.outputEquipment, recipe.outputRarity),
+                RecipeOutputKind.Material => MaterialGenerator.GenerateFromDefinition(recipe.outputMaterial, recipe.outputRarity),
                 _ => recipe.outputItem
             };
         }
@@ -614,9 +668,9 @@ namespace DoomScroller.Inventory
             }
 
             data.discoveredMaterials.Clear();
-            foreach (var material in _discoveredMaterials)
+            foreach (var (material, rarity) in _discoveredMaterials)
             {
-                data.discoveredMaterials.Add(Intern(material));
+                data.discoveredMaterials.Add(new DiscoveredMaterialEntry { materialName = material.materialName, rarity = rarity });
             }
 
             data.craftedRecipeIds.Clear();
@@ -662,9 +716,14 @@ namespace DoomScroller.Inventory
             }
 
             _discoveredMaterials.Clear();
-            foreach (var index in data.discoveredMaterials)
+            foreach (var entry in data.discoveredMaterials)
             {
-                _discoveredMaterials.Add(pool[index]);
+                var material = Resources.LoadAll<MaterialDefinition>("MaterialDefinitions")
+                    .FirstOrDefault(d => d.materialName == entry.materialName);
+                if (material != null)
+                {
+                    _discoveredMaterials.Add((material, entry.rarity));
+                }
             }
 
             _craftedRecipeIds.Clear();

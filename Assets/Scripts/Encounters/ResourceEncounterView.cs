@@ -1,28 +1,64 @@
 using System;
+using System.Collections;
+using System.Linq;
+using DoomScroller.Combat;
 using DoomScroller.Feed;
 using DoomScroller.Inventory;
 using DoomScroller.Progression;
 using DoomScroller.UI;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace DoomScroller.Encounters
 {
-    // A Resource-type feed card: no combat, no chest ceremony — the material is granted
-    // the instant the card is entered (Show()), scaled by the player's Expertise
-    // (PlayerAttributes.ResourceYieldMultiplier). Deliberately simpler than
-    // CombatResolutionView's reward-chest flow — a gathered log or ore vein reads as a
-    // quick pickup, not a treasure moment, and this avoids touching RewardChestView's
-    // already-verified XP/gold/item-shaped Show().
-    public class ResourceEncounterView : MonoBehaviour
+    // A Resource-type feed card: tapping the card in the feed both enters and starts a
+    // timed damage window (the player's equipped weapon(s) auto-attack this node, which
+    // never attacks back — CombatPlaybackView.PlayTimedWindow, backed by
+    // CombatResolver.CreateSimulatorForResource) — no separate "tap to start" gesture,
+    // since the feed tap already is that. Swipe right for the reward page — same
+    // two-page horizontal-swipe shell
+    // CombatResolutionView uses (viewport/content, drag-to-swipe, a reward page that
+    // only becomes reachable once resolved). Every run is swipeable once the timer ends,
+    // win or not — there's no losing state, just "which thresholds did you clear."
+    public class ResourceEncounterView : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
     {
+        private const float SnapSpeed = 12f;
+        private const float SnapThreshold = 0.5f;
+        private const float HorizontalSwipeThreshold = 80f;
+        private const float AxisLockThreshold = 12f;
+
         public event Action ReturnToFeedRequested;
         public event Action<EncounterData> EncounterWon;
 
-        private Image _icon;
+        private EncounterData _data;
+        private PlayerLoadout _loadout;
+        private PlayerAttributes _attributes;
+        private GameSettings _settings;
+
         private Text _titleText;
-        private Text _yieldText;
-        private Text _bonusText;
+        private Image _icon;
+        private CombatPlaybackView _playback;
+        private Text _outcomeText;
+        private Text _hintText;
+        private GameObject _leaveButtonGo;
+        private Coroutine _runCoroutine;
+
+        private RectTransform _rewardLines;
+        private GameObject _returnButtonGo;
+
+        private RectTransform _viewport;
+        private RectTransform _content;
+        private LayoutElement _gatherPageLayout;
+        private LayoutElement _rewardPageLayout;
+        private float _pageWidth;
+        private int _currentPage;
+        private bool _canReachRewardPage;
+
+        private Vector2 _dragStart;
+        private bool? _dragIsHorizontal;
+        private bool _isSnapping;
+        private float _targetX;
 
         public static ResourceEncounterView Create(Transform parent)
         {
@@ -38,9 +74,9 @@ namespace DoomScroller.Encounters
             background.color = new Color(0.05f, 0.06f, 0.05f, 1f);
 
             var layoutGroup = go.AddComponent<VerticalLayoutGroup>();
-            layoutGroup.padding = new RectOffset(40, 40, NavBarController.Height + 40, 40);
-            layoutGroup.spacing = 20;
-            layoutGroup.childAlignment = TextAnchor.MiddleCenter;
+            layoutGroup.padding = new RectOffset(0, 0, NavBarController.Height, 0);
+            layoutGroup.spacing = 0;
+            layoutGroup.childAlignment = TextAnchor.UpperCenter;
             layoutGroup.childForceExpandWidth = true;
             layoutGroup.childForceExpandHeight = false;
             layoutGroup.childControlWidth = true;
@@ -48,73 +84,314 @@ namespace DoomScroller.Encounters
 
             var view = go.AddComponent<ResourceEncounterView>();
 
-            view._titleText = CreateLabel(rect, "Title", "", 48, FontStyle.Bold);
+            var pagerAreaGo = new GameObject("PagerArea", typeof(RectTransform));
+            pagerAreaGo.transform.SetParent(rect, false);
+            var pagerAreaLayout = pagerAreaGo.AddComponent<LayoutElement>();
+            pagerAreaLayout.minHeight = 0;
+            pagerAreaLayout.preferredHeight = 0;
+            pagerAreaLayout.flexibleHeight = 1;
+
+            var viewportGo = new GameObject("Viewport", typeof(RectTransform));
+            var viewportRect = (RectTransform)viewportGo.transform;
+            viewportRect.SetParent(pagerAreaGo.transform, false);
+            viewportRect.anchorMin = Vector2.zero;
+            viewportRect.anchorMax = Vector2.one;
+            viewportRect.offsetMin = Vector2.zero;
+            viewportRect.offsetMax = Vector2.zero;
+            viewportGo.AddComponent<RectMask2D>();
+            view._viewport = viewportRect;
+
+            var contentGo = new GameObject("Content", typeof(RectTransform));
+            var contentRect = (RectTransform)contentGo.transform;
+            contentRect.SetParent(viewportRect, false);
+            contentRect.anchorMin = new Vector2(0, 0);
+            contentRect.anchorMax = new Vector2(0, 1);
+            contentRect.pivot = new Vector2(0, 0.5f);
+            contentRect.sizeDelta = Vector2.zero;
+            view._content = contentRect;
+
+            var contentLayout = contentGo.AddComponent<HorizontalLayoutGroup>();
+            contentLayout.spacing = 0;
+            contentLayout.childForceExpandWidth = false;
+            contentLayout.childForceExpandHeight = true;
+            contentLayout.childControlWidth = true;
+            contentLayout.childControlHeight = true;
+
+            var contentFitter = contentGo.AddComponent<ContentSizeFitter>();
+            contentFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            // Page 0 — the node itself and the timed damage window, which starts the
+            // instant Show() runs (entering the card from the feed IS the "start"
+            // gesture — no separate confirm step).
+            var gatherPageGo = new GameObject("GatherPage", typeof(RectTransform));
+            gatherPageGo.transform.SetParent(contentRect, false);
+            var gatherPageLayout = gatherPageGo.AddComponent<LayoutElement>();
+            gatherPageLayout.flexibleWidth = 0;
+            gatherPageLayout.flexibleHeight = 1;
+            view._gatherPageLayout = gatherPageLayout;
+
+            var gatherGroup = gatherPageGo.AddComponent<VerticalLayoutGroup>();
+            gatherGroup.padding = new RectOffset(48, 48, 24, 24);
+            gatherGroup.spacing = 14;
+            gatherGroup.childAlignment = TextAnchor.UpperCenter;
+            gatherGroup.childForceExpandWidth = true;
+            gatherGroup.childForceExpandHeight = false;
+            gatherGroup.childControlWidth = true;
+            gatherGroup.childControlHeight = true;
+
+            view._titleText = CreateLabel(gatherPageGo.transform, "Title", "", 48, FontStyle.Bold, 68);
 
             var iconGo = new GameObject("Icon", typeof(RectTransform));
-            iconGo.transform.SetParent(rect, false);
-            iconGo.AddComponent<LayoutElement>().preferredHeight = 220;
+            iconGo.transform.SetParent(gatherPageGo.transform, false);
+            iconGo.AddComponent<LayoutElement>().preferredHeight = 160;
             var iconRect = (RectTransform)iconGo.transform;
-            iconRect.sizeDelta = new Vector2(220, 220);
+            iconRect.sizeDelta = new Vector2(160, 160);
             view._icon = iconGo.AddComponent<Image>();
 
-            view._yieldText = CreateLabel(rect, "Yield", "", 38, FontStyle.Italic);
-            view._yieldText.color = new Color(0.7f, 1f, 0.75f, 0.95f);
+            view._outcomeText = CreateLabel(gatherPageGo.transform, "Outcome", "", 40, FontStyle.Bold, 60);
+            view._hintText = CreateLabel(gatherPageGo.transform, "SwipeHint", "◂ Swipe left for your reward", 28, FontStyle.Bold, 50);
+            view._hintText.color = new Color(0.4f, 0.85f, 1f, 0.95f);
+            view._hintText.gameObject.SetActive(false);
 
-            // Hidden by default (SetActive(false)) rather than left as an empty string —
-            // an empty Text still reserves its LayoutElement's preferredHeight, which
-            // would leave a blank gap on every non-bonus visit otherwise.
-            view._bonusText = CreateLabel(rect, "Bonus", "", 32, FontStyle.Bold);
-            view._bonusText.color = new Color(1f, 0.85f, 0.3f, 0.95f);
-            view._bonusText.gameObject.SetActive(false);
+            view._playback = CombatPlaybackView.Create(gatherPageGo.transform, rect);
+            view._playback.gameObject.SetActive(false);
 
-            CreateButton(rect, "ReturnButton", "Return", () => view.ReturnToFeedRequested?.Invoke());
+            // Page 1 — reward summary, one line per threshold cleared.
+            var rewardPageGo = new GameObject("RewardPage", typeof(RectTransform));
+            rewardPageGo.transform.SetParent(contentRect, false);
+            var rewardPageLayout = rewardPageGo.AddComponent<LayoutElement>();
+            rewardPageLayout.flexibleWidth = 0;
+            rewardPageLayout.flexibleHeight = 1;
+            view._rewardPageLayout = rewardPageLayout;
+
+            var rewardGroup = rewardPageGo.AddComponent<VerticalLayoutGroup>();
+            rewardGroup.padding = new RectOffset(48, 48, 24, 24);
+            rewardGroup.spacing = 14;
+            rewardGroup.childAlignment = TextAnchor.UpperCenter;
+            rewardGroup.childForceExpandWidth = true;
+            rewardGroup.childForceExpandHeight = false;
+            rewardGroup.childControlWidth = true;
+            rewardGroup.childControlHeight = true;
+
+            CreateLabel(rewardPageGo.transform, "RewardHeader", "Gathered", 44, FontStyle.Bold, 68);
+
+            var linesGo = new GameObject("RewardLines", typeof(RectTransform));
+            view._rewardLines = (RectTransform)linesGo.transform;
+            view._rewardLines.SetParent(rewardPageGo.transform, false);
+            var linesLayout = linesGo.AddComponent<VerticalLayoutGroup>();
+            linesLayout.spacing = 8;
+            linesLayout.childAlignment = TextAnchor.UpperCenter;
+            linesLayout.childForceExpandWidth = true;
+            linesLayout.childForceExpandHeight = false;
+            linesLayout.childControlWidth = true;
+            linesLayout.childControlHeight = true;
+
+            view._returnButtonGo = CreateActionButton(rewardPageGo.transform, "ReturnButton", "Return", 120,
+                new Color(1, 1, 1, 0.15f), () => view.ReturnToFeedRequested?.Invoke());
+
+            view._leaveButtonGo = CreateActionButton(rect, "LeaveButton", "Leave", 120,
+                new Color(1, 1, 1, 0.15f), () => view.OnLeaveClicked());
 
             go.SetActive(false);
             return view;
         }
 
-        // Grants the material immediately — no confirm step, matching this project's
-        // existing immediate-action UI conventions (e.g. tap-to-equip, Stats' "+" button).
-        public void Show(EncounterData data, PlayerLoadout loadout, PlayerAttributes attributes)
+        public void Show(EncounterData data, PlayerLoadout loadout, PlayerAttributes attributes, GameSettings settings)
         {
             gameObject.SetActive(true);
-
-            var yield = Mathf.Max(1, Mathf.RoundToInt(data.baseResourceYield * attributes.ResourceYieldMultiplier));
-            for (var i = 0; i < yield; i++)
-            {
-                loadout.AddToInventory(data.resourceMaterial);
-            }
-
-            // Independent roll, separate from the scaled primary yield above — a rarer
-            // bonus find, not something Expertise should inflate the odds or amount of.
-            var gotSecondary = data.secondaryResourceMaterial != null
-                                && new System.Random().NextDouble() < data.secondaryResourceChance;
-            if (gotSecondary)
-            {
-                for (var i = 0; i < data.secondaryResourceYield; i++)
-                {
-                    loadout.AddToInventory(data.secondaryResourceMaterial);
-                }
-            }
+            _data = data;
+            _loadout = loadout;
+            _attributes = attributes;
+            _settings = settings;
 
             _titleText.text = data.title;
-            _icon.color = data.resourceMaterial.itemColor;
-            _yieldText.text = $"+{yield} {data.resourceMaterial.title}";
-            _bonusText.gameObject.SetActive(gotSecondary);
-            if (gotSecondary)
+            _icon.sprite = data.foregroundArt;
+            _icon.color = data.foregroundArt != null ? Color.white : data.cardColor;
+
+            _outcomeText.text = "";
+            _hintText.gameObject.SetActive(false);
+            _playback.gameObject.SetActive(true);
+            _leaveButtonGo.SetActive(true);
+            ClearRewardLines();
+
+            _canReachRewardPage = false;
+            _currentPage = 0;
+            _isSnapping = false;
+            Canvas.ForceUpdateCanvases();
+            _pageWidth = _viewport.rect.width;
+            _gatherPageLayout.minWidth = _pageWidth;
+            _gatherPageLayout.preferredWidth = _pageWidth;
+            _rewardPageLayout.minWidth = _pageWidth;
+            _rewardPageLayout.preferredWidth = _pageWidth;
+            Canvas.ForceUpdateCanvases();
+            _content.anchoredPosition = Vector2.zero;
+
+            if (_runCoroutine != null)
             {
-                _bonusText.text = $"Bonus! +{data.secondaryResourceYield} {data.secondaryResourceMaterial.title}";
+                StopCoroutine(_runCoroutine);
             }
 
-            EncounterWon?.Invoke(data);
+            _runCoroutine = StartCoroutine(RunTimedWindow());
         }
 
         public void Hide()
         {
+            if (_runCoroutine != null)
+            {
+                StopCoroutine(_runCoroutine);
+                _runCoroutine = null;
+            }
+
             gameObject.SetActive(false);
         }
 
-        private static Text CreateLabel(Transform parent, string name, string content, int fontSize, FontStyle style)
+        // Nothing is ever at risk here (the node never attacks back), so leaving early
+        // has no penalty — unlike CombatResolutionView.OnLeaveClicked, this never fires
+        // EncounterWon or applies any cost.
+        private void OnLeaveClicked()
+        {
+            if (_runCoroutine != null)
+            {
+                StopCoroutine(_runCoroutine);
+                _runCoroutine = null;
+            }
+
+            ReturnToFeedRequested?.Invoke();
+        }
+
+        private IEnumerator RunTimedWindow()
+        {
+            // playerStartHp is irrelevant here — the player is never at risk
+            // (enemyCanAttack: false), so nothing downstream ever reads it back.
+            var sim = CombatResolver.CreateSimulatorForResource(_loadout, _attributes, _settings, _data, 1);
+            yield return StartCoroutine(_playback.PlayTimedWindow(sim, _loadout, _settings, _data.foregroundArt,
+                _data.cardColor, _data.resourceTimerSeconds));
+
+            var damage = _playback.TotalDamageDealt;
+            _outcomeText.text = $"Dealt {damage} damage!";
+            _hintText.gameObject.SetActive(true);
+            _leaveButtonGo.SetActive(false);
+            _canReachRewardPage = true;
+
+            BuildRewardLines(damage);
+            EncounterWon?.Invoke(_data);
+            _runCoroutine = null;
+        }
+
+        // Grants every threshold whose damageRequired is met (they stack — see
+        // ResourceThreshold's own doc comment), each scaled by the player's Expertise
+        // the same way the old flat yield used to be.
+        private void BuildRewardLines(int damage)
+        {
+            ClearRewardLines();
+
+            var cleared = (_data.resourceThresholds ?? Array.Empty<ResourceThreshold>())
+                .Where(t => t.rewardMaterial != null && damage >= t.damageRequired)
+                .OrderBy(t => t.damageRequired)
+                .ToList();
+
+            if (cleared.Count == 0)
+            {
+                CreateLabel(_rewardLines, "NoReward", "No resources gathered — try a weapon better suited to this node.",
+                    28, FontStyle.Italic, 60);
+                return;
+            }
+
+            foreach (var threshold in cleared)
+            {
+                var amount = Mathf.Max(1, Mathf.RoundToInt(threshold.rewardAmount * _attributes.ResourceYieldMultiplier));
+                for (var i = 0; i < amount; i++)
+                {
+                    _loadout.AddToInventory(MaterialGenerator.GenerateFromDefinition(threshold.rewardMaterial, threshold.rewardRarity));
+                }
+
+                CreateLabel(_rewardLines, $"Line_{threshold.damageRequired}",
+                    $"+{amount} {threshold.rewardRarity} {threshold.rewardMaterial.materialName}", 34, FontStyle.Italic, 50);
+            }
+        }
+
+        private void ClearRewardLines()
+        {
+            for (var i = _rewardLines.childCount - 1; i >= 0; i--)
+            {
+                Destroy(_rewardLines.GetChild(i).gameObject);
+            }
+        }
+
+        public void OnBeginDrag(PointerEventData eventData)
+        {
+            _dragStart = eventData.position;
+            _dragIsHorizontal = null;
+            _isSnapping = false;
+        }
+
+        public void OnDrag(PointerEventData eventData)
+        {
+            var delta = eventData.position - _dragStart;
+
+            if (_dragIsHorizontal == null)
+            {
+                if (Mathf.Abs(delta.x) < AxisLockThreshold && Mathf.Abs(delta.y) < AxisLockThreshold)
+                {
+                    return;
+                }
+
+                _dragIsHorizontal = Mathf.Abs(delta.x) >= Mathf.Abs(delta.y);
+            }
+
+            if (_dragIsHorizontal == true)
+            {
+                var pos = _content.anchoredPosition;
+                pos.x = -_currentPage * _pageWidth + delta.x;
+                _content.anchoredPosition = pos;
+            }
+        }
+
+        public void OnEndDrag(PointerEventData eventData)
+        {
+            if (_dragIsHorizontal != true)
+            {
+                SnapTo(_currentPage);
+                return;
+            }
+
+            var delta = eventData.position - _dragStart;
+            var desired = Mathf.Abs(delta.x) >= HorizontalSwipeThreshold
+                ? _currentPage + (delta.x < 0 ? 1 : -1)
+                : _currentPage;
+
+            var maxPage = _canReachRewardPage ? 1 : 0;
+            SnapTo(Mathf.Clamp(desired, 0, maxPage));
+        }
+
+        private void SnapTo(int page)
+        {
+            _currentPage = page;
+            _targetX = -page * _pageWidth;
+            _isSnapping = true;
+        }
+
+        private void LateUpdate()
+        {
+            if (!_isSnapping)
+            {
+                return;
+            }
+
+            var pos = _content.anchoredPosition;
+            pos.x = Mathf.Lerp(pos.x, _targetX, Time.unscaledDeltaTime * SnapSpeed);
+
+            if (Mathf.Abs(pos.x - _targetX) < SnapThreshold)
+            {
+                pos.x = _targetX;
+                _isSnapping = false;
+            }
+
+            _content.anchoredPosition = pos;
+        }
+
+        private static Text CreateLabel(Transform parent, string name, string content, int fontSize, FontStyle style,
+            float preferredHeight)
         {
             var go = new GameObject(name, typeof(RectTransform));
             go.transform.SetParent(parent, false);
@@ -129,21 +406,22 @@ namespace DoomScroller.Encounters
             text.horizontalOverflow = HorizontalWrapMode.Wrap;
 
             var layoutElement = go.AddComponent<LayoutElement>();
-            layoutElement.preferredHeight = fontSize + 24;
+            layoutElement.preferredHeight = preferredHeight;
 
             return text;
         }
 
-        private static void CreateButton(Transform parent, string name, string label, Action onClick)
+        private static GameObject CreateActionButton(Transform parent, string name, string label, float height,
+            Color backgroundColor, Action onClick)
         {
             var go = new GameObject(name, typeof(RectTransform));
             go.transform.SetParent(parent, false);
 
             var image = go.AddComponent<Image>();
-            image.color = new Color(1, 1, 1, 0.15f);
+            image.color = backgroundColor;
 
             var layoutElement = go.AddComponent<LayoutElement>();
-            layoutElement.preferredHeight = 120;
+            layoutElement.preferredHeight = height;
 
             var button = go.AddComponent<Button>();
             button.onClick.AddListener(() => onClick());
@@ -163,6 +441,8 @@ namespace DoomScroller.Encounters
             labelText.alignment = TextAnchor.MiddleCenter;
             labelText.color = Color.white;
             labelText.text = label;
+
+            return go;
         }
     }
 }

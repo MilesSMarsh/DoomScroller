@@ -4,57 +4,74 @@ using UnityEngine;
 
 namespace DoomScroller.Encounters
 {
-    // One page of a dungeon run — an enemy fight at increasing depth, an optional rest
-    // stop, or the guaranteed treasure room that always caps the run. Generated once per
-    // run by DungeonGenerator; DungeonView pages between these, resolving each the first
-    // time its page is reached and just re-displaying the stored result on revisits.
+    // One page of a dungeon run — a fight, a rest stop, a mid-run bonus treasure pickup,
+    // or the guaranteed treasure room that always caps the run. Generated once per run by
+    // DungeonGenerator, straight from the dungeon's own authored EncounterData.dungeonRooms
+    // (no growth-formula scaling); DungeonView pages between these, resolving each the
+    // first time its page is reached and just re-displaying the stored result on revisits.
     public readonly struct DungeonStep
     {
         // The step's position in the generated sequence (_steps/_pages index) — always a
-        // clean 0..N-1 run regardless of whether a rest step is present. Distinct from
-        // RewardTierIndex below, which only fight steps use.
+        // clean 0..N-1 run, since only rooms that actually rolled in are included at all.
         public int DepthIndex { get; }
         public string Label { get; }
-        public string RewardSummary { get; }
-        public int XpReward { get; }
-        public bool IsTreasureRoom { get; }
         public bool IsRestRoom { get; }
 
-        // Which reward rarity (RewardGenerator.GenerateItem) a fight step grants —
-        // separate from DepthIndex so inserting a rest step can shift a later fight's
-        // position without changing its intended rarity. Meaningless for rest/treasure
-        // steps.
-        public ItemRarity RewardRarity { get; }
+        // A mid-run bonus pickup (EncounterData.dungeonRooms' Treasure room type) —
+        // grants a reward (gold + item, never XP) but the run continues afterward.
+        // Distinct from IsFinalTreasureRoom below, which is the only one that ends the
+        // run.
+        public bool IsBonusTreasureRoom { get; }
 
-        // Enemy combat stats for the Phase 8 simulation — meaningless when IsTreasureRoom
-        // or IsRestRoom is true (both resolve instantly with a null CombatSimulator).
+        // The guaranteed, always-last step — every completed run ends here regardless of
+        // which authored rooms rolled in. Ends the run and grants the full reward
+        // (XP + gold + item).
+        public bool IsFinalTreasureRoom { get; }
+
+        // Meaningful only when IsBonusTreasureRoom or IsFinalTreasureRoom is true — 0/
+        // empty otherwise. All pre-resolved at generation time (RewardGenerator.
+        // RollLootTable/ResolveGoldReward), from the room's own loot table for a bonus
+        // pickup, or EncounterData's own for the final room.
+        public int XpReward { get; }
+        public int GoldReward { get; }
+        public ItemData[] RewardItems { get; }
+
+        // Enemy combat stats for the Phase 8 simulation — meaningless unless this is a
+        // Fight room (every other kind resolves instantly with a null CombatSimulator).
         public int EnemyHealth { get; }
         public int EnemyAttackDamage { get; }
         public float EnemyAttackSpeed { get; }
 
-        // Carried straight through from the dungeon's own EncounterData — the same
-        // weaknesses apply at every depth. Meaningless for rest/treasure steps.
+        // This room's own weaknesses (DungeonRoomData.damageTypeModifiers) — each Fight
+        // room is independent, not shared across the dungeon.
         public DamageTypeModifier[] EnemyWeaknesses { get; }
 
-        // Placeholder "art" for this page — a flat color distinct per depth, greybox
-        // convention, same as every other fallback-color visual in this project.
+        // This room's own creature portrait (DungeonRoomData.enemySprite) — null falls
+        // back to StepColor, same convention as every other Sprite-or-flat-color field.
+        public Sprite EnemySprite { get; }
+
+        // Placeholder "art" for this page — a flat color, greybox convention, same as
+        // every other fallback-color visual in this project.
         public Color StepColor { get; }
 
-        public DungeonStep(int depthIndex, string label, string rewardSummary, int xpReward, ItemRarity rewardRarity,
+        public DungeonStep(int depthIndex, string label, bool isRestRoom, bool isBonusTreasureRoom,
+            bool isFinalTreasureRoom, int xpReward, int goldReward, ItemData[] rewardItems,
             int enemyHealth, int enemyAttackDamage, float enemyAttackSpeed, DamageTypeModifier[] enemyWeaknesses,
-            bool isTreasureRoom, bool isRestRoom, Color stepColor)
+            Sprite enemySprite, Color stepColor)
         {
             DepthIndex = depthIndex;
             Label = label;
-            RewardSummary = rewardSummary;
+            IsRestRoom = isRestRoom;
+            IsBonusTreasureRoom = isBonusTreasureRoom;
+            IsFinalTreasureRoom = isFinalTreasureRoom;
             XpReward = xpReward;
-            RewardRarity = rewardRarity;
+            GoldReward = goldReward;
+            RewardItems = rewardItems;
             EnemyHealth = enemyHealth;
             EnemyAttackDamage = enemyAttackDamage;
             EnemyAttackSpeed = enemyAttackSpeed;
             EnemyWeaknesses = enemyWeaknesses;
-            IsTreasureRoom = isTreasureRoom;
-            IsRestRoom = isRestRoom;
+            EnemySprite = enemySprite;
             StepColor = stepColor;
         }
     }

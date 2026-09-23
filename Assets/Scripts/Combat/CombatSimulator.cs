@@ -55,9 +55,15 @@ namespace DoomScroller.Combat
         public bool IsPlayerDead => PlayerHp <= 0;
         public bool IsEnemyDead => EnemyHp <= 0;
 
+        // Cumulative damage dealt to the enemy so far — always accurate even when the
+        // enemy can never actually reach 0 (see the resource-node minigame's
+        // enemyCanAttack: false, effectively-infinite-health construction in
+        // CombatResolver.CreateSimulatorForResource).
+        public int DamageDealt => EnemyMaxHp - EnemyHp;
+
         public CombatSimulator(PlayerLoadout loadout, PlayerAttributes attributes, GameSettings settings, int playerStartHp,
             int enemyMaxHealth, int enemyAttackDamage, float enemyAttackSpeed, DamageTypeModifier[] enemyWeaknesses,
-            System.Random rng)
+            System.Random rng, bool enemyCanAttack = true)
         {
             _rng = rng;
             PlayerHp = PlayerStartHp = Mathf.Max(1, playerStartHp);
@@ -74,9 +80,18 @@ namespace DoomScroller.Combat
 
             _timers = new List<AttackTimer>
             {
-                new(CombatActor.Player, IntervalFor(basicAttack.Speed), basicAttack.Damage, basicAttack.IsRanged, null, 0f),
-                new(CombatActor.Enemy, IntervalFor(effectiveEnemySpeed), effectiveEnemyDamage, false, null, 0f)
+                new(CombatActor.Player, IntervalFor(basicAttack.Speed), basicAttack.Damage, basicAttack.IsRanged, null, 0f)
             };
+
+            // A resource node never fights back — omitting its timer entirely (rather
+            // than e.g. zeroing its damage) is the only clean way to make it truly
+            // passive: 0 damage still floors at 1 applied per beat, and 0 speed clamps
+            // to 20/sec via MinIntervalSeconds, so either alone would still chip away
+            // at the player.
+            if (enemyCanAttack)
+            {
+                _timers.Add(new AttackTimer(CombatActor.Enemy, IntervalFor(effectiveEnemySpeed), effectiveEnemyDamage, false, null, 0f));
+            }
 
             _abilityCastEffects = new Dictionary<string, StatusEffectData[]>();
             foreach (var (_, ability) in loadout.GetEquippedWeaponAbilityPairs())
@@ -370,6 +385,59 @@ namespace DoomScroller.Combat
                 {
                     PlayerHp = 0;
                 }
+            }
+
+            return beats;
+        }
+
+        // The resource-node minigame's entry point — same beat-picking loop as
+        // RunUntilDeathOrVictory, but bounded by elapsed virtual time instead of death
+        // (there's no enemy timer to resolve when enemyCanAttack was false at
+        // construction, so every returned beat is CombatActor.Player). MaxBeats still
+        // applies as a safety net against a degenerate ultra-fast weapon. Stops the
+        // instant the next-due timer would fire past `seconds` rather than resolving it
+        // and stopping after — so DamageDealt only ever reflects beats that actually
+        // landed within the window.
+        public List<CombatBeat> RunForDuration(float seconds)
+        {
+            var beats = new List<CombatBeat>();
+
+            while (_beatsRun < MaxBeats)
+            {
+                _timers.RemoveAll(t => t.IsDot && t.NextFireTime > t.ExpiresAt);
+
+                var actor = _timers[0];
+                foreach (var timer in _timers)
+                {
+                    if (timer.NextFireTime < actor.NextFireTime)
+                    {
+                        actor = timer;
+                    }
+                }
+
+                if (actor.NextFireTime > seconds)
+                {
+                    break;
+                }
+
+                _beatsRun++;
+                _currentTime = actor.NextFireTime;
+                _activeEffects.RemoveAll(e => e.ExpiresAt <= _currentTime);
+
+                if (actor.IsDot)
+                {
+                    beats.Add(ResolveDotTick(actor.BaseDamage));
+                }
+                else
+                {
+                    beats.Add(ResolveBeat(actor.Actor, actor.BaseDamage, actor.IsRanged, actor.AbilityName));
+                    if (actor.Actor == CombatActor.Player && !string.IsNullOrEmpty(actor.AbilityName))
+                    {
+                        ApplyOnCastEffects(actor.AbilityName);
+                    }
+                }
+
+                actor.NextFireTime += GetIntervalSeconds(actor);
             }
 
             return beats;

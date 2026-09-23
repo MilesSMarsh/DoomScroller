@@ -37,21 +37,26 @@ namespace DoomScroller.Feed
         public string description;
 
         [Tooltip("Base XP for the entry-level variant shown in the feed; harder in-encounter " +
-                  "variants (Phase 3 sideways swipe) scale up from this.")]
+                  "variants (Phase 3 sideways swipe) scale up from this. For Dungeon, this " +
+                  "is the guaranteed end-of-run reward's XP — combat rooms along the way " +
+                  "grant none.")]
         public int baseXpReward = 50;
 
-        [Header("Loot Table (Combat / Treasure only)")]
-        [Tooltip("Drop chance per ItemRarity tier (index 0..4 = Common/Uncommon/Rare/" +
-                  "Legendary/Mythic) — doesn't need to sum to exactly 100, RewardGenerator." +
-                  "RollRarity normalizes against whatever the total actually is. All-zero " +
-                  "(the default on every pre-existing asset) always rolls Common, matching " +
-                  "this project's original behavior before loot tables existed. Not read at " +
-                  "all for Dungeon (keeps its own hardcoded per-depth progression) or " +
-                  "Resource (grants a fixed resourceMaterial instead of a rarity roll).")]
-        public float[] lootTablePercentByRarity = new float[5];
+        [Tooltip("0 (every asset's default before this field existed) means derive gold " +
+                  "from baseXpReward the old way (RewardGenerator.ComputeGoldReward) — any " +
+                  "positive value overrides it. For Dungeon, this is the guaranteed " +
+                  "end-of-run reward's gold.")]
+        public int goldReward;
 
-        [Header("Combat Simulation (Phase 8)")]
-        [Tooltip("Enemy HP for the live combat simulation. Ignored for Treasure.")]
+        [Header("Loot Table")]
+        [Tooltip("For Combat/Treasure this drives that encounter's own reward; for " +
+                  "Dungeon it drives only the guaranteed end-of-run reward (see " +
+                  "dungeonRooms below for each room's own, separate loot table). Not read " +
+                  "at all for Resource (see resourceThresholds below instead).")]
+        public LootTable lootTable = new();
+
+        [Header("Combat Simulation — Combat (Enemy/Ambush) only")]
+        [Tooltip("Enemy HP for the live combat simulation.")]
         public int enemyHealth = 80;
 
         [Tooltip("Damage per enemy basic attack.")]
@@ -60,34 +65,36 @@ namespace DoomScroller.Feed
         [Tooltip("Enemy basic attacks per second.")]
         public float enemyAttackSpeed = 0.8f;
 
-        [Header("Damage Weaknesses")]
-        [Tooltip("How this enemy's incoming damage is scaled per weapon DamageType. " +
-                  "Unlisted types stay at a normal 1× — leave empty for no special " +
-                  "weaknesses/resistances at all.")]
+        [Header("Damage Weaknesses — Combat only")]
+        [Tooltip("How incoming damage is scaled per weapon DamageType. Unlisted types stay " +
+                  "at a normal 1× — leave empty for no special weaknesses/resistances at " +
+                  "all. Not used by Dungeon — each Fight room in dungeonRooms below has its " +
+                  "own, separate weaknesses instead.")]
         public DamageTypeModifier[] damageTypeModifiers;
 
-        [Header("Resource Encounter")]
-        [Tooltip("Only relevant when type is Resource. The material instantly granted on entry.")]
-        public ItemData resourceMaterial;
+        [Header("Dungeon Rooms — Dungeon only")]
+        [Tooltip("The authored, ordered room list a run is built from (see DungeonGenerator) " +
+                  "— replaces any growth-formula scaling entirely; each room's own numbers " +
+                  "are exactly what plays out. The guaranteed end-of-run reward (XP/gold/" +
+                  "loot table above) is separate from this list and always happens when the " +
+                  "run is completed, regardless of which of these rolled in.")]
+        public DungeonRoomData[] dungeonRooms;
 
-        [Tooltip("Only relevant when type is Resource. Units granted before scaling by the " +
-                  "player's Expertise (PlayerAttributes.ResourceYieldMultiplier).")]
-        public int baseResourceYield = 5;
+        [Header("Resource Minigame — Resource only")]
+        [Tooltip("Only relevant when type is Resource. How long the timed damage window " +
+                  "lasts, in seconds — the player's equipped weapon(s) auto-attack this " +
+                  "node (which never attacks back) for exactly this long.")]
+        public float resourceTimerSeconds = 10f;
 
-        [Tooltip("Only relevant when type is Resource. An optional rarer secondary " +
-                  "material with a small independent chance to also drop alongside " +
-                  "resourceMaterial each time this encounter is entered. Leave unset for " +
-                  "no secondary drop.")]
-        public ItemData secondaryResourceMaterial;
+        [Tooltip("Only relevant when type is Resource. How incoming damage is scaled per " +
+                  "weapon DamageType — same mechanism as Combat's damageTypeModifiers, " +
+                  "lets a better-suited weapon deal more damage to this node.")]
+        public DamageTypeModifier[] resourceWeaknesses;
 
-        [Tooltip("Only relevant when secondaryResourceMaterial is set. Independent roll " +
-                  "chance (0-1) each time this encounter is entered.")]
-        [Range(0f, 1f)]
-        public float secondaryResourceChance = 0.1f;
-
-        [Tooltip("Only relevant when secondaryResourceMaterial is set. Units granted on a " +
-                  "successful roll — not scaled by Expertise (a bonus find, not the main " +
-                  "yield).")]
-        public int secondaryResourceYield = 1;
+        [Tooltip("Only relevant when type is Resource. Reward tiers by total damage dealt " +
+                  "in the timed window — every threshold whose damageRequired is met grants " +
+                  "its own reward (they stack, not just the highest one reached), scaled by " +
+                  "the player's Expertise (PlayerAttributes.ResourceYieldMultiplier).")]
+        public ResourceThreshold[] resourceThresholds;
     }
 }

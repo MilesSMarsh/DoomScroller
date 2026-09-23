@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3080f8a71b5317737bcbb1e7d0dc0129, type: 3}
+  m_Name: Recipe_Rope
+  m_EditorClassIdentifier: DoomScroller::DoomScroller.Inventory.RecipeDefinition
+  recipeId: ddeedb07-22d7-4ae4-8e8d-9a15f954c138
+  outputKind: 3
+  outputItem: {fileID: 0}
+  outputWeapon: {fileID: 0}
+  outputEquipment: {fileID: 0}
+  outputMaterial: {fileID: 11400000, guid: b6dbba29b3b1dec1d91de9e7e07a1dbd, type: 2}
+  outputRarity: 0
+  goldCost: 3
+  ingredients:
+  - material: {fileID: 11400000, guid: 72c7d605fc3829b4899f1ed6f0194bf9, type: 2}
+    count: 5
+  prerequisiteRecipes: []

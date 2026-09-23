@@ -15,15 +15,36 @@ MonoBehaviour:
   title: Sturdy Tree
   type: 4
   artwork: {fileID: 0}
+  foregroundArt: {fileID: 0}
   cardColor: {r: 0.25, g: 0.4, b: 0.2, a: 1}
-  rewardSummary: "Gather Wood \u2014 no combat required"
+  description: "Gather Wood \u2014 no combat required"
   baseXpReward: 0
+  goldReward: 0
+  lootTable:
+    percentByRarity:
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    minItemCount: 1
+    maxItemCount: 1
+    weapons: []
+    equipment: []
+    materials: []
   enemyHealth: 80
   enemyAttackDamage: 10
   enemyAttackSpeed: 0.8
   damageTypeModifiers: []
-  resourceMaterial: {fileID: 11400000, guid: 297b208e32d837a97be87cc81fcf80f4, type: 2}
-  baseResourceYield: 5
-  secondaryResourceMaterial: {fileID: 11400000, guid: 18746591024edc0dabd689d48249847f, type: 2}
-  secondaryResourceChance: 0.1
-  secondaryResourceYield: 1
+  dungeonRooms: []
+  resourceTimerSeconds: 10
+  resourceWeaknesses: []
+  resourceThresholds:
+  - damageRequired: 20
+    rewardMaterial: {fileID: 11400000, guid: 5a5fce6e43c19dbbfadc81ba4fd05e13, type: 2}
+    rewardRarity: 0
+    rewardAmount: 5
+  - damageRequired: 60
+    rewardMaterial: {fileID: 11400000, guid: b19ce57e120ebb5c7827ba8c7f32c082, type: 2}
+    rewardRarity: 0
+    rewardAmount: 1

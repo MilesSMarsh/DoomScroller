@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using DoomScroller.Feed;
 using DoomScroller.Inventory;
 using UnityEngine;
 
@@ -33,6 +34,14 @@ namespace DoomScroller.Progression
             return Mathf.RoundToInt(xpReward * GoldPerXpRatio);
         }
 
+        // EncounterData.goldReward's resolution — 0 (every asset's default before that
+        // field existed) falls back to the original XP-derived formula; any authored
+        // positive value overrides it outright.
+        public static int ResolveGoldReward(int authoredGoldReward, int xpReward)
+        {
+            return authoredGoldReward > 0 ? authoredGoldReward : ComputeGoldReward(xpReward);
+        }
+
         // EncounterData.lootTablePercentByRarity's roll — normalizes against whatever the
         // table's own total actually is, so an author doesn't have to hit exactly 100.
         // Null/empty/all-zero (every pre-existing encounter, before loot tables existed)
@@ -63,15 +72,20 @@ namespace DoomScroller.Progression
         // "+50 XP · 70% Common, 25% Uncommon, 5% Rare Gear" — generated straight from the
         // same table RollRarity itself rolls against, so the feed card's stated odds can
         // never drift from what actually drops. Deliberately never names a specific
-        // weapon/item, only rarity (the user's own call). Falls back to the original
+        // weapon/item, only rarity (the user's own call) — even when the table has
+        // specific weapons/equipment authored into it. Appends an item-count suffix
+        // (e.g. "×1-3") when that isn't fixed at exactly 1. Falls back to the original
         // generic default when the table is unset, matching every card authored before
         // loot tables existed.
-        public static string DescribeLootTable(float[] percentByRarity, int xpReward)
+        public static string DescribeLootTable(LootTable table, int xpReward)
         {
+            var percentByRarity = table?.percentByRarity;
             var total = percentByRarity?.Sum() ?? 0f;
+            var countSuffix = DescribeItemCountSuffix(table);
+
             if (total <= 0f)
             {
-                return $"+{xpReward} XP · Common Gear";
+                return $"+{xpReward} XP · Common Gear{countSuffix}";
             }
 
             var parts = new List<string>();
@@ -85,7 +99,73 @@ namespace DoomScroller.Progression
                 parts.Add($"{Mathf.RoundToInt(percentByRarity[i] / total * 100f)}% {(ItemRarity)i}");
             }
 
-            return $"+{xpReward} XP · {string.Join(", ", parts)} Gear";
+            return $"+{xpReward} XP · {string.Join(", ", parts)} Gear{countSuffix}";
+        }
+
+        private static string DescribeItemCountSuffix(LootTable table)
+        {
+            var min = table?.minItemCount ?? 1;
+            var max = table?.maxItemCount ?? 1;
+            if (min == 1 && max == 1)
+            {
+                return "";
+            }
+
+            return min == max ? $" ×{min}" : $" ×{min}-{max}";
+        }
+
+        // The actual roll — one or more items (LootTable.minItemCount..maxItemCount,
+        // inclusive), each independently rolled through the same table: its own rarity
+        // roll, then either a specific authored weapon/equipment template at that
+        // rarity, or a fully generic archetype roll when neither pool has anything
+        // authored (every table's behavior before specific entries existed).
+        public static ItemData[] RollLootTable(LootTable table, System.Random rng = null)
+        {
+            rng ??= new System.Random();
+            var min = Mathf.Max(0, Mathf.Min(table?.minItemCount ?? 1, table?.maxItemCount ?? 1));
+            var max = Mathf.Max(min, table?.maxItemCount ?? 1);
+            var count = rng.Next(min, max + 1);
+
+            var results = new ItemData[count];
+            for (var i = 0; i < count; i++)
+            {
+                results[i] = RollOneItem(table, rng);
+            }
+
+            return results;
+        }
+
+        private static ItemData RollOneItem(LootTable table, System.Random rng)
+        {
+            var rarity = RollRarity(table?.percentByRarity, rng);
+
+            var weapons = table?.weapons?.Where(w => w != null).ToList() ?? new List<WeaponDefinition>();
+            var equipment = table?.equipment?.Where(e => e != null).ToList() ?? new List<EquipmentDefinition>();
+            var materials = table?.materials?.Where(m => m != null).ToList() ?? new List<MaterialDefinition>();
+            var total = weapons.Count + equipment.Count + materials.Count;
+            if (total == 0)
+            {
+                return GenerateItem(rarity, rng);
+            }
+
+            // One combined draw across all three pools — same "shuffle both pools
+            // together" convention as WeaponGenerator.RollSkills, so a weapon, a piece
+            // of equipment, and a material are all equally likely candidates, weighted
+            // by how many of each are actually authored. All three generate a fresh
+            // instance at the same rolled rarity now that materials carry rarity too.
+            var pick = rng.Next(total);
+            if (pick < weapons.Count)
+            {
+                return WeaponGenerator.GenerateFromDefinition(weapons[pick], rarity, rng);
+            }
+
+            pick -= weapons.Count;
+            if (pick < equipment.Count)
+            {
+                return EquipmentGenerator.GenerateFromDefinition(equipment[pick], rarity, rng);
+            }
+
+            return MaterialGenerator.GenerateFromDefinition(materials[pick - equipment.Count], rarity);
         }
 
         // allowedCategories restricts the roll (the Market uses this to sell only

@@ -1,3 +1,4 @@
+using System.Linq;
 using DoomScroller.Combat;
 using DoomScroller.Inventory;
 using DoomScroller.Progression;
@@ -67,6 +68,46 @@ namespace DoomScroller.Tests.EditMode
             var secondBeats = sim.RunUntilDeathOrVictory();
             Assert.IsNotEmpty(secondBeats, "the fight should continue, not have already been over");
             Assert.LessOrEqual(sim.EnemyHp, enemyHpAfterFirstRun, "damage already dealt to the enemy must carry over");
+        }
+
+        [Test]
+        public void EnemyCannotAttack_EveryBeatIsThePlayers_AndPlayerHpNeverMoves()
+        {
+            // The resource-node minigame's construction — enemyAttackDamage/Speed are
+            // still passed but must have zero effect once enemyCanAttack is false.
+            var weapon = TestFixtures.MakeWeapon(power: 10, attackSpeed: 2f);
+            var loadout = TestFixtures.MakeLoadout(weapon);
+
+            var sim = new CombatSimulator(loadout, new PlayerAttributes(), new GameSettings(), playerStartHp: 100,
+                enemyMaxHealth: 999_999_999, enemyAttackDamage: 500, enemyAttackSpeed: 20f, enemyWeaknesses: null,
+                rng: new FixedRandom(), enemyCanAttack: false);
+
+            var beats = sim.RunForDuration(5f);
+
+            Assert.IsNotEmpty(beats);
+            Assert.IsTrue(beats.All(b => b.Actor == CombatActor.Player), "the node never gets a turn");
+            Assert.AreEqual(100, sim.PlayerHp, "nothing can ever damage the player in this mode");
+            Assert.Greater(sim.DamageDealt, 0);
+            Assert.AreEqual(sim.EnemyMaxHp - sim.EnemyHp, sim.DamageDealt);
+        }
+
+        [Test]
+        public void RunForDuration_StopsAtTheTimeLimit_NotOnDeathOrMaxBeats()
+        {
+            var weapon = TestFixtures.MakeWeapon(power: 1, attackSpeed: 1f);
+            var loadout = TestFixtures.MakeLoadout(weapon);
+
+            var sim = new CombatSimulator(loadout, new PlayerAttributes(), new GameSettings(), playerStartHp: 100,
+                enemyMaxHealth: 999_999_999, enemyAttackDamage: 0, enemyAttackSpeed: 1f, enemyWeaknesses: null,
+                rng: new FixedRandom(), enemyCanAttack: false);
+
+            // Default PlayerAttributes seed Agility at BaseValue (5), adding
+            // 5*0.015=0.075 to the weapon's own 1/s, so beats land at intervals of
+            // 1/1.075 ≈ 0.9302s: t≈0, 0.930, 1.860, 2.791, next≈3.721 (excluded) — 4
+            // beats in a 3.5s window, not however many MaxBeats(200) would allow.
+            var beats = sim.RunForDuration(3.5f);
+
+            Assert.AreEqual(4, beats.Count);
         }
     }
 }

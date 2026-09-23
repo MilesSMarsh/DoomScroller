@@ -48,6 +48,11 @@ namespace DoomScroller.Progression
         // archetype-rolled weapon, which never had a source definition to begin with.
         public string sourceWeaponName;
 
+        // Same convention as sourceWeaponName above, but for ItemData.materialSource —
+        // every Material-category item has one (see MaterialGenerator.GenerateFromDefinition),
+        // re-resolved against the live MaterialDefinitions catalog on Restore.
+        public string sourceMaterialName;
+
         public static ItemSnapshot Capture(ItemData item)
         {
             return new ItemSnapshot
@@ -71,7 +76,8 @@ namespace DoomScroller.Progression
                 potionEffect = item.potionEffect,
                 potionAmount = item.potionAmount,
                 attributeScalingEntries = item.attributeScalingEntries,
-                sourceWeaponName = item.sourceDefinition != null ? item.sourceDefinition.weaponName : null
+                sourceWeaponName = item.sourceDefinition != null ? item.sourceDefinition.weaponName : null,
+                sourceMaterialName = item.materialSource != null ? item.materialSource.materialName : null
             };
         }
 
@@ -112,6 +118,12 @@ namespace DoomScroller.Progression
                     .FirstOrDefault(d => d.weaponName == sourceWeaponName);
             }
 
+            if (!string.IsNullOrEmpty(sourceMaterialName))
+            {
+                item.materialSource = Resources.LoadAll<MaterialDefinition>("MaterialDefinitions")
+                    .FirstOrDefault(d => d.materialName == sourceMaterialName);
+            }
+
             return item;
         }
     }
@@ -121,6 +133,18 @@ namespace DoomScroller.Progression
     {
         public EquipmentSlotType slot;
         public int itemIndex;
+    }
+
+    // One (family, rarity) pair the player has ever owned — MaterialDefinition is a
+    // persistent Resources asset like WeaponDefinition, so it's captured by its stable
+    // materialName (same "look it up by a stable string" convention as
+    // ItemSnapshot.sourceWeaponName) rather than an itemPool index; there's no ItemData
+    // instance to intern here, just the (definition, rarity) pair itself.
+    [Serializable]
+    public class DiscoveredMaterialEntry
+    {
+        public string materialName;
+        public ItemRarity rarity;
     }
 
     // One entry per potion type with a nonzero Alchemist upgrade — merges
@@ -149,10 +173,10 @@ namespace DoomScroller.Progression
         public List<int> knownPotionTypes = new();
         public List<PotionUpgradeEntry> reviveUpgrades = new();
 
-        // Materials ever owned (itemPool-indexed, same convention as knownPotionTypes)
-        // and RecipeDefinition.recipeId values ever crafted — see
+        // Materials ever owned, by (family, rarity) — see DiscoveredMaterialEntry — and
+        // RecipeDefinition.recipeId values ever crafted — see
         // PlayerLoadout.IsRecipeUnlocked for what these gate.
-        public List<int> discoveredMaterials = new();
+        public List<DiscoveredMaterialEntry> discoveredMaterials = new();
         public List<string> craftedRecipeIds = new();
 
         public int progressionLevel;

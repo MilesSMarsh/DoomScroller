@@ -15,10 +15,71 @@ MonoBehaviour:
   title: Bonewrought Depths
   type: 2
   artwork: {fileID: 0}
+  foregroundArt: {fileID: 0}
   cardColor: {r: 0.3, g: 0.15, b: 0.35, a: 1}
-  rewardSummary: Escalating XP + Gear, guaranteed Rare loot at the end
+  description: Escalating XP + Gear, guaranteed Rare loot at the end
   baseXpReward: 60
-  baseChallenge: 35
+  goldReward: 10000
+  lootTable:
+    percentByRarity:
+    - 0
+    - 0
+    - 0
+    - 0
+    - 100
+    minItemCount: 1
+    maxItemCount: 1
+    weapons: []
+    equipment: []
+    materials:
+    - {fileID: 11400000, guid: 1508bc622581c60e29af1a86d33610f2, type: 2}
   enemyHealth: 60
   enemyAttackDamage: 7
   enemyAttackSpeed: 0.75
+  damageTypeModifiers: []
+  dungeonRooms:
+  - label: 
+    type: 0
+    appearChance: 100
+    enemyHealth: 80
+    enemyAttackDamage: 10
+    enemyAttackSpeed: 0.8
+    enemySprite: {fileID: 0}
+    damageTypeModifiers: []
+    goldReward: 0
+    lootTable:
+      percentByRarity:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      minItemCount: 1
+      maxItemCount: 1
+      weapons: []
+      equipment: []
+      materials: []
+  - label: 
+    type: 0
+    appearChance: 100
+    enemyHealth: 80
+    enemyAttackDamage: 10
+    enemyAttackSpeed: 0.8
+    enemySprite: {fileID: 0}
+    damageTypeModifiers: []
+    goldReward: 0
+    lootTable:
+      percentByRarity:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      minItemCount: 1
+      maxItemCount: 1
+      weapons: []
+      equipment: []
+      materials: []
+  resourceTimerSeconds: 10
+  resourceWeaknesses: []
+  resourceThresholds: []

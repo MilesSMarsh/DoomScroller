@@ -399,8 +399,10 @@ namespace DoomScroller.Inventory
             }
         }
 
-        // Grouped by item reference (same ScriptableObject asset = same "type"), so N
-        // owned Iron Ore is one row reading "xN owned" rather than N identical rows.
+        // Grouped by (family, rarity) — each generated instance is now its own unique
+        // ItemData (see MaterialGenerator.GenerateFromDefinition), so N owned Common
+        // Wood and M owned Rare Wood are always two separate rows/stacks, never merged
+        // into one "Wood" total (the user's own explicit call).
         private void RefreshMaterials()
         {
             for (var i = _materialsContainer.childCount - 1; i >= 0; i--)
@@ -408,7 +410,7 @@ namespace DoomScroller.Inventory
                 Destroy(_materialsContainer.GetChild(i).gameObject);
             }
 
-            var groups = _loadout.GetMaterials().GroupBy(m => m).ToList();
+            var groups = _loadout.GetMaterials().GroupBy(m => (m.materialSource, m.rarity)).ToList();
             if (groups.Count == 0)
             {
                 CreateLabel(_materialsContainer, "NoMaterials", "No crafting materials yet", 32, FontStyle.Normal);
@@ -417,20 +419,20 @@ namespace DoomScroller.Inventory
 
             foreach (var group in groups)
             {
-                CreateMaterialRow(_materialsContainer, group.Key, group.Count());
+                CreateMaterialRow(_materialsContainer, group.First(), group.Count());
             }
         }
 
         private static void CreateMaterialRow(Transform parent, ItemData material, int count)
         {
-            var rowGo = new GameObject($"Material_{material.title}", typeof(RectTransform));
+            var rowGo = new GameObject($"Material_{material.title}_{material.rarity}", typeof(RectTransform));
             rowGo.transform.SetParent(parent, false);
             var layoutElement = rowGo.AddComponent<LayoutElement>();
             layoutElement.preferredHeight = 100;
 
             var row = GearRowFactory.Create(rowGo.transform, 64, 22, 28, 24);
             GearRowFactory.SetIcon(row, material.icon, material.itemColor, material.rarity);
-            row.CaptionText.text = "Material";
+            row.CaptionText.text = material.rarity.ToString();
             row.TitleText.text = material.title;
             row.StatText.text = $"x{count} owned";
         }

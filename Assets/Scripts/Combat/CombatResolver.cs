@@ -27,21 +27,35 @@ namespace DoomScroller.Combat
                 data.enemyAttackDamage, data.enemyAttackSpeed, data.damageTypeModifiers, rng ?? new Random());
         }
 
-        // One page of a dungeon run — enemy stats come from the generated step (scaled
-        // per depth by DungeonGenerator) instead of the raw asset. Null for the
-        // treasure-room step, same reasoning as above.
+        // One page of a dungeon run — enemy stats come straight from the room the player
+        // authored (see DungeonGenerator) instead of the raw asset. Null for anything
+        // that isn't a Fight room.
         public static CombatSimulator CreateSimulatorForStep(PlayerLoadout loadout, PlayerAttributes attributes,
             GameSettings settings, DungeonStep step, int playerStartHp, Random rng = null)
         {
-            // Both resolve instantly with no fight — CombatPlaybackView.Play already
+            // All three resolve instantly with no fight — CombatPlaybackView.Play already
             // treats a null simulator as a guaranteed win.
-            if (step.IsTreasureRoom || step.IsRestRoom)
+            if (step.IsFinalTreasureRoom || step.IsBonusTreasureRoom || step.IsRestRoom)
             {
                 return null;
             }
 
             return new CombatSimulator(loadout, attributes, settings, playerStartHp, step.EnemyHealth,
                 step.EnemyAttackDamage, step.EnemyAttackSpeed, step.EnemyWeaknesses, rng ?? new Random());
+        }
+
+        // A resource node's timed damage window — the "enemy" never attacks and can't
+        // meaningfully die (an arbitrarily large health pool the timer will never drain),
+        // so CombatSimulator.DamageDealt after RunForDuration is the whole point, not a
+        // side effect. enemyAttackDamage/Speed are irrelevant with enemyCanAttack: false
+        // (no enemy timer is ever created) but still need valid, non-degenerate values.
+        private const int ResourceNodeEffectiveHealth = 999_999_999;
+
+        public static CombatSimulator CreateSimulatorForResource(PlayerLoadout loadout, PlayerAttributes attributes,
+            GameSettings settings, EncounterData data, int playerStartHp, Random rng = null)
+        {
+            return new CombatSimulator(loadout, attributes, settings, playerStartHp, ResourceNodeEffectiveHealth,
+                0, 1f, data.resourceWeaknesses, rng ?? new Random(), enemyCanAttack: false);
         }
 
         // Time-to-kill race: how long the player would take to kill the enemy versus how

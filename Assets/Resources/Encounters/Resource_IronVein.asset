@@ -15,15 +15,42 @@ MonoBehaviour:
   title: Iron Vein
   type: 4
   artwork: {fileID: 0}
+  foregroundArt: {fileID: 0}
   cardColor: {r: 0.45, g: 0.3, b: 0.25, a: 1}
-  rewardSummary: "Gather Iron Ore \u2014 no combat required"
+  description: "Gather Iron Ore \u2014 no combat required"
   baseXpReward: 0
+  goldReward: 0
+  lootTable:
+    percentByRarity:
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    minItemCount: 1
+    maxItemCount: 1
+    weapons: []
+    equipment: []
+    materials: []
   enemyHealth: 80
   enemyAttackDamage: 10
   enemyAttackSpeed: 0.8
   damageTypeModifiers: []
-  resourceMaterial: {fileID: 11400000, guid: da5740f42a89c5353a2e7537daf4b3ec, type: 2}
-  baseResourceYield: 3
-  secondaryResourceMaterial: {fileID: 11400000, guid: 49d9a9c915c76332ab2d75384e389efa, type: 2}
-  secondaryResourceChance: 0.1
-  secondaryResourceYield: 1
+  dungeonRooms: []
+  resourceTimerSeconds: 10
+  resourceWeaknesses:
+  - type: 2
+    multiplier: 2
+  resourceThresholds:
+  - damageRequired: 20
+    rewardMaterial: {fileID: 11400000, guid: fd13e7c61e6f74e0cb289324075bf947, type: 2}
+    rewardRarity: 0
+    rewardAmount: 3
+  - damageRequired: 60
+    rewardMaterial: {fileID: 11400000, guid: 041e344ce9fdeca7c9e17fa02911aba9, type: 2}
+    rewardRarity: 0
+    rewardAmount: 1
+  - damageRequired: 100
+    rewardMaterial: {fileID: 11400000, guid: fd13e7c61e6f74e0cb289324075bf947, type: 2}
+    rewardRarity: 1
+    rewardAmount: 1

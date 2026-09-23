@@ -11,11 +11,9 @@ namespace DoomScroller.Inventory
         [Tooltip("Stable identity for a hand-authored catalog asset — set this to restore " +
                   "the ORIGINAL asset reference on load (see ItemSnapshot.Restore) instead " +
                   "of a fresh deep-cloned instance. Leave blank for anything procedurally " +
-                  "rolled (WeaponGenerator/EquipmentGenerator output) — those are " +
-                  "genuinely unique per instance, so cloning on restore is correct for " +
-                  "them. Required for anything referenced by a static design-time asset " +
-                  "reference that must survive a save/reload — currently just " +
-                  "RecipeIngredient.material.")]
+                  "rolled (WeaponGenerator/EquipmentGenerator/MaterialGenerator output) — " +
+                  "those are genuinely unique per instance, so cloning on restore is " +
+                  "correct for them.")]
         public string itemId;
 
         public string title;
@@ -92,6 +90,12 @@ namespace DoomScroller.Inventory
                   "type-wide catalog. Null for an archetype-rolled weapon " +
                   "(WeaponGenerator.Generate), which has no curated pool of its own.")]
         public WeaponDefinition sourceDefinition;
+
+        [Tooltip("Only relevant when category is Material. Set by MaterialGenerator." +
+                  "GenerateFromDefinition to the MaterialDefinition this instance was " +
+                  "generated from — PlayerLoadout keys every material stack off this " +
+                  "plus rarity (see PlayerLoadout's material-counting methods).")]
+        public MaterialDefinition materialSource;
 
         // Not persisted — a display-only lookup so combat math never has to know
         // "defence" and "damage" are the same field under different labels.

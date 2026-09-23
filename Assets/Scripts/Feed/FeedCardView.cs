@@ -251,12 +251,10 @@ namespace DoomScroller.Feed
             {
                 EncounterType.Tavern => "No combat — shop, chat, and upgrade",
                 EncounterType.Dungeon => $"+{data.baseXpReward}+ XP · Common → Rare Gear",
-                EncounterType.Resource => data.resourceMaterial != null
-                    ? $"+{data.baseResourceYield}+ {data.resourceMaterial.title}"
-                    : "(misconfigured — no resource material set)",
+                EncounterType.Resource => $"Deal damage in {data.resourceTimerSeconds:0}s for resources",
                 EncounterType.Landing => "",
                 EncounterType.Enemy or EncounterType.Ambush or EncounterType.Treasure =>
-                    DoomScroller.Progression.RewardGenerator.DescribeLootTable(data.lootTablePercentByRarity, data.baseXpReward),
+                    DoomScroller.Progression.RewardGenerator.DescribeLootTable(data.lootTable, data.baseXpReward),
                 _ => $"+{data.baseXpReward} XP · Common Gear"
             };
         }
@@ -305,7 +303,7 @@ namespace DoomScroller.Feed
             {
                 EncounterType.Dungeon => "Dungeon Door",
                 EncounterType.Tavern => "The Village",
-                EncounterType.Resource => data.resourceMaterial != null ? $"{data.resourceMaterial.title} Node" : "Resource Node",
+                EncounterType.Resource => "Resource Node",
                 EncounterType.Landing => "",
                 _ => $"{data.type} · {EntryDifficultyLabel}"
             };

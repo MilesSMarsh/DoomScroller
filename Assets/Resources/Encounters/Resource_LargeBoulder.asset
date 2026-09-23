@@ -15,15 +15,36 @@ MonoBehaviour:
   title: Large Boulder
   type: 4
   artwork: {fileID: 0}
+  foregroundArt: {fileID: 0}
   cardColor: {r: 0.4, g: 0.4, b: 0.42, a: 1}
-  rewardSummary: "Gather Stone \u2014 no combat required"
+  description: "Gather Stone \u2014 no combat required"
   baseXpReward: 0
+  goldReward: 0
+  lootTable:
+    percentByRarity:
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    minItemCount: 1
+    maxItemCount: 1
+    weapons: []
+    equipment: []
+    materials: []
   enemyHealth: 80
   enemyAttackDamage: 10
   enemyAttackSpeed: 0.8
   damageTypeModifiers: []
-  resourceMaterial: {fileID: 11400000, guid: a55e7d70910f4ea359e408df37be22e1, type: 2}
-  baseResourceYield: 4
-  secondaryResourceMaterial: {fileID: 11400000, guid: 878d1fa9582ed8258b693e75263f456f, type: 2}
-  secondaryResourceChance: 0.1
-  secondaryResourceYield: 1
+  dungeonRooms: []
+  resourceTimerSeconds: 10
+  resourceWeaknesses: []
+  resourceThresholds:
+  - damageRequired: 20
+    rewardMaterial: {fileID: 11400000, guid: 554ad8eca2d3b9eb9b9e0f5aec1b0247, type: 2}
+    rewardRarity: 0
+    rewardAmount: 4
+  - damageRequired: 60
+    rewardMaterial: {fileID: 11400000, guid: fd13e7c61e6f74e0cb289324075bf947, type: 2}
+    rewardRarity: 0
+    rewardAmount: 1

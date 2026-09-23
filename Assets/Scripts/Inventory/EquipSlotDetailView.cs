@@ -180,7 +180,10 @@ namespace DoomScroller.Inventory
             }
 
             // Only items for this exact slot — the earlier universal grid showing
-            // everything was confusing and made drops easy to misfire.
+            // everything was confusing and made drops easy to misfire. The one
+            // exception is a hand slot, where GetInventory itself already returns
+            // every owned weapon/shield regardless of which hand it's nominally in —
+            // see PlayerLoadout.GetInventory.
             var options = _loadout.GetInventory(_slotType).Where(i => i != equipped).ToList();
             if (options.Count == 0)
             {
@@ -206,8 +209,10 @@ namespace DoomScroller.Inventory
             rowLayout.childControlWidth = true;
             rowLayout.childControlHeight = true;
 
-            // Every item shown here is, by construction, not equipped anywhere (RebuildList
-            // already excludes the equipped one) — every option is always safely deletable.
+            // Every item shown here is, by construction, not equipped in *this* slot
+            // (RebuildList already excludes the equipped one) — but for a hand slot it
+            // may still be equipped in the *other* hand, in which case Delete silently
+            // no-ops via RemoveFromInventory's own "refuse if equipped anywhere" guard.
             var equipAreaGo = new GameObject("EquipArea", typeof(RectTransform));
             equipAreaGo.transform.SetParent(rowGo.transform, false);
             equipAreaGo.AddComponent<Image>().color = new Color(1f, 1f, 1f, 0.06f);
@@ -222,15 +227,24 @@ namespace DoomScroller.Inventory
             equipButton.onClick.AddListener(() =>
             {
                 // Tap to equip, then refresh in place — this item moves to the top,
-                // whatever was equipped before reappears in the list below.
-                _loadout.Equip(item);
+                // whatever was equipped before reappears in the list below. Always
+                // targets this screen's own slot explicitly — for a hand slot, the
+                // item's own slotType is no longer a reliable "where" (see
+                // PlayerLoadout.Equip).
+                _loadout.Equip(item, _slotType);
                 Refresh();
             });
 
             var row = GearRowFactory.Create(equipAreaGo.transform, IconSize, 24, 32, 28);
             GearRowFactory.SetIcon(row, item.icon, item.itemColor, item.rarity);
             GearRowFactory.SetWeaponDetail(row, item);
-            row.CaptionText.text = ItemCategoryInfo.SlotLabel(item.slotType);
+            // A weapon/shield's own slotType no longer means anything until equipped
+            // (both hands browse the same pool — see GetInventory), so its caption
+            // shows handedness instead; every other category is still genuinely pinned
+            // to one slot, so its caption keeps naming that slot.
+            row.CaptionText.text = item.category == ItemCategory.Weapon || item.category == ItemCategory.Shield
+                ? (item.isTwoHanded ? "Two-Handed" : "One-Handed")
+                : ItemCategoryInfo.SlotLabel(item.slotType);
             row.TitleText.text = item.title;
             row.StatText.text = item.isTwoHanded
                 ? $"{item.StatLabel} {item.powerValue} (2H) — tap to equip"

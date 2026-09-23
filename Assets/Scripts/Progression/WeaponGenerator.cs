@@ -138,7 +138,6 @@ namespace DoomScroller.Progression
             item.category = ItemCategory.Weapon;
             item.rarity = rarity;
             item.weaponType = type;
-            item.slotType = RollHandSlot(rng);
             item.isTwoHanded = info.IsTwoHanded;
             item.isRanged = info.IsRanged;
             item.attackSpeed = info.AttackSpeed;
@@ -172,7 +171,6 @@ namespace DoomScroller.Progression
             item.rarity = rarity;
             item.weaponType = definition.weaponType;
             item.damageType = definition.damageType;
-            item.slotType = RollHandSlot(rng);
             item.isTwoHanded = definition.isTwoHanded;
             item.isRanged = definition.weaponType != WeaponType.Melee;
             item.attackSpeed = definition.attackSpeed;
@@ -210,15 +208,6 @@ namespace DoomScroller.Progression
 
             var definition = definitions[rng.Next(definitions.Length)];
             return GenerateFromDefinition(definition, rarity, rng);
-        }
-
-        // Randomized like RewardGenerator's own slot roll — a two-handed weapon clears
-        // the opposite hand regardless of which one it's nominally assigned to (see
-        // PlayerLoadout.Equip), but a fixed hand would mean it never shows up browsing
-        // the *other* hand slot's options in EquipSlotDetailView.
-        private static EquipmentSlotType RollHandSlot(System.Random rng)
-        {
-            return rng.Next(2) == 0 ? EquipmentSlotType.LeftHand : EquipmentSlotType.RightHand;
         }
 
         // Internal (not private) so WeaponUpgrader.Reroll can draw a fresh ability set

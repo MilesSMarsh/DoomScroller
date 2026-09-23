@@ -211,7 +211,7 @@ namespace DoomScroller.Encounters
                 _runOver = true;
                 EncounterLost?.Invoke(_data);
             }
-            else if (step.IsTreasureRoom)
+            else if (step.IsFinalTreasureRoom)
             {
                 _runOver = true;
                 _pendingChestClaim = true;

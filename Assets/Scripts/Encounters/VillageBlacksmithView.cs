@@ -306,17 +306,20 @@ namespace DoomScroller.Encounters
             row.RowButton.interactable = unlocked;
         }
 
-        // "2 Iron Ore, 1 Wood" — or "no materials" for a gold-only recipe (the Materials
-        // tab's own recipes, which craft a raw material for gold alone) or an
-        // unconfigured Empower/Reroll tier.
-        private static string DescribeIngredients(RecipeIngredient[] ingredients)
+        // "2 Rare Iron Ore, 1 Rare Wood" — or "no materials" for a gold-only recipe (the
+        // Materials tab's own recipes, which craft a raw material for gold alone) or an
+        // unconfigured Empower/Reroll tier. Every ingredient in one list shares the same
+        // rarity — whatever's being crafted/upgraded at (see PlayerLoadout's
+        // material-counting methods) — so it's shown once per line, not per ingredient.
+        private static string DescribeIngredients(RecipeIngredient[] ingredients, ItemRarity rarity)
         {
             return ingredients is { Length: > 0 }
-                ? string.Join(", ", ingredients.Select(i => $"{i.count} {i.material.title}"))
+                ? string.Join(", ", ingredients.Select(i => $"{i.count} {rarity} {i.material.materialName}"))
                 : "no materials";
         }
 
-        private static string DescribeIngredients(RecipeDefinition recipe) => DescribeIngredients(recipe.ingredients);
+        private static string DescribeIngredients(RecipeDefinition recipe) =>
+            DescribeIngredients(recipe.ingredients, recipe.OutputRarity);
 
         // What's still missing before a locked row becomes craftable — every
         // undiscovered ingredient and every un-crafted prerequisite, joined together.
@@ -325,8 +328,8 @@ namespace DoomScroller.Encounters
             var parts = new List<string>();
 
             var missingMaterials = (recipe.ingredients ?? Array.Empty<RecipeIngredient>())
-                .Where(i => i.material != null && !_loadout.HasDiscovered(i.material))
-                .Select(i => i.material.title)
+                .Where(i => i.material != null && !_loadout.HasDiscovered(i.material, recipe.OutputRarity))
+                .Select(i => $"{recipe.OutputRarity} {i.material.materialName}")
                 .ToList();
             if (missingMaterials.Count > 0)
             {
@@ -395,7 +398,7 @@ namespace DoomScroller.Encounters
         {
             var canEmpower = WeaponUpgrader.CanEmpower(weapon);
             var costLabel = canEmpower
-                ? $"{DiscountedGoldCost(WeaponUpgrader.EmpowerGoldCost(weapon))}g + {DescribeIngredients(WeaponUpgrader.EmpowerIngredients(weapon))}  " +
+                ? $"{DiscountedGoldCost(WeaponUpgrader.EmpowerGoldCost(weapon))}g + {DescribeIngredients(WeaponUpgrader.EmpowerIngredients(weapon), weapon.rarity)}  " +
                   $"({weapon.rarity} → {weapon.rarity + 1})"
                 : "Already at max rarity";
             CreateWeaponUpgradeRow(parent, weapon, canEmpower, costLabel, () => OnEmpowerTapped(weapon));
@@ -403,7 +406,7 @@ namespace DoomScroller.Encounters
 
         private void CreateRerollRow(Transform parent, ItemData weapon)
         {
-            var costLabel = $"{DiscountedGoldCost(WeaponUpgrader.RerollGoldCost(weapon))}g + {DescribeIngredients(WeaponUpgrader.RerollIngredients())}  " +
+            var costLabel = $"{DiscountedGoldCost(WeaponUpgrader.RerollGoldCost(weapon))}g + {DescribeIngredients(WeaponUpgrader.RerollIngredients(), weapon.rarity)}  " +
                              $"(reroll {weapon.rarity} skills)";
             CreateWeaponUpgradeRow(parent, weapon, true, costLabel, () => OnRerollTapped(weapon));
         }
@@ -492,10 +495,10 @@ namespace DoomScroller.Encounters
 
             var goldCost = DiscountedGoldCost(WeaponUpgrader.EmpowerGoldCost(weapon));
             var ingredients = WeaponUpgrader.EmpowerIngredients(weapon);
-            var canAfford = _wallet.Gold >= goldCost && _loadout.HasIngredients(ingredients);
+            var canAfford = _wallet.Gold >= goldCost && _loadout.HasIngredients(ingredients, weapon.rarity);
 
             _confirmMessageText.text = canAfford
-                ? $"Empower {weapon.title} to {weapon.rarity + 1} for {goldCost}g + {DescribeIngredients(ingredients)}?"
+                ? $"Empower {weapon.title} to {weapon.rarity + 1} for {goldCost}g + {DescribeIngredients(ingredients, weapon.rarity)}?"
                 : $"Not enough gold or materials to empower {weapon.title}.";
             _confirmCraftButtonGo.SetActive(canAfford);
             _pendingConfirmAction = () =>
@@ -512,10 +515,10 @@ namespace DoomScroller.Encounters
         {
             var goldCost = DiscountedGoldCost(WeaponUpgrader.RerollGoldCost(weapon));
             var ingredients = WeaponUpgrader.RerollIngredients();
-            var canAfford = _wallet.Gold >= goldCost && _loadout.HasIngredients(ingredients);
+            var canAfford = _wallet.Gold >= goldCost && _loadout.HasIngredients(ingredients, weapon.rarity);
 
             _confirmMessageText.text = canAfford
-                ? $"Reroll {weapon.title}'s skills for {goldCost}g + {DescribeIngredients(ingredients)}?"
+                ? $"Reroll {weapon.title}'s skills for {goldCost}g + {DescribeIngredients(ingredients, weapon.rarity)}?"
                 : $"Not enough gold or materials to reroll {weapon.title}.";
             _confirmCraftButtonGo.SetActive(canAfford);
             _pendingConfirmAction = () =>

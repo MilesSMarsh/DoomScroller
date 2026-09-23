@@ -271,21 +271,24 @@ namespace DoomScroller.Encounters
                 var previousLevel = progression.Level;
                 progression.AddXp(xpReward);
 
-                // Rarity now comes from the encounter's own authored loot table (all-zero
-                // on anything created before loot tables existed, which RollRarity treats
-                // as "always Common" — the exact behavior this replaced).
-                var rarity = RewardGenerator.RollRarity(_data.lootTablePercentByRarity);
-                var item = RewardGenerator.GenerateItem(rarity);
-                loadout.AddToInventory(item);
+                // Items now come from the encounter's own authored loot table (all-zero
+                // on anything created before loot tables existed, which RollLootTable
+                // treats as "exactly one, always Common" — the exact behavior this
+                // replaced).
+                var items = RewardGenerator.RollLootTable(_data.lootTable);
+                foreach (var rolledItem in items)
+                {
+                    loadout.AddToInventory(rolledItem);
+                }
 
                 // Not granted here — RewardChestView.Show only stores it, and actually
                 // adds it to the wallet once the chest is opened.
-                var goldReward = RewardGenerator.ComputeGoldReward(xpReward);
+                var goldReward = RewardGenerator.ResolveGoldReward(_data.goldReward, xpReward);
 
                 // A Treasure card's own chest art; a Combat win keeps the generic chest —
                 // _data.foregroundArt there is the creature portrait, not a chest.
                 var chestSprite = _data.type == EncounterType.Treasure ? _data.foregroundArt : null;
-                _rewardChest.Show(xpReward, goldReward, item, progression.Level > previousLevel, progression.Level,
+                _rewardChest.Show(xpReward, goldReward, items, progression.Level > previousLevel, progression.Level,
                     _playback.WasCloseCall, wallet, chestSprite);
                 // Already sitting on the reward page for a Treasure card (see Show()) —
                 // no swipe needed, so no hint to swipe.

@@ -12,7 +12,8 @@ namespace DoomScroller.Inventory
     {
         FixedItem,
         Weapon,
-        Equipment
+        Equipment,
+        Material
     }
 
     // A hand-authored crafting recipe — listed/edited by the Equipment Menu window
@@ -32,7 +33,8 @@ namespace DoomScroller.Inventory
         public ItemData outputItem; // FixedItem
         public WeaponDefinition outputWeapon; // Weapon
         public EquipmentDefinition outputEquipment; // Equipment
-        public ItemRarity outputRarity; // Weapon/Equipment only
+        public MaterialDefinition outputMaterial; // Material — e.g. Rope crafted from Fibers
+        public ItemRarity outputRarity; // Weapon/Equipment/Material only
 
         [Tooltip("Self-authored, like every other placeholder number this session — a " +
                   "rolled Weapon/Equipment output has no single natural goldValue to " +
@@ -51,6 +53,7 @@ namespace DoomScroller.Inventory
         {
             RecipeOutputKind.Weapon => outputWeapon != null ? outputWeapon.weaponName : "(no weapon)",
             RecipeOutputKind.Equipment => outputEquipment != null ? outputEquipment.equipmentName : "(no equipment)",
+            RecipeOutputKind.Material => outputMaterial != null ? outputMaterial.materialName : "(no material)",
             _ => outputItem != null ? outputItem.title : "(no output item)"
         };
 
@@ -58,6 +61,7 @@ namespace DoomScroller.Inventory
         {
             RecipeOutputKind.Weapon => ItemCategory.Weapon,
             RecipeOutputKind.Equipment => outputEquipment != null ? outputEquipment.category : null,
+            RecipeOutputKind.Material => ItemCategory.Material,
             _ => outputItem != null ? outputItem.category : null
         };
 
@@ -65,6 +69,7 @@ namespace DoomScroller.Inventory
         {
             RecipeOutputKind.Weapon => outputWeapon != null ? outputWeapon.icon : null,
             RecipeOutputKind.Equipment => outputEquipment != null ? outputEquipment.icon : null,
+            RecipeOutputKind.Material => outputMaterial != null ? outputMaterial.icon : null,
             _ => outputItem != null ? outputItem.icon : null
         };
 
@@ -72,15 +77,16 @@ namespace DoomScroller.Inventory
         {
             RecipeOutputKind.Weapon => outputWeapon != null ? outputWeapon.itemColor : Color.gray,
             RecipeOutputKind.Equipment => outputEquipment != null ? outputEquipment.itemColor : Color.gray,
+            RecipeOutputKind.Material => outputMaterial != null ? outputMaterial.itemColor : Color.gray,
             _ => outputItem != null ? outputItem.itemColor : Color.gray
         };
 
-        // Weapon/Equipment kinds already commit to a fixed rarity (outputRarity — see
-        // RecipeOutputKind's own doc comment); a FixedItem's rarity is whatever its
-        // hand-authored ItemData carries.
+        // Weapon/Equipment/Material kinds already commit to a fixed rarity (outputRarity
+        // — see RecipeOutputKind's own doc comment); a FixedItem's rarity is whatever
+        // its hand-authored ItemData carries.
         public ItemRarity OutputRarity => outputKind switch
         {
-            RecipeOutputKind.Weapon or RecipeOutputKind.Equipment => outputRarity,
+            RecipeOutputKind.Weapon or RecipeOutputKind.Equipment or RecipeOutputKind.Material => outputRarity,
             _ => outputItem != null ? outputItem.rarity : ItemRarity.Common
         };
 

@@ -82,6 +82,9 @@ namespace DoomScroller.Combat
         // DungeonStepPageView to carry HP forward into the next step of a run.
         public int FinalPlayerHp { get; private set; }
 
+        // Set once PlayTimedWindow's coroutine finishes — the resource minigame's score.
+        public int TotalDamageDealt { get; private set; }
+
         // screenRoot is a full-screen ancestor (the host view's own root) the revive
         // dialog anchors to — this view's own rect is only the bounded combat-sim area,
         // too small for a proper full-screen modal.
@@ -332,6 +335,97 @@ namespace DoomScroller.Combat
                 (float)sim.PlayerHp / sim.PlayerStartHp < CloseCallHealthFraction;
             FinalPlayerHp = sim.PlayerHp;
             _sim = null;
+        }
+
+        // The resource-node minigame's entry point — sibling to Play, but structurally
+        // simpler: the whole run resolves synchronously up front (sim.RunForDuration),
+        // every beat is guaranteed CombatActor.Player (the node never attacks — see
+        // CombatSimulator's enemyCanAttack), and there's no win/loss/revive branching to
+        // handle. Manual ability casting is deliberately not supported here even if
+        // GameSettings.ManualAbilityCasting is on — every ability just auto-fires as
+        // part of the timed window, same as this mode's own timer. Reuses the enemy-side
+        // health bar as a real-time countdown (fill drains 1→0 over durationSeconds) and
+        // its label as a running damage total — an actual depleting enemy HP bar would
+        // misrepresent a target that structurally can't die within the window.
+        public IEnumerator PlayTimedWindow(CombatSimulator sim, PlayerLoadout loadout, GameSettings settings,
+            Sprite nodeSprite, Color nodeColor, float durationSeconds)
+        {
+            _playerPortrait.sprite = loadout.PlayerSprite;
+            _playerBaseColor = loadout.PlayerSprite != null ? Color.white : new Color(1f, 1f, 1f, 0.15f);
+            _playerPortrait.color = _playerBaseColor;
+
+            _enemyPortrait.sprite = nodeSprite;
+            _enemyBaseColor = nodeSprite != null ? Color.white : nodeColor;
+            _enemyPortrait.color = _enemyBaseColor;
+
+            BuildGearRow(loadout);
+            _sim = sim;
+            _activeManualMode = false;
+            _pendingManualCastName = null;
+            BuildAbilityRow(loadout, false);
+
+            UpdateHealthBar(_playerHealthFill, _playerHealthLabel, 1, 1);
+            _enemyHealthFill.fillAmount = 1f;
+            _enemyHealthLabel.text = "Damage: 0";
+
+            var beats = sim.RunForDuration(durationSeconds);
+            var countdown = StartCoroutine(CountdownRoutine(durationSeconds));
+
+            // Spread across the window rather than the fixed combat BeatPause — a fast
+            // weapon landing 30 beats in 10s would otherwise strobe by unreadably, and a
+            // slow one landing 3 would leave long dead gaps; clamped to a sane range
+            // either way.
+            var spacing = beats.Count > 0 ? Mathf.Clamp(durationSeconds / beats.Count, 0.08f, 0.6f) : 0f;
+            var runningDamage = 0;
+
+            foreach (var beat in beats)
+            {
+                var isAbility = !string.IsNullOrEmpty(beat.AbilityName);
+                yield return StartCoroutine(Lunge(_playerPortrait.rectTransform, 1f));
+
+                if (beat.IsRanged)
+                {
+                    var abilityColor = isAbility && _abilityWidgets.TryGetValue(beat.AbilityName, out var castWidget)
+                        ? castWidget.Icon.color
+                        : Color.white;
+                    yield return StartCoroutine(FireProjectile(_playerAnchor, _enemyAnchor, true, isAbility, beat.IsDotTick, abilityColor));
+                }
+
+                if (!beat.WasMiss)
+                {
+                    runningDamage += beat.DisplayDamage;
+                    _enemyHealthLabel.text = $"Damage: {runningDamage}";
+                }
+
+                ResolveImpact(_enemyAnchor, _enemyPortrait, beat, true);
+                yield return new WaitForSeconds(spacing);
+            }
+
+            // Let the countdown finish draining even if every beat already animated
+            // faster than the real window (a slow weapon might only land 2-3 beats).
+            yield return countdown;
+
+            TotalDamageDealt = sim.DamageDealt;
+            _sim = null;
+        }
+
+        private IEnumerator CountdownRoutine(float seconds)
+        {
+            if (seconds <= 0f)
+            {
+                _enemyHealthFill.fillAmount = 0f;
+                yield break;
+            }
+
+            var t = 0f;
+            while (t < seconds)
+            {
+                t += Time.deltaTime;
+                _enemyHealthFill.fillAmount = 1f - Mathf.Clamp01(t / seconds);
+                yield return null;
+            }
+
+            _enemyHealthFill.fillAmount = 0f;
         }
 
         private void Update()
