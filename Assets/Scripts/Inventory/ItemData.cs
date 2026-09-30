@@ -97,6 +97,12 @@ namespace DoomScroller.Inventory
                   "plus rarity (see PlayerLoadout's material-counting methods).")]
         public MaterialDefinition materialSource;
 
+        [Tooltip("Only relevant for Armor/Talisman. Set by EquipmentGenerator." +
+                  "GenerateFromDefinition to the EquipmentDefinition this instance was " +
+                  "generated from — lets a save/restore re-read live authored data (e.g. " +
+                  "an icon drawn after the item was saved) off the definition.")]
+        public EquipmentDefinition equipmentSource;
+
         // Not persisted — a display-only lookup so combat math never has to know
         // "defence" and "damage" are the same field under different labels.
         public string StatLabel => ItemCategoryInfo.Label(category);

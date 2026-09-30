@@ -305,9 +305,33 @@ namespace DoomScroller.Encounters
                     _loadout.AddToInventory(MaterialGenerator.GenerateFromDefinition(threshold.rewardMaterial, threshold.rewardRarity));
                 }
 
-                CreateLabel(_rewardLines, $"Line_{threshold.damageRequired}",
-                    $"+{amount} {threshold.rewardRarity} {threshold.rewardMaterial.materialName}", 34, FontStyle.Italic, 50);
+                CreateRewardLine(threshold, amount);
             }
+        }
+
+        // Icon (with its rarity border, same as every other gear row) beside the
+        // "+N Rarity Material" label, centered as a unit on the reward page.
+        private void CreateRewardLine(ResourceThreshold threshold, int amount)
+        {
+            var lineGo = new GameObject($"Line_{threshold.damageRequired}", typeof(RectTransform));
+            lineGo.transform.SetParent(_rewardLines, false);
+            var lineLayout = lineGo.AddComponent<HorizontalLayoutGroup>();
+            lineLayout.spacing = 16;
+            lineLayout.childAlignment = TextAnchor.MiddleCenter;
+            lineLayout.childForceExpandWidth = false;
+            lineLayout.childForceExpandHeight = false;
+            lineLayout.childControlWidth = true;
+            lineLayout.childControlHeight = true;
+
+            var (icon, border) = GearRowFactory.CreateIconFrame(lineGo.transform, 64);
+            GearRowFactory.SetIcon(icon, threshold.rewardMaterial.icon, threshold.rewardMaterial.itemColor);
+            GearRowFactory.SetRarityBorder(border, threshold.rewardRarity);
+            icon.raycastTarget = false;
+
+            var label = CreateLabel(lineGo.transform, "Label",
+                $"+{amount} {threshold.rewardRarity} {threshold.rewardMaterial.materialName}", 34, FontStyle.Italic, 64);
+            label.horizontalOverflow = HorizontalWrapMode.Overflow;
+            label.alignment = TextAnchor.MiddleLeft;
         }
 
         private void ClearRewardLines()

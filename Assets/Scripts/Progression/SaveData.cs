@@ -53,6 +53,10 @@ namespace DoomScroller.Progression
         // re-resolved against the live MaterialDefinitions catalog on Restore.
         public string sourceMaterialName;
 
+        // Same convention again, for ItemData.equipmentSource (EquipmentDefinition.
+        // equipmentName). Blank for anything not rolled from an EquipmentDefinition.
+        public string sourceEquipmentName;
+
         public static ItemSnapshot Capture(ItemData item)
         {
             return new ItemSnapshot
@@ -77,7 +81,8 @@ namespace DoomScroller.Progression
                 potionAmount = item.potionAmount,
                 attributeScalingEntries = item.attributeScalingEntries,
                 sourceWeaponName = item.sourceDefinition != null ? item.sourceDefinition.weaponName : null,
-                sourceMaterialName = item.materialSource != null ? item.materialSource.materialName : null
+                sourceMaterialName = item.materialSource != null ? item.materialSource.materialName : null,
+                sourceEquipmentName = item.equipmentSource != null ? item.equipmentSource.equipmentName : null
             };
         }
 
@@ -122,6 +127,28 @@ namespace DoomScroller.Progression
             {
                 item.materialSource = Resources.LoadAll<MaterialDefinition>("MaterialDefinitions")
                     .FirstOrDefault(d => d.materialName == sourceMaterialName);
+            }
+
+            if (!string.IsNullOrEmpty(sourceEquipmentName))
+            {
+                item.equipmentSource = Resources.LoadAll<EquipmentDefinition>("EquipmentDefinitions")
+                    .FirstOrDefault(d => d.equipmentName == sourceEquipmentName);
+            }
+
+            // Sprites can't ride through JsonUtility either, so the icon is re-read off
+            // whichever definition was resolved above — which also means art assigned
+            // after the item was saved shows up on already-owned copies.
+            if (item.materialSource != null)
+            {
+                item.icon = item.materialSource.icon;
+            }
+            else if (item.sourceDefinition != null)
+            {
+                item.icon = item.sourceDefinition.icon;
+            }
+            else if (item.equipmentSource != null)
+            {
+                item.icon = item.equipmentSource.icon;
             }
 
             return item;

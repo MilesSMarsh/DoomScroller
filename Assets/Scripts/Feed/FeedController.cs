@@ -56,6 +56,7 @@ namespace DoomScroller.Feed
             // each card's win-chance badge, and Awake() order between components on
             // different GameObjects isn't guaranteed (same hazard as NavBarController).
             EventSystemBootstrapper.EnsureExists();
+            PerformanceBootstrapper.Apply();
             LoadPool();
             BuildFeed();
 

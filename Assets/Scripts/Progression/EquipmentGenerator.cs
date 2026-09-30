@@ -24,6 +24,7 @@ namespace DoomScroller.Progression
             item.slotType = definition.slotType;
             item.itemColor = definition.itemColor;
             item.icon = definition.icon;
+            item.equipmentSource = definition;
             item.powerValue = power;
             item.statSummary = $"+{power} {ItemCategoryInfo.Label(definition.category)}";
 

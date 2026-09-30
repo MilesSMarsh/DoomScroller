@@ -22,6 +22,7 @@ namespace DoomScroller.UI
 
         private Text _progressionText;
         private Text _healthText;
+        private string _lastHealthText;
 
         private void Awake()
         {
@@ -90,17 +91,32 @@ namespace DoomScroller.UI
                 ? Mathf.RoundToInt(100f * health.CurrentMaxHealth / health.TrueMaxHealth)
                 : 0;
 
+            string text;
+            Color color;
             if (health.CurrentMaxHealth < health.TrueMaxHealth)
             {
                 var seconds = Mathf.CeilToInt(health.SecondsUntilFullHealth());
-                _healthText.text = $"HP {percent}% · full in {seconds / 60}:{seconds % 60:D2}";
-                _healthText.color = new Color(0.95f, 0.4f, 0.35f);
+                text = $"HP {percent}% · full in {seconds / 60}:{seconds % 60:D2}";
+                color = new Color(0.95f, 0.4f, 0.35f);
             }
             else
             {
-                _healthText.text = $"HP {percent}%";
-                _healthText.color = Color.white;
+                text = $"HP {percent}%";
+                color = Color.white;
             }
+
+            // This runs every Update() (the countdown needs to tick live) — but Text.text/
+            // color assignment always dirties the Canvas for a rebuild regardless of
+            // whether the value actually changed, so skip it entirely on the (vast
+            // majority of) frames where the displayed string is identical to last frame.
+            if (text == _lastHealthText)
+            {
+                return;
+            }
+
+            _lastHealthText = text;
+            _healthText.text = text;
+            _healthText.color = color;
         }
 
         private static Text CreateLabel(Transform parent, string name, string content, TextAnchor alignment,

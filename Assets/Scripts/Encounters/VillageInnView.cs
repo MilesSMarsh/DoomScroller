@@ -11,8 +11,10 @@ namespace DoomScroller.Encounters
     {
         private Text _hpText;
         private GameObject _restButtonGo;
+        private Button _restButton;
         private Text _restButtonLabel;
         private PlayerHealth _health;
+        private string _lastHpText;
 
         public static VillageInnView Create(Transform parent)
         {
@@ -39,6 +41,7 @@ namespace DoomScroller.Encounters
             var buttonGo = CreateButton(go.transform, "RestButton", "Rest (Full Heal)", () => view.OnRestClicked());
             SetFixedHeight(buttonGo.GetComponent<LayoutElement>(), 100);
             view._restButtonGo = buttonGo;
+            view._restButton = buttonGo.GetComponent<Button>();
             view._restButtonLabel = buttonGo.GetComponentInChildren<Text>();
 
             return view;
@@ -63,11 +66,23 @@ namespace DoomScroller.Encounters
 
         private void Refresh()
         {
-            _hpText.text = $"HP {_health.CurrentMaxHealth}/{_health.TrueMaxHealth}";
+            var text = $"HP {_health.CurrentMaxHealth}/{_health.TrueMaxHealth}";
+
+            // Cheap early-out, same reasoning as NavBarController/ProfileView's own
+            // RefreshHealthText — this runs every Update() while the Inn is open, but
+            // Text.text/Button.interactable both dirty the Canvas for a rebuild even when
+            // nothing actually changed.
+            if (text == _lastHpText)
+            {
+                return;
+            }
+
+            _lastHpText = text;
+            _hpText.text = text;
 
             var atFull = _health.CurrentMaxHealth >= _health.TrueMaxHealth;
             _restButtonLabel.text = atFull ? "Already at full health" : "Rest (Full Heal)";
-            _restButtonGo.GetComponent<Button>().interactable = !atFull;
+            _restButton.interactable = !atFull;
         }
 
         private void OnRestClicked()

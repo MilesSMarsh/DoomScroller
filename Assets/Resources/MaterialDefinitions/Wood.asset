@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: Wood
   m_EditorClassIdentifier: DoomScroller::DoomScroller.Inventory.MaterialDefinition
   materialName: Wood
-  icon: {fileID: 0}
+  icon: {fileID: -2067898546876541913, guid: ab5ed2c062b06546e8639826929e52e4, type: 3}
   itemColor: {r: 0.5045903, g: 0.21818627, b: 0.034116354, a: 1}
   goldValue: 2

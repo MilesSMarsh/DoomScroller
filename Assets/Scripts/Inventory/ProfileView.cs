@@ -26,6 +26,7 @@ namespace DoomScroller.Inventory
         private RectTransform _materialsContainer;
         private Text _progressionText;
         private Text _healthText;
+        private string _lastHealthText;
         private Text _manualCastingToggleText;
         private EquipSlotClusterView _equipCluster;
 
@@ -328,16 +329,28 @@ namespace DoomScroller.Inventory
 
         private void RefreshHealthText()
         {
+            string text;
             if (_health.CurrentMaxHealth < _health.TrueMaxHealth)
             {
                 var seconds = Mathf.CeilToInt(_health.SecondsUntilFullHealth());
-                _healthText.text = $"HP {_health.CurrentMaxHealth}/{_health.TrueMaxHealth} — " +
+                text = $"HP {_health.CurrentMaxHealth}/{_health.TrueMaxHealth} — " +
                     $"full in {seconds / 60}:{seconds % 60:D2}";
             }
             else
             {
-                _healthText.text = $"HP {_health.CurrentMaxHealth}/{_health.TrueMaxHealth}";
+                text = $"HP {_health.CurrentMaxHealth}/{_health.TrueMaxHealth}";
             }
+
+            // Same cheap early-out as NavBarController.RefreshHealthText — this runs every
+            // Update() while the screen is open, but Text.text dirties the Canvas for a
+            // rebuild even when the string is unchanged.
+            if (text == _lastHealthText)
+            {
+                return;
+            }
+
+            _lastHealthText = text;
+            _healthText.text = text;
         }
 
         private void Refresh()

@@ -20,5 +20,7 @@ MonoBehaviour:
   outputMaterial: {fileID: 0}
   outputRarity: 4
   goldCost: 20
-  ingredients: []
+  ingredients:
+  - material: {fileID: 11400000, guid: 1508bc622581c60e29af1a86d33610f2, type: 2}
+    count: 1
   prerequisiteRecipes: []
