@@ -36,6 +36,8 @@ namespace DoomScroller.Progression
         // so a very low TrueMaxHealth can't compute a floor of 0.
         public int Floor => Mathf.Max(1, Mathf.RoundToInt(TrueMaxHealth * FloorFraction));
 
+        public bool IsAtFloor => CurrentMaxHealth <= Floor;
+
         public PlayerHealth(int trueMaxHealth, int regenPerInterval, float regenIntervalSeconds)
         {
             TrueMaxHealth = trueMaxHealth;

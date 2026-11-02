@@ -377,23 +377,60 @@ namespace DoomScroller.Feed
         // entries, no two cards in the live window are ever the same encounter.
         private EncounterData DrawNext()
         {
+            var atFloor = profileController.Health.IsAtFloor;
+
             if (_shuffleBag.Count == 0)
             {
-                for (var i = 0; i < _pool.Length; i++)
-                {
-                    _shuffleBag.Add(i);
-                }
+                RefillBag();
+            }
 
-                for (var i = _shuffleBag.Count - 1; i > 0; i--)
+            var bagPos = FindDrawable(atFloor);
+            if (bagPos < 0)
+            {
+                // Everything left in the bag is undrawable right now: start a fresh pass.
+                RefillBag();
+                bagPos = FindDrawable(atFloor);
+                if (bagPos < 0)
                 {
-                    var j = _rng.Next(i + 1);
-                    (_shuffleBag[i], _shuffleBag[j]) = (_shuffleBag[j], _shuffleBag[i]);
+                    Debug.LogWarning("FeedController: no drawable encounter in the pool for the " +
+                        "current player state; drawing an undrawable one to avoid hanging.");
+                    bagPos = _shuffleBag.Count - 1;
                 }
             }
 
-            var index = _shuffleBag[^1];
-            _shuffleBag.RemoveAt(_shuffleBag.Count - 1);
+            // Skipped (undrawable) entries stay in the bag for a later draw this pass.
+            var index = _shuffleBag[bagPos];
+            _shuffleBag.RemoveAt(bagPos);
             return _pool[index];
+        }
+
+        private void RefillBag()
+        {
+            _shuffleBag.Clear();
+            for (var i = 0; i < _pool.Length; i++)
+            {
+                _shuffleBag.Add(i);
+            }
+
+            for (var i = _shuffleBag.Count - 1; i > 0; i--)
+            {
+                var j = _rng.Next(i + 1);
+                (_shuffleBag[i], _shuffleBag[j]) = (_shuffleBag[j], _shuffleBag[i]);
+            }
+        }
+
+        // Last (next-to-draw) bag position whose encounter is drawable, or -1.
+        private int FindDrawable(bool atFloor)
+        {
+            for (var i = _shuffleBag.Count - 1; i >= 0; i--)
+            {
+                if (FeedDrawRules.IsDrawable(_pool[_shuffleBag[i]].type, atFloor))
+                {
+                    return i;
+                }
+            }
+
+            return -1;
         }
 
         private void TrimBehind(int currentAbsoluteIndex)

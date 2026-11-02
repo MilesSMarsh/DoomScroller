@@ -97,7 +97,11 @@ def tag(report: str, name: str) -> str | None:
 def approve(question: str, auto_yes: bool) -> bool:
     if auto_yes:
         return True
-    return input(f"\n{question} [y/N] ").strip().lower() in {"y", "yes"}
+    try:
+        return input(f"\n{question} [y/N] ").strip().lower() in {"y", "yes"}
+    except EOFError:  # non-interactive (no stdin): treat as "not approved yet"
+        print("(no input available; not approved)")
+        return False
 
 
 def plan(crew: Crew, request: str) -> tuple[str, str]:
