@@ -43,5 +43,8 @@ so it keeps context). After two failed rounds, escalate to Miles.
 
 - `tools/run-editmode-tests.sh [filter]` — headless EditMode tests (~2.5 min). Exits 2 if
   the Editor has the project open; use Unity MCP then.
+- After an MCP test run, check the Editor still has `Assets/Scenes/SampleScene.unity`
+  open (test runs can leave an empty untitled scene). If not, reload it with
+  `manage_scene` `load` — otherwise Miles presses Play and sees nothing.
 - Editor/device-only checks are listed as manual for Miles, never claimed as verified.
 - Agents don't commit; the main session commits after Miles approves.

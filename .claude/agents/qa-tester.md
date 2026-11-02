@@ -1,7 +1,7 @@
 ---
 name: qa-tester
 description: Writes automated Unity tests against a feature's acceptance criteria, runs the suite, and reports what fails. Use after a feature is built and before Miles merges. Does not fix game code.
-tools: Read, Grep, Glob, Write, Edit, Bash, mcp__UnityMCP__run_tests, mcp__UnityMCP__get_test_job, mcp__UnityMCP__read_console, mcp__UnityMCP__refresh_unity, mcp__unity-mcp__run_tests, mcp__unity-mcp__get_test_job, mcp__unity-mcp__read_console, mcp__unity-mcp__refresh_unity
+tools: Read, Grep, Glob, Write, Edit, Bash, mcp__UnityMCP__run_tests, mcp__UnityMCP__get_test_job, mcp__UnityMCP__read_console, mcp__UnityMCP__refresh_unity, mcp__UnityMCP__manage_scene, mcp__unity-mcp__run_tests, mcp__unity-mcp__get_test_job, mcp__unity-mcp__read_console, mcp__unity-mcp__refresh_unity, mcp__unity-mcp__manage_scene
 model: haiku
 ---
 
@@ -37,6 +37,8 @@ Running tests (always run them; a report with unrun tests is incomplete):
    `action: clear`, then refresh again.
 4. `run_tests` (`mode: EditMode`, `include_failed_tests: true`), then `get_test_job`
    with the returned `job_id` and `wait_timeout: 60` until status is finished.
+5. Confirm the Editor's open scene is still `Assets/Scenes/SampleScene.unity`; if the
+   run left an untitled scene, reload SampleScene (see `.claude/rules/agent-workflow.md`).
 If an MCP call says Unity isn't ready, retry once; if it still fails, report that
 tests were not run and why.
 

@@ -16,15 +16,11 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
   (`DefaultRunCount`) via `CombatResolver.CreateSimulator`, auto-cast, no revive, and
   returns the win fraction plus a `WinOddsTier`: Likely >= 0.70, Risky >= 0.35, else
   Long shot. Non-fight types (Treasure, Tavern, Resource, Landing, WanderingMerchant,
-  and Dungeon for now) skip the sim and return 1 / Likely. Cards are to show only the
-  tier word, no %.
+  and Dungeon for now) skip the sim and return 1 / Likely.
 - Key files: `Combat/CombatSimulator.cs`, `Combat/CombatResolver.cs`,
   `Combat/WinOddsEstimator.cs`, `Combat/WinOddsTier.cs`, `Combat/CombatBeat.cs`,
   `Combat/CombatPlaybackView.cs`, `Encounters/CombatResolutionView.cs`.
-- Gap: `WinOddsEstimator` isn't wired into `FeedController`/`FeedCardView`; the feed
-  badge still shows win%/close-call% from the DPS heuristic
-  (`CombatResolver.PredictWinChance`/`PredictCloseCallChance`). Simulator
-  `using UnityEngine` — GDD needs a Unity-free shared library. Seed isn't drawn/saved
+- Gap: Simulator `using UnityEngine` — GDD needs a Unity-free shared library. Seed isn't drawn/saved
   at tap-in. No 2x speed or skip. Revive is carried, not armed via a card toggle.
 
 ## Health, loss and regen
@@ -38,12 +34,17 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
 ## Feed
 - Infinite vertical feed from a shuffled pool of `EncounterData` loaded from
   `Resources/Encounters`. Card shows title, art, live reward line from its loot table,
-  win%/close-call badge, typed action button. A tap commits — no hold.
+  odds badge, typed action button. A tap commits — no hold.
+- Odds badge: `WinOddsEstimator` tier word only (Likely / Risky / Long shot), placeholder
+  per-tier colours from static `FeedBadge` (in `FeedCardView.cs`). Hidden on non-fight
+  cards, Dungeon included. Start HP = `Health.CurrentMaxHealth`. Odds refresh on loadout
+  change only, not on HP changes (defeat penalty or regen).
 - Key files: `Feed/FeedController.cs`, `Feed/FeedCardView.cs`, `Feed/FeedPager.cs`,
   `Input/TouchGestureService.cs`.
 - Gap: no regions, difficulty ranges, swipe pressure, streak penalty, swipe-back
   history, hold-to-commit, Revive toggle, first-session scripted cards, or Ambush rules
-  tied to the floor.
+  tied to the floor. Badge colours still need ui-stylist. Device performance of the
+  badge sims (64 per fight card) is unchecked.
 
 ## Encounters and dungeons
 - Types (`Feed/EncounterType.cs`): Treasure, Enemy, Dungeon, Tavern (Village), Resource,

@@ -2,7 +2,7 @@
 
 **Owner:** ui-engineer
 **Size:** S
-**Status:** todo
+**Status:** done
 **GDD:** docs/gdd/GDD.md#what-the-player-sees, docs/gdd/GDD.md#where-combat-runs (badge row), Semester scope item 4
 **Depends on:** 001 (done)
 
@@ -24,7 +24,7 @@ Long shot) instead of the heuristic win% and close-call%.
 - [ ] Each estimate gets its own `System.Random` from a single feed-owned source, so
       cards don't share a seed.
 - [ ] Non-fight cards (Treasure, Tavern, Resource, Landing, WanderingMerchant, Dungeon)
-      keep whatever badge visibility they have today.
+      hide the badge entirely (Miles' answer).
 - [ ] EditMode suite passes.
 - [ ] (manual, Miles) In the Editor, cards show tier words; equipping/unequipping in
       Profile updates them on return; no visible hitch when the feed loads or refreshes.
@@ -50,4 +50,10 @@ Long shot) instead of the heuristic win% and close-call%.
   Use the player's current max/start HP the fight would begin with.
 - 64 sims per card on every refresh may be slow on device; if it's visibly slow in the
   Editor, report it rather than lowering the run count.
-- Question for Miles: should non-fight cards hide the badge, or keep showing it as today?
+- Miles' answers: (1) hide the badge entirely on non-fight cards (any type where
+  `WinOddsEstimator.IsNonFight` is true, Dungeon included for now); (2) pass the player's
+  start HP for the fight (HP when the fight would begin) into `Estimate`; tier word only.
+- Implemented: start HP = `Health.CurrentMaxHealth` (PlayerHealth has no separate current
+  HP). Logic in static `FeedBadge` (in FeedCardView.cs): `LabelFor`, `IsVisible`, `ColorFor`.
+- Miles' decision: odds do NOT refresh on HP changes (defeat penalty or regen), only on
+  loadout change.

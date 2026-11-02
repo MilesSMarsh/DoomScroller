@@ -150,7 +150,7 @@ namespace DoomScroller.Feed
             // still starts at index 1 exactly as it always has.
             if (_landingCard != null)
             {
-                var landingCardView = FeedCardView.Create(_content, _landingCard, _pageHeight, 1f, 0f, OnCardTapped);
+                var landingCardView = FeedCardView.Create(_content, _landingCard, _pageHeight, new WinOddsResult(1f, WinOddsTier.Likely), OnCardTapped);
                 _liveCards.Add(landingCardView);
                 _windowEndIndex++;
             }
@@ -348,11 +348,7 @@ namespace DoomScroller.Feed
                     encounter = Instantiate(encounter);
                 }
 
-                var winChance = CombatResolver.PredictWinChance(profileController.Loadout, profileController.Attributes,
-                    profileController.Health, encounter);
-                var closeCallChance = CombatResolver.PredictCloseCallChance(profileController.Loadout,
-                    profileController.Attributes, profileController.Health, encounter);
-                var card = FeedCardView.Create(_content, encounter, _pageHeight, winChance, closeCallChance, OnCardTapped);
+                var card = FeedCardView.Create(_content, encounter, _pageHeight, EstimateOdds(encounter), OnCardTapped);
                 _liveCards.Add(card);
                 _windowEndIndex++;
             }
@@ -364,12 +360,16 @@ namespace DoomScroller.Feed
         {
             foreach (var card in _liveCards)
             {
-                var winChance = CombatResolver.PredictWinChance(profileController.Loadout, profileController.Attributes,
-                    profileController.Health, card.Data);
-                var closeCallChance = CombatResolver.PredictCloseCallChance(profileController.Loadout,
-                    profileController.Attributes, profileController.Health, card.Data);
-                card.SetOdds(winChance, closeCallChance);
+                card.SetOdds(EstimateOdds(card.Data));
             }
+        }
+
+        // Each estimate gets its own Random seeded from the feed-owned _rng, so cards don't
+        // share a seed. Start HP is the HP the fight would begin with.
+        private WinOddsResult EstimateOdds(EncounterData data)
+        {
+            return WinOddsEstimator.Estimate(profileController.Loadout, profileController.Attributes,
+                profileController.Health.CurrentMaxHealth, data, new System.Random(_rng.Next()));
         }
 
         // Shuffle-bag draw: every encounter in the pool is served exactly once per full
