@@ -2,7 +2,7 @@
 
 **Owner:** gameplay-engineer
 **Size:** S
-**Status:** review
+**Status:** done
 **GDD:** docs/gdd/GDD.md#feed-generation (Ambush bullet), docs/gdd/GDD.md#combat (Rewards scale with max HP), Semester scope item 5
 **Depends on:** none
 

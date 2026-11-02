@@ -24,7 +24,8 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
   at tap-in. No 2x speed or skip. Revive is carried, not armed via a card toggle.
 
 ## Health, loss and regen
-- Persistent max HP with a 20% floor (`FloorFraction = 0.2`). Loss drops max HP by 25%
+- Persistent max HP with a 20% floor (`FloorFraction = 0.2`); `IsAtFloor` is true when
+  current max <= floor (the feed uses it to block Ambushes). Loss drops max HP by 25%
   of true max (`DefeatPenaltyFraction = 0.25`). Regen 10 HP / 30 s by default
   (serialized on `ProfileController`), credited while backgrounded using device time.
 - Key files: `Progression/PlayerHealth.cs`, `Inventory/ProfileController.cs`.
@@ -39,11 +40,16 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
   per-tier colours from static `FeedBadge` (in `FeedCardView.cs`). Hidden on non-fight
   cards, Dungeon included. Start HP = `Health.CurrentMaxHealth`. Odds refresh on loadout
   change only, not on HP changes (defeat penalty or regen).
-- Key files: `Feed/FeedController.cs`, `Feed/FeedCardView.cs`, `Feed/FeedPager.cs`,
-  `Input/TouchGestureService.cs`.
+- Draw rules: `FeedDrawRules.IsDrawable(type, playerAtFloor)` blocks new Ambush draws
+  while `Health.IsAtFloor`. `DrawNext` skips undrawable entries but leaves them in the
+  shuffle bag (each drawable entry still once per pass); refills when only undrawable
+  entries remain; if none are drawable it logs a warning and draws one anyway. Ambushes
+  already in the live window are not removed when the player hits the floor.
+- Key files: `Feed/FeedController.cs`, `Feed/FeedDrawRules.cs`, `Feed/FeedCardView.cs`,
+  `Feed/FeedPager.cs`, `Input/TouchGestureService.cs`.
 - Gap: no regions, difficulty ranges, swipe pressure, streak penalty, swipe-back
-  history, hold-to-commit, Revive toggle, first-session scripted cards, or Ambush rules
-  tied to the floor. Badge colours still need ui-stylist. Device performance of the
+  history, hold-to-commit, Revive toggle, or first-session scripted cards. Badge colours
+  still need ui-stylist. Device performance of the
   badge sims (64 per fight card) is unchecked.
 
 ## Encounters and dungeons
