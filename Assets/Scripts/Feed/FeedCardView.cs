@@ -1,4 +1,5 @@
 using System;
+using DoomScroller.Combat;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -23,7 +24,7 @@ namespace DoomScroller.Feed
         // from where the scrim starts) rather than bottom-aligning within the whole card.
         private const float CaptionAreaFraction = 0.4f;
 
-        // Height of the caption's top row (action banner + win% badge).
+        // Height of the caption's top row (action banner + win-odds tier badge).
         private const float TopRowHeight = 76f;
 
         // A black strip along each card's own bottom edge, so consecutive cards read as
@@ -43,14 +44,12 @@ namespace DoomScroller.Feed
         private Text _rewardDetailText;
         private Image _chanceBadge;
         private Text _chanceText;
-        private Text _riskText;
         private Image _actionBannerImage;
         private Text _actionBannerText;
         private EncounterData _data;
         private Action<FeedCardView> _onTapped;
         private bool _locked;
-        private float _winChance;
-        private float _closeCallChance;
+        private WinOddsTier _tier;
 
         public EncounterData Data => _data;
 
@@ -62,8 +61,8 @@ namespace DoomScroller.Feed
         // asset can appear at multiple scroll positions since it's drawn from a reusable
         // hand-authored pool, so only the specific card instance unambiguously identifies
         // "the one the player entered."
-        public static FeedCardView Create(Transform parent, EncounterData data, float height, float winChance,
-            float closeCallChance, Action<FeedCardView> onTapped = null)
+        public static FeedCardView Create(Transform parent, EncounterData data, float height, WinOddsResult odds,
+            Action<FeedCardView> onTapped = null)
         {
             var go = new GameObject($"Card_{data.title}", typeof(RectTransform));
             var rect = (RectTransform)go.transform;
@@ -173,10 +172,7 @@ namespace DoomScroller.Feed
             view._actionBannerText.alignment = TextAnchor.MiddleCenter;
             view._actionBannerText.color = Color.white;
 
-            // Predicted odds for the entry-level variant. Two numbers stacked — overall
-            // success chance (color-graded red (0%) -> green (100%) on the badge itself)
-            // on top, and how much of that is a "close call" that still costs health
-            // underneath.
+            // Simulated win-odds tier word (Likely / Risky / Long shot); hidden on non-fight cards.
             var badgeGo = new GameObject("ChanceBadge", typeof(RectTransform));
             badgeGo.transform.SetParent(topRowGo.transform, false);
             var badgeLayout = badgeGo.AddComponent<LayoutElement>();
@@ -185,21 +181,13 @@ namespace DoomScroller.Feed
 
             view._chanceBadge = badgeGo.AddComponent<Image>();
 
-            var chanceTextRect = CreateStretchChild(badgeGo.transform, "Text", new Vector2(0, 0.45f), Vector2.one);
+            var chanceTextRect = CreateStretchChild(badgeGo.transform, "Text", Vector2.zero, Vector2.one);
             view._chanceText = chanceTextRect.gameObject.AddComponent<Text>();
             view._chanceText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            view._chanceText.fontSize = 30;
+            view._chanceText.fontSize = 26;
             view._chanceText.fontStyle = FontStyle.Bold;
             view._chanceText.alignment = TextAnchor.MiddleCenter;
             view._chanceText.color = Color.white;
-
-            var riskTextRect = CreateStretchChild(badgeGo.transform, "RiskText", Vector2.zero, new Vector2(1, 0.45f));
-            view._riskText = riskTextRect.gameObject.AddComponent<Text>();
-            view._riskText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            view._riskText.fontSize = 20;
-            view._riskText.fontStyle = FontStyle.Bold;
-            view._riskText.alignment = TextAnchor.MiddleCenter;
-            view._riskText.color = new Color(1f, 0.85f, 0.4f);
 
             view._titleText = CreateLabel(captionAreaRect, "Title", 52, FontStyle.Bold);
             view._badgeText = CreateLabel(captionAreaRect, "Badge", 34, FontStyle.Italic);
@@ -215,7 +203,7 @@ namespace DoomScroller.Feed
             bufferRect.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
 
             view.Bind(data);
-            view.SetOdds(winChance, closeCallChance);
+            view.SetOdds(odds);
             return view;
         }
 
@@ -309,18 +297,16 @@ namespace DoomScroller.Feed
             };
         }
 
-        // Predicted odds for the entry-level variant against the player's current loadout
-        // (see CombatResolver.PredictWinChance/PredictCloseCallChance). Called again by
-        // FeedController whenever the loadout changes so already-visible cards don't show
-        // stale odds.
-        public void SetOdds(float winChance, float closeCallChance)
+        // Simulated win-odds tier (see WinOddsEstimator). Called again by FeedController
+        // whenever the loadout changes so already-visible cards don't show stale odds.
+        // Non-fight cards hide the badge entirely (FeedBadge.IsVisible).
+        public void SetOdds(WinOddsResult odds)
         {
-            _winChance = Mathf.Clamp01(winChance);
-            _closeCallChance = Mathf.Clamp01(closeCallChance);
-
-            _chanceText.text = $"{Mathf.RoundToInt(_winChance * 100)}%";
-            _riskText.text = _closeCallChance > 0.005f ? $"{Mathf.RoundToInt(_closeCallChance * 100)}% w/ dmg" : "no risk";
-            _chanceBadge.color = ChanceGradient(_winChance) * new Color(1f, 1f, 1f, _locked ? 0.4f : 1f);
+            _tier = odds.Tier;
+            var visible = _data == null || FeedBadge.IsVisible(_data.type);
+            _chanceBadge.gameObject.SetActive(visible);
+            _chanceText.text = FeedBadge.LabelFor(_tier);
+            _chanceBadge.color = FeedBadge.ColorFor(_tier) * new Color(1f, 1f, 1f, _locked ? 0.4f : 1f);
         }
 
         // Greys the card out and blocks re-entry. reasonLabel distinguishes a win
@@ -342,22 +328,10 @@ namespace DoomScroller.Feed
                 ? $"{BaseBadgeText(_data)} · {reasonLabel}"
                 : BaseBadgeText(_data);
             _chanceText.color = new Color(1, 1, 1, textAlpha);
-            _riskText.color = new Color(1f, 0.85f, 0.4f, textAlpha);
-            SetOdds(_winChance, _closeCallChance);
+            SetOdds(new WinOddsResult(0f, _tier));
 
             _actionBannerImage.color = ActionColor(_data.type) * new Color(1f, 1f, 1f, locked ? 0.4f : 1f);
             _actionBannerText.color = new Color(1, 1, 1, textAlpha);
-        }
-
-        // Red (0%) -> yellow (50%) -> green (100%): a traffic-light gradient reads more
-        // clearly at the midpoint than a straight red-to-green lerp (which passes through
-        // a muddy olive around 50%).
-        private static Color ChanceGradient(float t)
-        {
-            var red = new Color(0.75f, 0.2f, 0.18f, 0.9f);
-            var yellow = new Color(0.8f, 0.68f, 0.15f, 0.9f);
-            var green = new Color(0.2f, 0.68f, 0.3f, 0.9f);
-            return t < 0.5f ? Color.Lerp(red, yellow, t / 0.5f) : Color.Lerp(yellow, green, (t - 0.5f) / 0.5f);
         }
 
         public void OnPointerClick(PointerEventData eventData)
@@ -411,6 +385,37 @@ namespace DoomScroller.Feed
             rect.offsetMin = Vector2.zero;
             rect.offsetMax = Vector2.zero;
             return rect;
+        }
+    }
+}
+
+namespace DoomScroller.Feed
+{
+    // Plain mapping logic for the feed card's win-odds badge (EditMode-tested).
+    public static class FeedBadge
+    {
+        public static string LabelFor(WinOddsTier tier)
+        {
+            return tier switch
+            {
+                WinOddsTier.Likely => "Likely",
+                WinOddsTier.Risky => "Risky",
+                _ => "Long shot"
+            };
+        }
+
+        // Badge shows only on cards the estimator actually simulates.
+        public static bool IsVisible(EncounterType type) => !WinOddsEstimator.IsNonFight(type);
+
+        // Placeholder per-tier colours; final palette is for ui-stylist.
+        public static UnityEngine.Color ColorFor(WinOddsTier tier)
+        {
+            return tier switch
+            {
+                WinOddsTier.Likely => new UnityEngine.Color(0.2f, 0.68f, 0.3f, 0.9f),
+                WinOddsTier.Risky => new UnityEngine.Color(0.8f, 0.68f, 0.15f, 0.9f),
+                _ => new UnityEngine.Color(0.75f, 0.2f, 0.18f, 0.9f)
+            };
         }
     }
 }
