@@ -22,11 +22,11 @@ MonoBehaviour:
   goldReward: 0
   lootTable:
     percentByRarity:
-    - 0
-    - 0
-    - 0
-    - 0
-    - 0
+    - 10
+    - 25
+    - 40
+    - 20
+    - 5
     minItemCount: 1
     maxItemCount: 2
     weapons:

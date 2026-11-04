@@ -2,7 +2,7 @@
 
 **Owner:** content-designer
 **Size:** S
-**Status:** review (blocked until 004 is merged; 004 references `Wooden Sword`)
+**Status:** done
 **GDD:** n/a (content hygiene; conventions in memory/content.md)
 **Depends on:** 004
 
@@ -70,5 +70,4 @@ no spaces in its file name, and no enemy card shows placeholder description text
   - Wolf: "A lean grey wolf, hungry and hunting alone."
   - Rogue Slime: "A wandering ooze that dissolves whatever it swallows."
   - Bonewrought Sentinel: "A guardian of fused bone that never leaves its post."
-- Approved for merge (Miles, 2026-11-04).
 - Approved for merge (Miles, 2026-11-04).

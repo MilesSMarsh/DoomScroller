@@ -2,7 +2,7 @@
 
 **Owner:** backend-engineer
 **Size:** M
-**Status:** todo (ready)
+**Status:** review (ready)
 **GDD:** docs/gdd/GDD.md#technical-strategy (Stack), #where-combat-runs,
 #scaling-and-cost-control
 **Depends on:** none

@@ -96,7 +96,7 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
   `Inventory/ProfileController.cs`, `UI/NavBarController.cs`.
 - New game (`StartFresh` only) adds and equips a Common Wooden Sword rolled by
   `Progression/StarterWeapon.Create` → `WeaponGenerator.GenerateFromDefinition`, from
-  `ProfileController.starterWeaponDefinition` (scene: `WeaponDefinitions/Wooden Sword`).
+  `ProfileController.starterWeaponDefinition` (scene: `WeaponDefinitions/WoodenSword`).
   Unassigned → warning, starts unarmed. Loaded saves keep their loadout (no migration
   for saves without a weapon).
 
@@ -152,3 +152,7 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
 - EditMode tests in `Assets/Tests/EditMode/` (asmdef `DoomScroller.Tests.EditMode`),
   run headless with `tools/run-editmode-tests.sh`. No PlayMode tests, no build scripts,
   no batch-mode simulation runner for the Balance Analysts yet.
+- `ResourcesNamingTests` guards asset names, GUIDs, identity fields and dangling GUID
+  references in authored content (`Resources/**/*.asset`, scenes, prefabs).
+- Gap: `Assets/Settings/Renderer2D.asset` holds 7 dangling URP probe-volume debug GUIDs
+  (pre-existing, outside the naming test's scope); needs a project-settings clean-up task.

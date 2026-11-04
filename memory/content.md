@@ -23,19 +23,24 @@ One asset per feed card. Current mix: Enemy 12, Resource 9, Dungeon 6, Ambush 3,
 Treasure 2, Tavern 1, Landing 1, WanderingMerchant 1. `EncounterType` is serialized by
 ordinal — append new values only. Key fields: `title`, `type`, `artwork`,
 `foregroundArt`, `cardColor`, `description`, `baseXpReward`, `goldReward`, `lootTable`
-(`percentByRarity[5]`, min/max item count), enemy stats `enemyHealth` /
+(`percentByRarity[5]` — all-zero always rolls Common; min/max item count; optional
+`weapons` / `equipment` / `materials` lists to pick from, else a generic roll), enemy stats `enemyHealth` /
 `enemyAttackDamage` / `enemyAttackSpeed`, `damageTypeModifiers` (per-`DamageType`
 multipliers), `dungeonRooms` (`DungeonRoomData[]`: Fight/Rest/Treasure, Dungeon only),
 `resourceTimerSeconds`, `resourceWeaknesses`, `resourceThresholds` (damage required →
 material, rarity, amount; Resource only). Enemies are not separate assets — an enemy is
 an Enemy/Ambush encounter, or a Fight room inside a dungeon. Landing is shown once at
-first open and never drawn by the shuffle bag.
+first open and never drawn by the shuffle bag. Enemy cards carry a one-sentence
+`description` (e.g. `Enemy_Wolf` "A lean grey wolf, hungry and hunting alone.");
+`Enemy_BonewroughtSentinel` is the tougher fight (110 HP, 200 XP, 1–2 drops from an
+authored weapon/equipment/material list, rarity 10/25/40/20/5, centred on Rare;
+placeholder values). `Ambush_Bandit` and `Enemy_Frostfang` have no `percentByRarity` at all.
 
 ## Weapons, abilities, equipment
 A `WeaponDefinition` has `weaponName`, `weaponType` (Melee 9 / Ranged 7 / Magic 7),
 `damageType`, `isTwoHanded`, `attackSpeed`, `statsByRarity[5]` (base damage + attribute
 scaling), and *pools* `possibleAbilities` / `possiblePassives`. Generation rolls a
-rarity-sized subset each time; never a fixed final list. `Wooden Sword` is the new-game
+rarity-sized subset each time; never a fixed final list. `WoodenSword` is the new-game
 starter (referenced by `ProfileController.starterWeaponDefinition` in SampleScene;
 a GUID reference, so renaming it inside Unity is safe; deleting it or renaming outside
 Unity breaks the starter, and `StarterWeaponTests` load it by path). Abilities and passives list
@@ -61,10 +66,8 @@ now 21 Weapon, 1 Equipment, 3 Material — Rope, SilverIngot, SteelIngot), outpu
 - `Assets/Editor/EquipmentMenuWindow.cs` — author weapons, equipment, abilities.
 
 ## Known content issues
-- Off-convention names: `Abilities/Passive_New`, `Passive_New 1`, `Passive_New 2`
-  (Damage Up, Weaken Enemy, Increase Attack Speed), `Encounters/Wolf` (no `Enemy_`
-  prefix), file names with spaces (`Stone Sword`, `Wooden Sword`, `Leather Helmet`),
-  `Enemy_Standard` (Rogue Slime) / `Enemy_Hard` (Bonewrought Sentinel) named by tier.
+None. Every file under `Resources/` follows its folder's naming convention, no spaces
+(`ResourcesNamingTests` enforces the renamed set).
 
 ## Not yet defined
 Regions, solo/world/raid bosses, Events cards, keeper dialogue, the economy table, and
