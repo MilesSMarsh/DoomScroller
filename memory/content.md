@@ -1,39 +1,60 @@
 # Content Data
 
 How authored data is structured and where it lives. All content is ScriptableObject
-assets loaded by folder with `Resources.LoadAll` — add content by adding assets, never
-by hardcoding a catalog. Create assets with the `DoomScroller/...` Create menu or the
-editor windows below; every asset needs its `.meta`.
+assets under `Assets/Resources/`, loaded by folder with `Resources.LoadAll` (path is a
+`const` in the loading class) — add content by adding assets, never by hardcoding a
+catalog. Create assets with the `DoomScroller/...` Create menu or the editor windows
+below; every asset needs its `.meta`. Scripts are in `Assets/Scripts/`.
 
-| Type (script) | Folder under `Assets/Resources/` | Naming |
-|---|---|---|
-| `EncounterData` (`Feed/EncounterData.cs`) | `Encounters/` | `Enemy_*`, `Dungeon_*`, `Ambush_*`, … |
-| `WeaponDefinition` (`Inventory/WeaponDefinition.cs`) | `WeaponDefinitions/` | |
-| `EquipmentDefinition` (`Inventory/EquipmentDefinition.cs`) | `EquipmentDefinitions/` | |
-| `AbilityDefinition` / `PassiveDefinition` | `Abilities/` | `Ability_*` |
-| `MaterialDefinition` | `MaterialDefinitions/` | |
-| `RecipeDefinition` | `RecipeDefinitions/` | |
-| `ItemData` (static items, e.g. potions) | `Items/` | |
-| `WeaponUpgradeConfig` (single) | `WeaponUpgradeConfig.asset` | |
+| Type (script) | Folder | Count | Naming | Loaded by |
+|---|---|---|---|---|
+| `EncounterData` (`Feed/EncounterData.cs`) | `Encounters/` | 35 | `<Type>_<Name>` | `FeedController` |
+| `WeaponDefinition` (`Inventory/WeaponDefinition.cs`) | `WeaponDefinitions/` | 23 | weapon name | `WeaponGenerator`, `SaveData` |
+| `AbilityDefinition` (`Inventory/AbilityDefinition.cs`) | `Abilities/` | 20 | `Ability_*` | `WeaponGenerator` |
+| `PassiveDefinition` (`Inventory/PassiveDefinition.cs`) | `Abilities/` | 18 | `Passive_*` | `WeaponGenerator` |
+| `MaterialDefinition` (`Inventory/MaterialDefinition.cs`) | `MaterialDefinitions/` | 20 | material name | `MarketGenerator`, `PlayerLoadout`, `SaveData` |
+| `RecipeDefinition` (`Inventory/RecipeDefinition.cs`) | `RecipeDefinitions/` | 25 | `Recipe_<Output>` | `RecipeCatalog` |
+| `EquipmentDefinition` (`Inventory/EquipmentDefinition.cs`) | `EquipmentDefinitions/` | 1 | item name | `SaveData` |
+| `ItemData` (`Inventory/ItemData.cs`, static items e.g. potions) | `Items/` | 0 | | `SaveData` |
+| `WeaponUpgradeConfig` (single) | `WeaponUpgradeConfig.asset` | 1 | | `WeaponUpgrader` |
 
 ## EncounterData
-One asset per feed card. Key fields: `title`, `type` (`EncounterType`), `artwork`,
-`foregroundArt`, `cardColor`, `description`, `baseXpReward`, `goldReward`, `lootTable`,
-enemy combat stats `enemyHealth` / `enemyAttackDamage` / `enemyAttackSpeed` (authored
-per encounter, separate from the difficulty number that currently drives the badge),
-`damageTypeModifiers`, `dungeonRooms`
-(`DungeonRoomData[]`, Dungeon only), `resourceWeaknesses` and `resourceThresholds`
-(Resource only). Enemies are not separate assets — an enemy is an Enemy/Ambush
-encounter, or a Fight room inside a dungeon.
+One asset per feed card. Current mix: Enemy 12, Resource 9, Dungeon 6, Ambush 3,
+Treasure 2, Tavern 1, Landing 1, WanderingMerchant 1. `EncounterType` is serialized by
+ordinal — append new values only. Key fields: `title`, `type`, `artwork`,
+`foregroundArt`, `cardColor`, `description`, `baseXpReward`, `goldReward`, `lootTable`
+(`percentByRarity[5]`, min/max item count), enemy stats `enemyHealth` /
+`enemyAttackDamage` / `enemyAttackSpeed`, `damageTypeModifiers` (per-`DamageType`
+multipliers), `dungeonRooms` (`DungeonRoomData[]`: Fight/Rest/Treasure, Dungeon only),
+`resourceTimerSeconds`, `resourceWeaknesses`, `resourceThresholds` (damage required →
+material, rarity, amount; Resource only). Enemies are not separate assets — an enemy is
+an Enemy/Ambush encounter, or a Fight room inside a dungeon. Landing is shown once at
+first open and never drawn by the shuffle bag.
 
-## Weapons and abilities
-A `WeaponDefinition` is a named weapon with hand-authored per-rarity stats and a *pool*
-of possible abilities/passives. Generation rolls a rarity-sized subset each time; it is
-never a fixed final list.
+## Weapons, abilities, equipment
+A `WeaponDefinition` has `weaponName`, `weaponType` (Melee 9 / Ranged 7 / Magic 7),
+`damageType`, `isTwoHanded`, `attackSpeed`, `statsByRarity[5]` (base damage + attribute
+scaling), and *pools* `possibleAbilities` / `possiblePassives`. Generation rolls a
+rarity-sized subset each time; never a fixed final list. Abilities and passives list
+`allowedWeaponTypes`. `EquipmentDefinition` has slot, `powerByRarity[5]` and a passive pool.
+
+## Recipes and materials
+`RecipeDefinition`: `recipeId`, `outputKind` (FixedItem / Weapon / Equipment / Material;
+now 21 Weapon, 1 Equipment, 3 Material — Rope, SilverIngot, SteelIngot), output ref,
+`outputRarity`, `goldCost`, `ingredients` (material + count), `prerequisiteRecipes`
+(the recipe tree). `MaterialDefinition`: name, icon, colour, `goldValue`.
 
 ## Editor tools
 - `Assets/Editor/EncounterCreatorWindow.cs` — author encounters.
 - `Assets/Editor/EquipmentMenuWindow.cs` — author weapons, equipment, abilities.
+
+## Known content issues
+- `Items/` is empty: no potion `ItemData` exists, so no potion types are known in a new
+  game. The scene's `starterWeapon` points at a deleted asset.
+- Off-convention names: `Abilities/Passive_New`, `Passive_New 1`, `Passive_New 2`
+  (Damage Up, Weaken Enemy, Increase Attack Speed), `Encounters/Wolf` (no `Enemy_`
+  prefix), file names with spaces (`Stone Sword`, `Wooden Sword`, `Leather Helmet`),
+  `Enemy_Standard` (Rogue Slime) / `Enemy_Hard` (Bonewrought Sentinel) named by tier.
 
 ## Not yet defined
 Regions, solo/world/raid bosses, Events cards, keeper dialogue, the economy table, and

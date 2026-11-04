@@ -11,21 +11,21 @@ Each feed card's badge shows the tier word from `WinOddsEstimator` (Likely / Ris
 Long shot) instead of the heuristic win% and close-call%.
 
 ## Acceptance criteria
-- [ ] `FeedController` computes card odds with `WinOddsEstimator.Estimate` (default run
+- [x] `FeedController` computes card odds with `WinOddsEstimator.Estimate` (default run
       count) both when a card is created and in `RefreshAllChances`; it no longer calls
       `CombatResolver.PredictWinChance` / `PredictCloseCallChance`.
-- [ ] `FeedCardView` takes a `WinOddsResult` (or `WinOddsTier`) and shows only the tier
+- [x] `FeedCardView` takes a `WinOddsResult` (or `WinOddsTier`) and shows only the tier
       word: "Likely", "Risky", "Long shot". No % anywhere on the card; the close-call
       text is removed.
-- [ ] Tier-to-label mapping lives in one static method, covered by an EditMode test
+- [x] Tier-to-label mapping lives in one static method, covered by an EditMode test
       (all three tiers).
-- [ ] Badge colour is a plain per-tier placeholder (three distinct colours, no
+- [x] Badge colour is a plain per-tier placeholder (three distinct colours, no
       gradient); final colours are for ui-stylist. The locked-card dimming still applies.
-- [ ] Each estimate gets its own `System.Random` from a single feed-owned source, so
+- [x] Each estimate gets its own `System.Random` from a single feed-owned source, so
       cards don't share a seed.
-- [ ] Non-fight cards (Treasure, Tavern, Resource, Landing, WanderingMerchant, Dungeon)
+- [x] Non-fight cards (Treasure, Tavern, Resource, Landing, WanderingMerchant, Dungeon)
       hide the badge entirely (Miles' answer).
-- [ ] EditMode suite passes.
+- [x] EditMode suite passes.
 - [ ] (manual, Miles) In the Editor, cards show tier words; equipping/unequipping in
       Profile updates them on return; no visible hitch when the feed loads or refreshes.
 

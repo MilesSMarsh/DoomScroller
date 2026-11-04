@@ -11,7 +11,8 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
   resolves next. 8% miss, ±15% variance. `MaxBeats = 200` guard decides by HP fraction.
   Takes an injected `System.Random`. Fight is computed in full, then replayed as beats
   (lunges, UGUI projectiles, damage numbers). Revive potion can continue a fight once.
-- Enemies: one flat basic attack, no defense or abilities.
+- Enemies: one flat basic attack plus per-damage-type multipliers
+  (`damageTypeModifiers`); no armour or abilities.
 - Win odds: `WinOddsEstimator.Estimate` runs 64 seeded practice fights
   (`DefaultRunCount`) via `CombatResolver.CreateSimulator`, auto-cast, no revive, and
   returns the win fraction plus a `WinOddsTier`: Likely >= 0.70, Risky >= 0.35, else
@@ -29,6 +30,8 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
   of true max (`DefeatPenaltyFraction = 0.25`). Regen 10 HP / 30 s by default
   (serialized on `ProfileController`), credited while backgrounded using device time.
 - Key files: `Progression/PlayerHealth.cs`, `Inventory/ProfileController.cs`.
+- Potions come only from `ProfileController.startingInventory` (empty in the scene)
+  and `Resources/Items/` (empty), so a new game has no potions and no revive.
 - Gap: GDD wants 10% loss, 1% of true max per 36 s, Inn 2×/3× offline multiplier,
   every fight starting at full current max HP, rewards scaling with max HP, server time.
 
@@ -67,9 +70,11 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
 ## Loot and items
 - Every drop has a rarity and rolled stats/abilities. Weapons roll from authored
   `WeaponDefinition` pools; shops must use `GenerateFromDefinition`/
-  `GenerateFromRandomDefinition`, never archetype `Generate` (used only for drops).
-- Key files: `Progression/RewardGenerator.cs`, `WeaponGenerator.cs`, `EquipmentGenerator.cs`,
-  `MaterialGenerator.cs`, `Encounters/RewardChestView.cs`.
+  `GenerateFromRandomDefinition`, never archetype `Generate` (used for drops,
+  and as the fallback when no definitions load). Potions never drop.
+- Key files: `Progression/RewardGenerator.cs`, `Progression/WeaponGenerator.cs`,
+  `Progression/EquipmentGenerator.cs`, `Progression/MaterialGenerator.cs`,
+  `Encounters/RewardChestView.cs`.
 - Gap: drop rates don't scale with max HP; no economy table.
 
 ## Profile and progression
@@ -78,6 +83,8 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
 - Key files: `Inventory/PlayerLoadout.cs`, `Inventory/ProfileView.cs`,
   `Inventory/AttributesPanelView.cs`, `Progression/PlayerProgression.cs`,
   `Progression/PlayerAttributes.cs`, `UI/NavBarController.cs`.
+- Gap: a new game equips `ProfileController.starterWeapon`, but the scene's reference
+  points at a deleted asset, so a fresh profile starts with no weapon.
 
 ## Crafting
 - Blacksmith: craft from `RecipeDefinition`s with material prerequisites (recipe tree);
