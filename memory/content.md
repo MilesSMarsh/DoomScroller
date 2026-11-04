@@ -15,7 +15,7 @@ below; every asset needs its `.meta`. Scripts are in `Assets/Scripts/`.
 | `MaterialDefinition` (`Inventory/MaterialDefinition.cs`) | `MaterialDefinitions/` | 20 | material name | `MarketGenerator`, `PlayerLoadout`, `SaveData` |
 | `RecipeDefinition` (`Inventory/RecipeDefinition.cs`) | `RecipeDefinitions/` | 25 | `Recipe_<Output>` | `RecipeCatalog` |
 | `EquipmentDefinition` (`Inventory/EquipmentDefinition.cs`) | `EquipmentDefinitions/` | 1 | item name | `SaveData` |
-| `ItemData` (`Inventory/ItemData.cs`, static items e.g. potions) | `Items/` | 0 | | `SaveData` |
+| `ItemData` (`Inventory/ItemData.cs`, static items e.g. potions) | `Items/` | 2 | `Potion_<Effect>` | `SaveData` |
 | `WeaponUpgradeConfig` (single) | `WeaponUpgradeConfig.asset` | 1 | | `WeaponUpgrader` |
 
 ## EncounterData
@@ -41,6 +41,15 @@ a GUID reference, so renaming it inside Unity is safe; deleting it or renaming o
 Unity breaks the starter, and `StarterWeaponTests` load it by path). Abilities and passives list
 `allowedWeaponTypes`. `EquipmentDefinition` has slot, `powerByRarity[5]` and a passive pool.
 
+## Potions (`ItemData`)
+`category` Potion, `potionEffect` (Revive / MaxHealthRestore), `potionAmount`, unique
+`itemId` (save re-links by it), `title`, `goldValue`, `rarity`, `itemColor`.
+`Potion_Revive` "Revive Draught" (`potion_revive`, 30 = revive HP %, decided) and
+`Potion_Restoration` "Restoration Potion" (`potion_restoration`, 25 HP), both Common,
+no icon. Restoration 25 and gold values 40 / 20 are placeholders pending the economy
+table. Both are referenced (3 each) by `ProfileController.startingInventory`;
+`PotionItemDataTests` load them by folder and expect exactly these two.
+
 ## Recipes and materials
 `RecipeDefinition`: `recipeId`, `outputKind` (FixedItem / Weapon / Equipment / Material;
 now 21 Weapon, 1 Equipment, 3 Material — Rope, SilverIngot, SteelIngot), output ref,
@@ -52,8 +61,6 @@ now 21 Weapon, 1 Equipment, 3 Material — Rope, SilverIngot, SteelIngot), outpu
 - `Assets/Editor/EquipmentMenuWindow.cs` — author weapons, equipment, abilities.
 
 ## Known content issues
-- `Items/` is empty: no potion `ItemData` exists, so no potion types are known in a new
-  game.
 - Off-convention names: `Abilities/Passive_New`, `Passive_New 1`, `Passive_New 2`
   (Damage Up, Weaken Enemy, Increase Attack Speed), `Encounters/Wolf` (no `Enemy_`
   prefix), file names with spaces (`Stone Sword`, `Wooden Sword`, `Leather Helmet`),

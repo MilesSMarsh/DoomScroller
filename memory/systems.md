@@ -30,12 +30,19 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
   of true max (`DefeatPenaltyFraction = 0.25`). Regen 10 HP / 30 s by default
   (serialized on `ProfileController`), credited while backgrounded using device time.
 - Key files: `Progression/PlayerHealth.cs`, `Inventory/ProfileController.cs`.
-- Potions come only from `ProfileController.startingInventory` (empty in the scene)
-  and `Resources/Items/` (empty), so a new game has no potions and no revive.
+- Potions: two `ItemData` types in `Resources/Items/` — Revive Draught
+  (`potion_revive`, `potionAmount` 30) and Restoration Potion (`potion_restoration`,
+  restores a flat 25 HP). A new game starts with 3 of each via
+  `ProfileController.startingInventory` (SampleScene); a type is "known" (Tavern refills
+  Revive, Alchemist upgrades it) only if it's in the starting inventory. Loaded saves keep
+  their saved known-potion list. Starting inventory is the only Restoration source.
+- Gap: Restoration is a flat `potionAmount` HP; GDD wants a % of true max. Restoration
+  25 HP and potion gold values (Revive 40, Restoration 20) are placeholders without
+  economy-balance-analyst sign-off. No shop sells potions yet.
 - Gap: GDD wants 10% loss, 1% of true max per 36 s, Inn 2×/3× offline multiplier,
   every fight starting at full current max HP, rewards scaling with max HP, server time.
-- Gap: Revive restores a flat `potionAmount` HP (+10 per Alchemist quality level); GDD
-  wants 30% HP raised by Alchemist upgrades. Alchemist capacity upgrades raise the Revive
+- Gap: Revive restores a flat `potionAmount` HP (30, +10 per Alchemist quality level),
+  equal to 30% only while max HP is 100; GDD wants 30% HP raised by Alchemist upgrades. Alchemist capacity upgrades raise the Revive
   carry cap to 8; GDD caps it at 3 (task 007).
 
 ## Feed

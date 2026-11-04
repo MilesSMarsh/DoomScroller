@@ -2,7 +2,7 @@
 
 **Owner:** content-designer
 **Size:** S
-**Status:** review
+**Status:** done
 **GDD:** docs/gdd/GDD.md#combat (Restoration / Revive potions), #progression
 **Depends on:** 004 for the SampleScene edit only (both edit the same `ProfileController`
 component; don't run them at the same time). The asset work can start now.

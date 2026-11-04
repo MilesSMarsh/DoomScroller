@@ -2,7 +2,7 @@
 
 **Owner:** gameplay-engineer
 **Size:** M
-**Status:** todo (blocked on 005 merge)
+**Status:** todo
 **GDD:** docs/gdd/GDD.md#combat (Revive potions), #progression (Alchemist)
 **Depends on:** 005
 
