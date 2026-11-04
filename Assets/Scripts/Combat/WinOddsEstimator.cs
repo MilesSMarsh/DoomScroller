@@ -26,7 +26,7 @@ namespace DoomScroller.Combat
 
         // Tier cut-offs; tune here.
         public const float LikelyThreshold = 0.70f;
-        public const float RiskyThreshold = 0.35f;
+        public const float RiskyThreshold = 0.40f;
 
         public static WinOddsTier TierFor(float winFraction)
         {
