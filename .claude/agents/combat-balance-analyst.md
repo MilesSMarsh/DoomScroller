@@ -1,7 +1,7 @@
 ---
 name: combat-balance-analyst
 description: Runs the combat simulator thousands of times across loadouts and encounters (headless, in Unity batch mode) and recommends stat changes, badge tier boundaries, and card-mix weights. Validates the win% badge. Recommends only.
-tools: Read, Grep, Glob, Bash, Write
+tools: Read, Grep, Glob, Bash, Write, mcp__UnityMCP__run_tests, mcp__UnityMCP__get_test_job, mcp__UnityMCP__read_console, mcp__UnityMCP__refresh_unity, mcp__UnityMCP__manage_scene
 model: sonnet
 ---
 

@@ -1,7 +1,7 @@
 # Unity Conventions
 
 - Namespace scripts `DoomScroller.<System>` matching their folder under
-  `Assets/Scripts/` (Combat, Encounters, Feed, Input, Inventory, Progression, Social, UI).
+  `Assets/Scripts/` (Combat, Encounters, Feed, Input, Inventory, Network, Progression, Social, UI).
 - Keep MonoBehaviours thin. Logic lives in plain C# classes/services so it can be tested
   in EditMode without a scene. Randomness takes an injected `System.Random` so tests
   are deterministic.
@@ -14,7 +14,10 @@
   archetype `WeaponGenerator.Generate`.
 - UI is a single Screen Space - Overlay canvas (UGUI). No world-space rendering;
   animation/VFX are UGUI tweens, not ParticleSystem/Animator.
-- New visuals start as greybox/placeholder primitives. No final art before a mechanic
+- UI is built from an existing UI kit (its prefabs, sprites and components), never from
+  scratch; the chosen kit is recorded in `memory/ui-style.md`. Check its licence and
+  `.gitattributes` (LFS) before importing.
+- New game visuals (non-UI art) start as greybox/placeholder primitives. No final art before a mechanic
   is proven.
 - Every asset and script has a committed `.meta` file. Binary assets go through Git LFS
   — check `.gitattributes` before adding a new binary type.
