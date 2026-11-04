@@ -115,3 +115,12 @@ InitTestScene*.unity*
 
 # Unity Editor crash-recovery scene backups
 /[Aa]ssets/_Recovery/
+
+# Server
+Server/.env
+Server/**/bin/
+Server/**/obj/
+# Unity's *.csproj/*.sln/*.slnx rules above target generated files; the server's are hand-written
+!Server/**/*.csproj
+!Server/**/*.slnx
+!Server/**/*.sln

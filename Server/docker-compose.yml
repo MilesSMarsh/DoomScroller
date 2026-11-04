@@ -1,0 +1,26 @@
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-doomscroller}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in Server/.env}
+      POSTGRES_DB: ${POSTGRES_DB:-doomscroller}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-doomscroller}"]
+      interval: 2s
+      retries: 30
+  server:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: "8080"
+      RUN_MIGRATIONS: "true"
+      DB_CONNECTION: Host=postgres;Database=${POSTGRES_DB:-doomscroller};Username=${POSTGRES_USER:-doomscroller};Password=${POSTGRES_PASSWORD}
+    ports:
+      - "${SERVER_PORT:-8088}:8080"
+volumes:
+  pgdata:

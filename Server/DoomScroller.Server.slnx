@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DoomScroller.Server/DoomScroller.Server.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DoomScroller.Server.Tests/DoomScroller.Server.Tests.csproj" />
+  </Folder>
+</Solution>
