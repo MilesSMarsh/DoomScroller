@@ -50,6 +50,30 @@ class CrewError(RuntimeError):
     pass
 
 
+STATE_FILE = ROOT / "tools" / "crew" / ".crew-state.json"  # git-ignored; read by dashboard.py
+
+
+def write_state(**fields) -> None:
+    """Record what the crew is doing right now, for tools/crew/dashboard.py."""
+    try:
+        state = json.loads(STATE_FILE.read_text()) if STATE_FILE.exists() else {}
+    except (OSError, json.JSONDecodeError):
+        state = {}
+    state.update(fields, pid=os.getpid(), updated=dt.datetime.now().isoformat(timespec="seconds"))
+    STATE_FILE.write_text(json.dumps(state, indent=2))
+
+
+def set_spec_status(spec: str, status: str) -> None:
+    """Update the '**Status:** ...' line of a spec (todo | in-progress | review | done)."""
+    path = ROOT / spec
+    if not path.is_file():
+        return
+    text = path.read_text()
+    new_text, n = re.subn(r"(\*\*Status:\*\*\s*)[A-Za-z-]+", rf"\g<1>{status}", text, count=1)
+    if n:
+        path.write_text(new_text)
+
+
 class Crew:
     def __init__(self, claude: str, permission_mode: str, dry_run: bool, run_dir: Path):
         self.claude = claude
@@ -68,6 +92,9 @@ class Crew:
         cmd.append(prompt)
         label = f"{self.step:02d}-{agent}"
         print(f"\n=== [{label}] {'(resumed) ' if resume else ''}running...", flush=True)
+        if not self.dry_run:
+            write_state(running=True, agent=agent, step=label, step_started=dt.datetime.now().isoformat(timespec="seconds"),
+                        run_dir=str(self.run_dir.relative_to(ROOT)))
         if self.dry_run:
             print("    " + " ".join(cmd[:-1]) + f" '<{len(prompt)} char prompt>'")
             return f"(dry run: {agent})", None
@@ -105,6 +132,8 @@ def approve(question: str, auto_yes: bool) -> bool:
 
 
 def plan(crew: Crew, request: str) -> tuple[str, str]:
+    if not crew.dry_run:
+        write_state(spec=None, outcome=None, request=request)
     report, _ = crew.call("producer", (
         f"Request from Miles: {request}\n\n"
         "Write ONE small task spec in docs/tasks/ (follow docs/tasks/README.md), Must scope "
@@ -131,6 +160,9 @@ def builder_for(spec: str) -> str:
 
 
 def build_and_verify(crew: Crew, spec: str, builder: str) -> bool:
+    if not crew.dry_run:
+        set_spec_status(spec, "in-progress")
+        write_state(spec=spec, outcome=None)
     _, build_session = crew.call(builder, (
         f"Build the task in {spec}. Read only the files the spec names. {UNITY_NOTE} "
         f"Don't commit. {FIVE_LINE}"
@@ -145,6 +177,9 @@ def build_and_verify(crew: Crew, spec: str, builder: str) -> bool:
         result = (tag(qa_report, "RESULT") or "").upper()
         if crew.dry_run or result == "PASS":
             print(f"\n>>> QA passed (round {qa_round}).")
+            if not crew.dry_run:
+                set_spec_status(spec, "review")
+                write_state(running=False, outcome="qa-passed")
             return True
         if qa_round == MAX_QA_ROUNDS:
             break
@@ -155,6 +190,9 @@ def build_and_verify(crew: Crew, spec: str, builder: str) -> bool:
         ), resume=build_session)
 
     print(f"\n>>> QA failed {MAX_QA_ROUNDS} rounds; escalating to Miles. See {crew.run_dir}.")
+    if not crew.dry_run:
+        set_spec_status(spec, "review")
+        write_state(running=False, outcome="escalated")
     return False
 
 
@@ -188,6 +226,8 @@ def main() -> int:
     try:
         if args.post_merge:
             post_merge(crew, args.post_merge)
+            if not args.dry_run:
+                write_state(running=False, spec=args.post_merge, outcome="merged")
             return 0
 
         if args.spec:
@@ -195,6 +235,8 @@ def main() -> int:
         else:
             spec, builder = plan(crew, args.request)
             if not approve(f"Producer wrote {spec} for {builder}. Build it?", args.yes):
+                if not args.dry_run:
+                    write_state(running=False, spec=spec, outcome="awaiting-approval")
                 print("Stopped before building. Edit the spec and rerun with --spec.")
                 return 0
 
@@ -204,6 +246,8 @@ def main() -> int:
         return 0 if passed else 1
     except CrewError as e:
         print(f"\nCrew stopped: {e}", file=sys.stderr)
+        if not args.dry_run:
+            write_state(running=False, outcome=f"crashed: {e}"[:300])
         return 2
 
 

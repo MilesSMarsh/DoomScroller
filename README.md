@@ -117,6 +117,11 @@ tools/crew/run_crew.py --post-merge docs/tasks/003-some-task.md
 tools/crew/run_crew.py "anything" --dry-run --yes
 ```
 
+**Dashboard:** `tools/crew/dashboard.py` serves http://localhost:8090. It shows what needs
+Miles (specs to review, open questions, manual checks, escalations), what the crew is running
+right now, what's ready, what's waiting on other tasks, and repo state. It refreshes every
+15 s. `--once` prints the same summary in the terminal.
+
 Each agent runs as a headless Claude Code call (`claude -p --agent <name> --output-format json`).
 Every agent's prompt and report is saved to `docs/crew-runs/<timestamp>/`.
 

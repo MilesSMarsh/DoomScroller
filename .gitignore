@@ -124,3 +124,8 @@ Server/**/obj/
 !Server/**/*.csproj
 !Server/**/*.slnx
 !Server/**/*.sln
+
+# Crew orchestrator live state (dashboard)
+tools/crew/.crew-state.json
+tools/crew/inbox.jsonl
+__pycache__/

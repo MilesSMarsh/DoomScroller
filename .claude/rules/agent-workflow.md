@@ -39,6 +39,14 @@ so it keeps context). After two failed rounds, escalate to Miles.
   without reason. `CLAUDE.md` and `memory/` files stay short and describe the current
   game, never a history.
 
+## Status and dashboard
+
+- A building agent sets its spec's `**Status:**` to `in-progress` when it starts and
+  `review` when it reports; the producer sets `done` post-merge. Questions for Miles go
+  under a "Questions for Miles" line in the spec; manual checks are `- [ ] (manual, Miles)`.
+- `tools/crew/dashboard.py` (http://localhost:8090) reads those fields plus
+  `run_crew.py`'s live state to show Miles what needs him and what is running.
+
 ## Verification
 
 - `tools/run-editmode-tests.sh [filter]` — headless EditMode tests (~2.5 min). Exits 2 if
