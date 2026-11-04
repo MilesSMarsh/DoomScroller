@@ -2,7 +2,7 @@
 
 **Owner:** content-designer
 **Size:** S
-**Status:** todo
+**Status:** review
 **GDD:** docs/gdd/GDD.md#combat (Restoration / Revive potions), #progression
 **Depends on:** 004 for the SampleScene edit only (both edit the same `ProfileController`
 component; don't run them at the same time). The asset work can start now.
@@ -76,3 +76,4 @@ drink a Restoration potion.
 - Revive `potionAmount` = 30 means 30%. Until task 007 merges, the code reads it as a flat
   30 HP (the same thing only while max HP is 100); 007 makes it a percentage and makes it
   upgradable at the Alchemist. No open questions remain on this task.
+- Approved for merge (Miles, 2026-11-04).
