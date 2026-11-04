@@ -15,7 +15,7 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
   (`damageTypeModifiers`); no armour or abilities.
 - Win odds: `WinOddsEstimator.Estimate` runs 64 seeded practice fights
   (`DefaultRunCount`) via `CombatResolver.CreateSimulator`, auto-cast, no revive, and
-  returns the win fraction plus a `WinOddsTier`: Likely >= 0.70, Risky >= 0.35, else
+  returns the win fraction plus a `WinOddsTier`: Likely >= 0.70, Risky >= 0.40, else
   Long shot. Non-fight types (Treasure, Tavern, Resource, Landing, WanderingMerchant,
   and Dungeon for now) skip the sim and return 1 / Likely.
 - Key files: `Combat/CombatSimulator.cs`, `Combat/CombatResolver.cs`,
@@ -34,6 +34,9 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
   and `Resources/Items/` (empty), so a new game has no potions and no revive.
 - Gap: GDD wants 10% loss, 1% of true max per 36 s, Inn 2×/3× offline multiplier,
   every fight starting at full current max HP, rewards scaling with max HP, server time.
+- Gap: Revive restores a flat `potionAmount` HP (+10 per Alchemist quality level); GDD
+  wants 30% HP raised by Alchemist upgrades. Alchemist capacity upgrades raise the Revive
+  carry cap to 8; GDD caps it at 3 (task 007).
 
 ## Feed
 - Infinite vertical feed from a shuffled pool of `EncounterData` loaded from
@@ -82,9 +85,13 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
   attribute points, potions, materials. XP levels grant attribute points.
 - Key files: `Inventory/PlayerLoadout.cs`, `Inventory/ProfileView.cs`,
   `Inventory/AttributesPanelView.cs`, `Progression/PlayerProgression.cs`,
-  `Progression/PlayerAttributes.cs`, `UI/NavBarController.cs`.
-- Gap: a new game equips `ProfileController.starterWeapon`, but the scene's reference
-  points at a deleted asset, so a fresh profile starts with no weapon.
+  `Progression/PlayerAttributes.cs`, `Progression/StarterWeapon.cs`,
+  `Inventory/ProfileController.cs`, `UI/NavBarController.cs`.
+- New game (`StartFresh` only) adds and equips a Common Wooden Sword rolled by
+  `Progression/StarterWeapon.Create` → `WeaponGenerator.GenerateFromDefinition`, from
+  `ProfileController.starterWeaponDefinition` (scene: `WeaponDefinitions/Wooden Sword`).
+  Unassigned → warning, starts unarmed. Loaded saves keep their loadout (no migration
+  for saves without a weapon).
 
 ## Crafting
 - Blacksmith: craft from `RecipeDefinition`s with material prerequisites (recipe tree);
@@ -113,7 +120,8 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
   (`JsonUtility`). Items re-link to their definitions by id via `Resources.LoadAll`.
 - Key files: `Progression/SaveSystem.cs`, `Progression/SaveData.cs`.
 - Gap: GDD is online-only — server owns profile, seeds, fight results, regen clock,
-  dungeon state, daily reset. No network code exists. Backend not chosen yet.
+  dungeon state, daily reset. No network code exists. Backend not chosen yet
+  (server move planned in tasks 008–018).
 
 ## Build and test
 - EditMode tests in `Assets/Tests/EditMode/` (asmdef `DoomScroller.Tests.EditMode`),

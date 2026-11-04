@@ -2,7 +2,7 @@
 
 **Owner:** gameplay-engineer
 **Size:** S
-**Status:** review
+**Status:** done
 **GDD:** docs/gdd/GDD.md#first-session (bug fix: a new game must start armed)
 **Depends on:** none
 

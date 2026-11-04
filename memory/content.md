@@ -35,7 +35,10 @@ first open and never drawn by the shuffle bag.
 A `WeaponDefinition` has `weaponName`, `weaponType` (Melee 9 / Ranged 7 / Magic 7),
 `damageType`, `isTwoHanded`, `attackSpeed`, `statsByRarity[5]` (base damage + attribute
 scaling), and *pools* `possibleAbilities` / `possiblePassives`. Generation rolls a
-rarity-sized subset each time; never a fixed final list. Abilities and passives list
+rarity-sized subset each time; never a fixed final list. `Wooden Sword` is the new-game
+starter (referenced by `ProfileController.starterWeaponDefinition` in SampleScene;
+a GUID reference, so renaming it inside Unity is safe; deleting it or renaming outside
+Unity breaks the starter, and `StarterWeaponTests` load it by path). Abilities and passives list
 `allowedWeaponTypes`. `EquipmentDefinition` has slot, `powerByRarity[5]` and a passive pool.
 
 ## Recipes and materials
@@ -50,7 +53,7 @@ now 21 Weapon, 1 Equipment, 3 Material — Rope, SilverIngot, SteelIngot), outpu
 
 ## Known content issues
 - `Items/` is empty: no potion `ItemData` exists, so no potion types are known in a new
-  game. The scene's `starterWeapon` points at a deleted asset.
+  game.
 - Off-convention names: `Abilities/Passive_New`, `Passive_New 1`, `Passive_New 2`
   (Damage Up, Weaken Enemy, Increase Attack Speed), `Encounters/Wolf` (no `Enemy_`
   prefix), file names with spaces (`Stone Sword`, `Wooden Sword`, `Leather Helmet`),
