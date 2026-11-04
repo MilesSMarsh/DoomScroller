@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3080f8a71b5317737bcbb1e7d0dc0129, type: 3}
+  m_Name: Recipe_SteelIngot
+  m_EditorClassIdentifier: DoomScroller::DoomScroller.Inventory.RecipeDefinition
+  recipeId: 2dbbb7b8-1cc8-4348-8fb3-ea22e4137702
+  outputKind: 3
+  outputItem: {fileID: 0}
+  outputWeapon: {fileID: 0}
+  outputEquipment: {fileID: 0}
+  outputMaterial: {fileID: 11400000, guid: 99ddb6251a940e92bb402ee1b187b071, type: 2}
+  outputRarity: 0
+  goldCost: 10
+  ingredients:
+  - material: {fileID: 11400000, guid: 1508bc622581c60e29af1a86d33610f2, type: 2}
+    count: 2
+  - material: {fileID: 11400000, guid: 18bffd81dfd4d1a7684928eb14314049, type: 2}
+    count: 3
+  prerequisiteRecipes: []

@@ -1,0 +1,72 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d028f9cfb60c907859353caf36b56d5c, type: 3}
+  m_Name: RecurveWarbow
+  m_EditorClassIdentifier: DoomScroller::DoomScroller.Inventory.WeaponDefinition
+  weaponName: Recurve Warbow
+  weaponType: 1
+  damageType: 2
+  isTwoHanded: 1
+  attackSpeed: 0.75
+  itemColor: {r: 0.4, g: 0.3, b: 0.2, a: 1}
+  icon: {fileID: 0}
+  statsByRarity:
+  - baseDamage: 3
+    attributeScalingEntries:
+    - attribute: 1
+      coefficient: 0.3
+    - attribute: 0
+      coefficient: 0.3
+  - baseDamage: 6
+    attributeScalingEntries:
+    - attribute: 1
+      coefficient: 0.3
+    - attribute: 0
+      coefficient: 0.3
+  - baseDamage: 12
+    attributeScalingEntries:
+    - attribute: 1
+      coefficient: 0.3
+    - attribute: 0
+      coefficient: 0.3
+  - baseDamage: 24
+    attributeScalingEntries:
+    - attribute: 1
+      coefficient: 0.3
+    - attribute: 0
+      coefficient: 0.3
+  - baseDamage: 48
+    attributeScalingEntries:
+    - attribute: 1
+      coefficient: 0.3
+    - attribute: 0
+      coefficient: 0.3
+  possibleAbilities:
+  - {fileID: 11400000, guid: 84764e86924ffe200a450b692647a848, type: 2}
+  - {fileID: 11400000, guid: 181cc7876072ff04e868eb1a21ac219d, type: 2}
+  - {fileID: 11400000, guid: b838e9bea43ffd5e690ba3bede7b78ae, type: 2}
+  - {fileID: 11400000, guid: 5a5a98cec4929ef76beed62225b3c932, type: 2}
+  - {fileID: 11400000, guid: a33c125043137d50fb5e7633b6fec1f7, type: 2}
+  possiblePassives:
+  - {fileID: 11400000, guid: 2354c15b773f1aaefb76ee6c1c3369ad, type: 2}
+  - {fileID: 11400000, guid: 756360cbfca4a5cc39a345071ad89fa4, type: 2}
+  - {fileID: 11400000, guid: f085e6ba0f6de9a1ebbbe1af2634a353, type: 2}
+  - {fileID: 11400000, guid: 1e50cea3eef4a77c79462026de333ac1, type: 2}
+  - {fileID: 11400000, guid: 7c26ef40a1d924e878ed721f4b7dc10f, type: 2}
+  - {fileID: 11400000, guid: 96e6b2e96b01b0b66852578e3a9942af, type: 2}
+  - {fileID: 11400000, guid: 51c089a1f4a84efe5bc2d0a643ab925f, type: 2}
+  - {fileID: 11400000, guid: 3c1f34edd4daf1a0f8aa4666a83c1088, type: 2}
+  - {fileID: 11400000, guid: 0f3ec3b779e8316e28c35c15ad1c7c12, type: 2}
+  - {fileID: 11400000, guid: 71209c2572471d47e8ac044f828b1e56, type: 2}
+  - {fileID: 11400000, guid: 7cba76e8de48f266f83083facfae3c02, type: 2}
+  - {fileID: 11400000, guid: 617b9bb004e6581b5802a0877a32d706, type: 2}
+  - {fileID: 11400000, guid: 86ed47f3e8d37b5dd99437e56d0e6cbf, type: 2}

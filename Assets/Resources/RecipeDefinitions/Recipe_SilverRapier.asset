@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3080f8a71b5317737bcbb1e7d0dc0129, type: 3}
+  m_Name: Recipe_SilverRapier
+  m_EditorClassIdentifier: DoomScroller::DoomScroller.Inventory.RecipeDefinition
+  recipeId: aa730685-281c-41e6-9121-e60cb44b3ada
+  outputKind: 1
+  outputItem: {fileID: 0}
+  outputWeapon: {fileID: 11400000, guid: 96524e589c845a2a2b9718581e3e3a8c, type: 2}
+  outputEquipment: {fileID: 0}
+  outputMaterial: {fileID: 0}
+  outputRarity: 0
+  goldCost: 18
+  ingredients:
+  - material: {fileID: 11400000, guid: 4694f55f5297917a0a95fc701908267c, type: 2}
+    count: 3
+  - material: {fileID: 11400000, guid: 40c677eef933c516baf0b5948c826cf5, type: 2}
+    count: 1
+  prerequisiteRecipes: []

@@ -1,0 +1,181 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a8294fed99c4ae1880d2e20e4ba7a0b, type: 3}
+  m_Name: Dungeon_HollowCrownCrypt
+  m_EditorClassIdentifier: DoomScroller::DoomScroller.Feed.EncounterData
+  title: Hollow Crown Crypt
+  type: 2
+  artwork: {fileID: 0}
+  foregroundArt: {fileID: 0}
+  cardColor: {r: 0.18, g: 0.08, b: 0.22, a: 1}
+  description: "A necrotic crypt sealed beneath Bonewrought Depths \u2014 the hardest
+    dungeon yet, guaranteed Mythic loot at the end."
+  baseXpReward: 300
+  goldReward: 80
+  lootTable:
+    percentByRarity:
+    - 0
+    - 0
+    - 10
+    - 40
+    - 50
+    minItemCount: 1
+    maxItemCount: 1
+    weapons:
+    - {fileID: 11400000, guid: d0404bafcc176f6e192d169ff3eb8ef3, type: 2}
+    - {fileID: 11400000, guid: 7bb077ca75ebd6e0ba8e64b4cfd86361, type: 2}
+    equipment: []
+    materials:
+    - {fileID: 11400000, guid: 4a81b7e64056c877ca7ce5514d54d251, type: 2}
+  enemyHealth: 80
+  enemyAttackDamage: 10
+  enemyAttackSpeed: 0.8
+  damageTypeModifiers: []
+  dungeonRooms:
+  - label: Crypt Wight
+    type: 0
+    appearChance: 100
+    enemyHealth: 210
+    enemyAttackDamage: 19
+    enemyAttackSpeed: 0.95
+    enemySprite: {fileID: 0}
+    damageTypeModifiers:
+    - type: 1
+      multiplier: 1.5
+    goldReward: 0
+    lootTable:
+      percentByRarity:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      minItemCount: 1
+      maxItemCount: 1
+      weapons: []
+      equipment: []
+      materials: []
+  - label: Hollow Knight
+    type: 0
+    appearChance: 100
+    enemyHealth: 230
+    enemyAttackDamage: 21
+    enemyAttackSpeed: 1
+    enemySprite: {fileID: 0}
+    damageTypeModifiers:
+    - type: 1
+      multiplier: 1.5
+    goldReward: 0
+    lootTable:
+      percentByRarity:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      minItemCount: 1
+      maxItemCount: 1
+      weapons: []
+      equipment: []
+      materials: []
+  - label: Bone Colossus
+    type: 0
+    appearChance: 100
+    enemyHealth: 250
+    enemyAttackDamage: 22
+    enemyAttackSpeed: 1
+    enemySprite: {fileID: 0}
+    damageTypeModifiers:
+    - type: 1
+      multiplier: 1.5
+    goldReward: 0
+    lootTable:
+      percentByRarity:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      minItemCount: 1
+      maxItemCount: 1
+      weapons: []
+      equipment: []
+      materials: []
+  - label: 
+    type: 1
+    appearChance: 100
+    enemyHealth: 80
+    enemyAttackDamage: 10
+    enemyAttackSpeed: 0.8
+    enemySprite: {fileID: 0}
+    damageTypeModifiers: []
+    goldReward: 0
+    lootTable:
+      percentByRarity:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      minItemCount: 1
+      maxItemCount: 1
+      weapons: []
+      equipment: []
+      materials: []
+  - label: The Hollow Crown
+    type: 0
+    appearChance: 100
+    enemyHealth: 320
+    enemyAttackDamage: 26
+    enemyAttackSpeed: 1.05
+    enemySprite: {fileID: 0}
+    damageTypeModifiers:
+    - type: 1
+      multiplier: 1.5
+    goldReward: 0
+    lootTable:
+      percentByRarity:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      minItemCount: 1
+      maxItemCount: 1
+      weapons: []
+      equipment: []
+      materials: []
+  - label: 
+    type: 2
+    appearChance: 30
+    enemyHealth: 80
+    enemyAttackDamage: 10
+    enemyAttackSpeed: 0.8
+    enemySprite: {fileID: 0}
+    damageTypeModifiers: []
+    goldReward: 50
+    lootTable:
+      percentByRarity:
+      - 0
+      - 0
+      - 20
+      - 50
+      - 30
+      minItemCount: 1
+      maxItemCount: 1
+      weapons: []
+      equipment: []
+      materials:
+      - {fileID: 11400000, guid: b1d9f6b31e8bbd2b08181ccb59fec1e8, type: 2}
+  resourceTimerSeconds: 10
+  resourceWeaknesses: []
+  resourceThresholds: []

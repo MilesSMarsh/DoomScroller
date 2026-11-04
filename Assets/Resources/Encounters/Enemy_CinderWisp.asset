@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a8294fed99c4ae1880d2e20e4ba7a0b, type: 3}
+  m_Name: Enemy_CinderWisp
+  m_EditorClassIdentifier: DoomScroller::DoomScroller.Feed.EncounterData
+  title: Cinder Wisp
+  type: 1
+  artwork: {fileID: 0}
+  foregroundArt: {fileID: 0}
+  cardColor: {r: 0.5, g: 0.2, b: 0.1, a: 1}
+  description: A flickering sprite of living fire.
+  baseXpReward: 110
+  goldReward: 10
+  lootTable:
+    percentByRarity:
+    - 40
+    - 35
+    - 18
+    - 6
+    - 1
+    minItemCount: 1
+    maxItemCount: 1
+    weapons: []
+    equipment: []
+    materials:
+    - {fileID: 11400000, guid: e71f3383f3150b3128b14f196c22306d, type: 2}
+  enemyHealth: 100
+  enemyAttackDamage: 12
+  enemyAttackSpeed: 0.9
+  damageTypeModifiers:
+  - type: 3
+    multiplier: 1.5
+  dungeonRooms: []
+  resourceTimerSeconds: 10
+  resourceWeaknesses: []
+  resourceThresholds: []

@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3080f8a71b5317737bcbb1e7d0dc0129, type: 3}
+  m_Name: Recipe_BattleStaff
+  m_EditorClassIdentifier: DoomScroller::DoomScroller.Inventory.RecipeDefinition
+  recipeId: 2cb23049-f3be-4ab2-9152-9f606543c56a
+  outputKind: 1
+  outputItem: {fileID: 0}
+  outputWeapon: {fileID: 11400000, guid: 9bd2a3a60123d4e96a1d2e37471dfdc5, type: 2}
+  outputEquipment: {fileID: 0}
+  outputMaterial: {fileID: 0}
+  outputRarity: 0
+  goldCost: 20
+  ingredients:
+  - material: {fileID: 11400000, guid: 041e344ce9fdeca7c9e17fa02911aba9, type: 2}
+    count: 2
+  - material: {fileID: 11400000, guid: 1d611f11dfc3d430781a7a7299b625fe, type: 2}
+    count: 3
+  prerequisiteRecipes: []

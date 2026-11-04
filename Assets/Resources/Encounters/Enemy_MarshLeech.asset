@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a8294fed99c4ae1880d2e20e4ba7a0b, type: 3}
+  m_Name: Enemy_MarshLeech
+  m_EditorClassIdentifier: DoomScroller::DoomScroller.Feed.EncounterData
+  title: Marsh Leech
+  type: 1
+  artwork: {fileID: 0}
+  foregroundArt: {fileID: 0}
+  cardColor: {r: 0.25, g: 0.35, b: 0.2, a: 1}
+  description: A bloated leech that lurks in the shallows.
+  baseXpReward: 60
+  goldReward: 5
+  lootTable:
+    percentByRarity:
+    - 65
+    - 25
+    - 8
+    - 2
+    - 0
+    minItemCount: 1
+    maxItemCount: 1
+    weapons: []
+    equipment: []
+    materials:
+    - {fileID: 11400000, guid: b19ce57e120ebb5c7827ba8c7f32c082, type: 2}
+  enemyHealth: 60
+  enemyAttackDamage: 7
+  enemyAttackSpeed: 0.7
+  damageTypeModifiers:
+  - type: 1
+    multiplier: 1.5
+  dungeonRooms: []
+  resourceTimerSeconds: 10
+  resourceWeaknesses: []
+  resourceThresholds: []

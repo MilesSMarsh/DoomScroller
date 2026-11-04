@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 39a6d6da07a55db11b8b0d8afd24eb47, type: 3}
+  m_Name: SteelIngot
+  m_EditorClassIdentifier: DoomScroller::DoomScroller.Inventory.MaterialDefinition
+  materialName: Steel Ingot
+  icon: {fileID: 0}
+  itemColor: {r: 0.55, g: 0.58, b: 0.62, a: 1}
+  goldValue: 8

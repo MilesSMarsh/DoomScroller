@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a8294fed99c4ae1880d2e20e4ba7a0b, type: 3}
+  m_Name: Enemy_RustboundGolem
+  m_EditorClassIdentifier: DoomScroller::DoomScroller.Feed.EncounterData
+  title: Rustbound Golem
+  type: 1
+  artwork: {fileID: 0}
+  foregroundArt: {fileID: 0}
+  cardColor: {r: 0.45, g: 0.3, b: 0.15, a: 1}
+  description: A hulking construct of scrap iron.
+  baseXpReward: 120
+  goldReward: 12
+  lootTable:
+    percentByRarity:
+    - 40
+    - 35
+    - 18
+    - 6
+    - 1
+    minItemCount: 1
+    maxItemCount: 1
+    weapons: []
+    equipment: []
+    materials:
+    - {fileID: 11400000, guid: fd13e7c61e6f74e0cb289324075bf947, type: 2}
+    - {fileID: 11400000, guid: 1508bc622581c60e29af1a86d33610f2, type: 2}
+  enemyHealth: 120
+  enemyAttackDamage: 11
+  enemyAttackSpeed: 0.75
+  damageTypeModifiers:
+  - type: 0
+    multiplier: 0.6
+  - type: 1
+    multiplier: 1.5
+  dungeonRooms: []
+  resourceTimerSeconds: 10
+  resourceWeaknesses: []
+  resourceThresholds: []

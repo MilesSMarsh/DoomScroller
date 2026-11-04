@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a8294fed99c4ae1880d2e20e4ba7a0b, type: 3}
+  m_Name: Resource_SulfurVent
+  m_EditorClassIdentifier: DoomScroller::DoomScroller.Feed.EncounterData
+  title: Sulfur Vent
+  type: 4
+  artwork: {fileID: 0}
+  foregroundArt: {fileID: 0}
+  cardColor: {r: 0.5, g: 0.45, b: 0.15, a: 1}
+  description: "Gather Sulfur \u2014 no combat required"
+  baseXpReward: 0
+  goldReward: 0
+  lootTable:
+    percentByRarity:
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    minItemCount: 1
+    maxItemCount: 1
+    weapons: []
+    equipment: []
+    materials: []
+  enemyHealth: 80
+  enemyAttackDamage: 10
+  enemyAttackSpeed: 0.8
+  damageTypeModifiers: []
+  dungeonRooms: []
+  resourceTimerSeconds: 10
+  resourceWeaknesses:
+  - type: 2
+    multiplier: 2
+  resourceThresholds:
+  - damageRequired: 20
+    rewardMaterial: {fileID: 11400000, guid: e71f3383f3150b3128b14f196c22306d, type: 2}
+    rewardRarity: 0
+    rewardAmount: 4
+  - damageRequired: 60
+    rewardMaterial: {fileID: 11400000, guid: e71f3383f3150b3128b14f196c22306d, type: 2}
+    rewardRarity: 1
+    rewardAmount: 1

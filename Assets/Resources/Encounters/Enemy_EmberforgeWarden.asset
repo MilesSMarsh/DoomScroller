@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a8294fed99c4ae1880d2e20e4ba7a0b, type: 3}
+  m_Name: Enemy_EmberforgeWarden
+  m_EditorClassIdentifier: DoomScroller::DoomScroller.Feed.EncounterData
+  title: Emberforge Warden
+  type: 1
+  artwork: {fileID: 0}
+  foregroundArt: {fileID: 0}
+  cardColor: {r: 0.45, g: 0.2, b: 0.1, a: 1}
+  description: A molten guardian bound to the old forge.
+  baseXpReward: 190
+  goldReward: 20
+  lootTable:
+    percentByRarity:
+    - 15
+    - 30
+    - 30
+    - 20
+    - 5
+    minItemCount: 1
+    maxItemCount: 1
+    weapons: []
+    equipment: []
+    materials:
+    - {fileID: 11400000, guid: e71f3383f3150b3128b14f196c22306d, type: 2}
+    - {fileID: 11400000, guid: b1d9f6b31e8bbd2b08181ccb59fec1e8, type: 2}
+  enemyHealth: 170
+  enemyAttackDamage: 18
+  enemyAttackSpeed: 0.95
+  damageTypeModifiers:
+  - type: 3
+    multiplier: 1.5
+  dungeonRooms: []
+  resourceTimerSeconds: 10
+  resourceWeaknesses: []
+  resourceThresholds: []

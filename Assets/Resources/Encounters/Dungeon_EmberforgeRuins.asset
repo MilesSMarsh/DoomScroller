@@ -1,0 +1,181 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a8294fed99c4ae1880d2e20e4ba7a0b, type: 3}
+  m_Name: Dungeon_EmberforgeRuins
+  m_EditorClassIdentifier: DoomScroller::DoomScroller.Feed.EncounterData
+  title: Emberforge Ruins
+  type: 2
+  artwork: {fileID: 0}
+  foregroundArt: {fileID: 0}
+  cardColor: {r: 0.4, g: 0.18, b: 0.08, a: 1}
+  description: "The scorched remains of a dwarven forge \u2014 escalating XP + Gear,
+    guaranteed loot at the end."
+  baseXpReward: 200
+  goldReward: 45
+  lootTable:
+    percentByRarity:
+    - 15
+    - 28
+    - 32
+    - 20
+    - 5
+    minItemCount: 1
+    maxItemCount: 1
+    weapons:
+    - {fileID: 11400000, guid: 9201f46e4a256038f9dea231cf0744ec, type: 2}
+    equipment: []
+    materials:
+    - {fileID: 11400000, guid: e71f3383f3150b3128b14f196c22306d, type: 2}
+  enemyHealth: 80
+  enemyAttackDamage: 10
+  enemyAttackSpeed: 0.8
+  damageTypeModifiers: []
+  dungeonRooms:
+  - label: Ember Husk
+    type: 0
+    appearChance: 100
+    enemyHealth: 150
+    enemyAttackDamage: 15
+    enemyAttackSpeed: 0.9
+    enemySprite: {fileID: 0}
+    damageTypeModifiers:
+    - type: 3
+      multiplier: 1.5
+    goldReward: 0
+    lootTable:
+      percentByRarity:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      minItemCount: 1
+      maxItemCount: 1
+      weapons: []
+      equipment: []
+      materials: []
+  - label: Forge Wretch
+    type: 0
+    appearChance: 100
+    enemyHealth: 160
+    enemyAttackDamage: 16
+    enemyAttackSpeed: 0.9
+    enemySprite: {fileID: 0}
+    damageTypeModifiers:
+    - type: 3
+      multiplier: 1.5
+    goldReward: 0
+    lootTable:
+      percentByRarity:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      minItemCount: 1
+      maxItemCount: 1
+      weapons: []
+      equipment: []
+      materials: []
+  - label: 
+    type: 1
+    appearChance: 100
+    enemyHealth: 80
+    enemyAttackDamage: 10
+    enemyAttackSpeed: 0.8
+    enemySprite: {fileID: 0}
+    damageTypeModifiers: []
+    goldReward: 0
+    lootTable:
+      percentByRarity:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      minItemCount: 1
+      maxItemCount: 1
+      weapons: []
+      equipment: []
+      materials: []
+  - label: Cinder Behemoth
+    type: 0
+    appearChance: 100
+    enemyHealth: 180
+    enemyAttackDamage: 17
+    enemyAttackSpeed: 0.95
+    enemySprite: {fileID: 0}
+    damageTypeModifiers:
+    - type: 3
+      multiplier: 1.5
+    goldReward: 0
+    lootTable:
+      percentByRarity:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      minItemCount: 1
+      maxItemCount: 1
+      weapons: []
+      equipment: []
+      materials: []
+  - label: Emberforge Guardian
+    type: 0
+    appearChance: 100
+    enemyHealth: 200
+    enemyAttackDamage: 19
+    enemyAttackSpeed: 1
+    enemySprite: {fileID: 0}
+    damageTypeModifiers:
+    - type: 3
+      multiplier: 1.5
+    goldReward: 0
+    lootTable:
+      percentByRarity:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      minItemCount: 1
+      maxItemCount: 1
+      weapons: []
+      equipment: []
+      materials: []
+  - label: 
+    type: 2
+    appearChance: 40
+    enemyHealth: 80
+    enemyAttackDamage: 10
+    enemyAttackSpeed: 0.8
+    enemySprite: {fileID: 0}
+    damageTypeModifiers: []
+    goldReward: 30
+    lootTable:
+      percentByRarity:
+      - 20
+      - 30
+      - 30
+      - 15
+      - 5
+      minItemCount: 1
+      maxItemCount: 1
+      weapons: []
+      equipment: []
+      materials:
+      - {fileID: 11400000, guid: e71f3383f3150b3128b14f196c22306d, type: 2}
+      - {fileID: 11400000, guid: 99ddb6251a940e92bb402ee1b187b071, type: 2}
+  resourceTimerSeconds: 10
+  resourceWeaknesses: []
+  resourceThresholds: []

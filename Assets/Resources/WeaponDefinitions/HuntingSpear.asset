@@ -1,0 +1,75 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d028f9cfb60c907859353caf36b56d5c, type: 3}
+  m_Name: HuntingSpear
+  m_EditorClassIdentifier: DoomScroller::DoomScroller.Inventory.WeaponDefinition
+  weaponName: Hunting Spear
+  weaponType: 0
+  damageType: 2
+  isTwoHanded: 0
+  attackSpeed: 1.1
+  itemColor: {r: 0.45, g: 0.3, b: 0.18, a: 1}
+  icon: {fileID: 0}
+  statsByRarity:
+  - baseDamage: 2
+    attributeScalingEntries:
+    - attribute: 0
+      coefficient: 0.3
+    - attribute: 1
+      coefficient: 0.3
+  - baseDamage: 4
+    attributeScalingEntries:
+    - attribute: 0
+      coefficient: 0.3
+    - attribute: 1
+      coefficient: 0.3
+  - baseDamage: 8
+    attributeScalingEntries:
+    - attribute: 0
+      coefficient: 0.3
+    - attribute: 1
+      coefficient: 0.3
+  - baseDamage: 16
+    attributeScalingEntries:
+    - attribute: 0
+      coefficient: 0.3
+    - attribute: 1
+      coefficient: 0.3
+  - baseDamage: 32
+    attributeScalingEntries:
+    - attribute: 0
+      coefficient: 0.3
+    - attribute: 1
+      coefficient: 0.3
+  possibleAbilities:
+  - {fileID: 11400000, guid: 09e940e3b8f973250a6131de099fe577, type: 2}
+  - {fileID: 11400000, guid: 84764e86924ffe200a450b692647a848, type: 2}
+  - {fileID: 11400000, guid: 55b2d849a7557e9298c6ac18ab2f2467, type: 2}
+  - {fileID: 11400000, guid: fd790f1d2e8fbb869ae35e22db749883, type: 2}
+  - {fileID: 11400000, guid: 8ceb6f448bd4b3d0ab2c3dd7141d157a, type: 2}
+  - {fileID: 11400000, guid: 800e8be8697228de0b830d6490e5ed31, type: 2}
+  - {fileID: 11400000, guid: 5a5a98cec4929ef76beed62225b3c932, type: 2}
+  - {fileID: 11400000, guid: 0baf47a125f6f0d6592b0a5f11f25378, type: 2}
+  possiblePassives:
+  - {fileID: 11400000, guid: 2354c15b773f1aaefb76ee6c1c3369ad, type: 2}
+  - {fileID: 11400000, guid: 756360cbfca4a5cc39a345071ad89fa4, type: 2}
+  - {fileID: 11400000, guid: f085e6ba0f6de9a1ebbbe1af2634a353, type: 2}
+  - {fileID: 11400000, guid: 7c26ef40a1d924e878ed721f4b7dc10f, type: 2}
+  - {fileID: 11400000, guid: cccb489cc505622169a48f74f562143c, type: 2}
+  - {fileID: 11400000, guid: 96e6b2e96b01b0b66852578e3a9942af, type: 2}
+  - {fileID: 11400000, guid: 51c089a1f4a84efe5bc2d0a643ab925f, type: 2}
+  - {fileID: 11400000, guid: 3c1f34edd4daf1a0f8aa4666a83c1088, type: 2}
+  - {fileID: 11400000, guid: 0f3ec3b779e8316e28c35c15ad1c7c12, type: 2}
+  - {fileID: 11400000, guid: 71209c2572471d47e8ac044f828b1e56, type: 2}
+  - {fileID: 11400000, guid: 5640a124fbe90da3aa0e7b1834654bf0, type: 2}
+  - {fileID: 11400000, guid: 617b9bb004e6581b5802a0877a32d706, type: 2}
+  - {fileID: 11400000, guid: 86ed47f3e8d37b5dd99437e56d0e6cbf, type: 2}
