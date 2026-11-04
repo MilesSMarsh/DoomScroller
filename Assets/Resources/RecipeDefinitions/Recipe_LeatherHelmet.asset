@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3080f8a71b5317737bcbb1e7d0dc0129, type: 3}
-  m_Name: Recipe_Leather Helmet
+  m_Name: Recipe_LeatherHelmet
   m_EditorClassIdentifier: DoomScroller::DoomScroller.Inventory.RecipeDefinition
   recipeId: 86500eae-b76c-414e-bfd8-c04f57730d10
   outputKind: 2

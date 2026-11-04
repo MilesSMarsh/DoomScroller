@@ -8,7 +8,7 @@ namespace DoomScroller.Tests.EditMode
     public class StarterWeaponTests
     {
         private static WeaponDefinition Load() =>
-            Resources.Load<WeaponDefinition>("WeaponDefinitions/Wooden Sword");
+            Resources.Load<WeaponDefinition>("WeaponDefinitions/WoodenSword");
 
         [Test]
         public void WoodenSwordAsset_Exists()

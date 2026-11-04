@@ -38,7 +38,7 @@ namespace DoomScroller.Tests.EditMode
         [Test]
         public void Equipment_RoundTrips_SourceDefinition_AndIcon()
         {
-            var definition = Resources.Load<EquipmentDefinition>("EquipmentDefinitions/Leather Helmet");
+            var definition = Resources.Load<EquipmentDefinition>("EquipmentDefinitions/LeatherHelmet");
             var item = EquipmentGenerator.GenerateFromDefinition(definition, ItemRarity.Common, new System.Random(1));
             Assert.AreSame(definition, item.equipmentSource);
 

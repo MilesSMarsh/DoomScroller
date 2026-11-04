@@ -30,15 +30,15 @@ namespace DoomScroller.Tests.EditMode
             }
         };
 
-        // Mirrors Assets/Resources/Abilities/Passive_New.asset exactly.
+        // Mirrors Assets/Resources/Abilities/Passive_DamageUp.asset exactly.
         private static StatusEffectData MakeEmpowerPassive() =>
             new StatusEffectData { effectType = StatusEffectType.EmpowerDamage, magnitude = 0.1f };
 
-        // Mirrors Assets/Resources/Abilities/Passive_New 1.asset exactly.
+        // Mirrors Assets/Resources/Abilities/Passive_WeakenEnemy.asset exactly.
         private static StatusEffectData MakeWeakenPassive() =>
             new StatusEffectData { effectType = StatusEffectType.WeakenDamage, magnitude = 0.25f };
 
-        // Mirrors Assets/Resources/WeaponDefinitions/Stone Sword.asset's Rare-tier row
+        // Mirrors Assets/Resources/WeaponDefinitions/StoneSword.asset's Rare-tier row
         // (baseDamage 4, Constitution x0.5) — the lowest rarity at which the pool of 2
         // abilities/2 passives is fully satisfied (SkillCountByRarity[Rare] == 2).
         private static ItemData MakeStoneSwordAtRare(WeaponAbilityData[] abilities = null, StatusEffectData[] passives = null)
@@ -55,8 +55,8 @@ namespace DoomScroller.Tests.EditMode
             // independently — capped at however many candidates Stone Sword's own pools
             // hold altogether (currently 2 abilities + 3 passives = 5, so this gets 4 of
             // those 5, split unpredictably between the two kinds).
-            var definition = Resources.Load<WeaponDefinition>("WeaponDefinitions/Stone Sword");
-            Assert.IsNotNull(definition, "expected Assets/Resources/WeaponDefinitions/Stone Sword.asset to exist");
+            var definition = Resources.Load<WeaponDefinition>("WeaponDefinitions/StoneSword");
+            Assert.IsNotNull(definition, "expected Assets/Resources/WeaponDefinitions/StoneSword.asset to exist");
 
             var item = WeaponGenerator.GenerateFromDefinition(definition, ItemRarity.Mythic, new System.Random(1));
 
@@ -78,7 +78,7 @@ namespace DoomScroller.Tests.EditMode
         {
             // The user's own bug report against their real content: Uncommon
             // (SkillCountByRarity == 1) used to give 1 ability AND 1 passive.
-            var definition = Resources.Load<WeaponDefinition>("WeaponDefinitions/Stone Sword");
+            var definition = Resources.Load<WeaponDefinition>("WeaponDefinitions/StoneSword");
 
             for (var seed = 0; seed < 30; seed++)
             {
@@ -92,7 +92,7 @@ namespace DoomScroller.Tests.EditMode
         [Test]
         public void ItemSnapshot_RoundTrips_SourceDefinition_AcrossSaveAndLoad()
         {
-            var definition = Resources.Load<WeaponDefinition>("WeaponDefinitions/Stone Sword");
+            var definition = Resources.Load<WeaponDefinition>("WeaponDefinitions/StoneSword");
             var item = WeaponGenerator.GenerateFromDefinition(definition, ItemRarity.Rare, new System.Random(1));
             Assert.IsNotNull(item.sourceDefinition);
 

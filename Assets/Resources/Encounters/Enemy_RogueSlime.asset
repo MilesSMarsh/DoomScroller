@@ -10,14 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9a8294fed99c4ae1880d2e20e4ba7a0b, type: 3}
-  m_Name: Enemy_Standard
-  m_EditorClassIdentifier:
+  m_Name: Enemy_RogueSlime
+  m_EditorClassIdentifier: 
   title: Rogue Slime
   type: 1
   artwork: {fileID: 21300000, guid: a0c240d86e921d9068ae8e935d8008d1, type: 3}
   foregroundArt: {fileID: 0}
   cardColor: {r: 0.55, g: 0.25, b: 0.2, a: 1}
-  description: 50 XP + Common Gear
+  description: A wandering ooze that dissolves whatever it swallows.
   baseXpReward: 50
   goldReward: 0
   lootTable:
@@ -37,8 +37,6 @@ MonoBehaviour:
   enemyAttackSpeed: 0.7
   damageTypeModifiers: []
   dungeonRooms: []
-  resourceMaterial: {fileID: 0}
-  baseResourceYield: 5
-  secondaryResourceMaterial: {fileID: 0}
-  secondaryResourceChance: 0.1
-  secondaryResourceYield: 1
+  resourceTimerSeconds: 10
+  resourceWeaknesses: []
+  resourceThresholds: []

@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a8294fed99c4ae1880d2e20e4ba7a0b, type: 3}
+  m_Name: Enemy_BonewroughtSentinel
+  m_EditorClassIdentifier: 
+  title: Bonewrought Sentinel
+  type: 1
+  artwork: {fileID: 21300000, guid: f911d6c54aef7449eb2bf44d3489cc69, type: 3}
+  foregroundArt: {fileID: 0}
+  cardColor: {r: 0.35, g: 0.08, b: 0.08, a: 1}
+  description: A guardian of fused bone that never leaves its post.
+  baseXpReward: 200
+  goldReward: 0
+  lootTable:
+    percentByRarity:
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    minItemCount: 1
+    maxItemCount: 2
+    weapons:
+    - {fileID: 11400000, guid: d0404bafcc176f6e192d169ff3eb8ef3, type: 2}
+    - {fileID: 11400000, guid: 1dbc299078fb700bba149b01bf86c195, type: 2}
+    equipment:
+    - {fileID: 11400000, guid: 54da90afdcdf24529a0f97d192b4c386, type: 2}
+    materials:
+    - {fileID: 11400000, guid: b1d9f6b31e8bbd2b08181ccb59fec1e8, type: 2}
+    - {fileID: 11400000, guid: 1508bc622581c60e29af1a86d33610f2, type: 2}
+  enemyHealth: 110
+  enemyAttackDamage: 12
+  enemyAttackSpeed: 0.9
+  damageTypeModifiers: []
+  dungeonRooms: []
+  resourceTimerSeconds: 10
+  resourceWeaknesses: []
+  resourceThresholds: []

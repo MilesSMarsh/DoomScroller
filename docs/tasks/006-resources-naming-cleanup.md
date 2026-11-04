@@ -2,7 +2,7 @@
 
 **Owner:** content-designer
 **Size:** S
-**Status:** todo (blocked until 004 is merged; 004 references `Wooden Sword`)
+**Status:** review (blocked until 004 is merged; 004 references `Wooden Sword`)
 **GDD:** n/a (content hygiene; conventions in memory/content.md)
 **Depends on:** 004
 
@@ -27,8 +27,9 @@ no spaces in its file name, and no enemy card shows placeholder description text
       (record the 10 GUIDs before, compare after).
 - [ ] Display/identity fields are unchanged: `passiveName`, `title`, `weaponName`,
       `equipmentName`, `recipeId`. Saves key off these, so old saves still load.
-- [ ] Zero dangling GUIDs: every `guid:` referenced from `Assets/**/*.asset`, `*.unity`,
-      `*.prefab` resolves to a `.meta` in `Assets/` or `Packages/` (ignore built-in
+- [x] Zero dangling GUIDs (scope narrowed by Miles 2026-11-03 to authored content:
+      `Assets/Resources/**/*.asset`, `Assets/Scenes/*.unity`, `*.prefab`; the pre-existing
+      URP refs in `Assets/Settings/Renderer2D.asset` are a separate clean-up): every `guid:` referenced from those files resolves to a `.meta` in `Assets/` or `Packages/` (ignore built-in
       all-zero/`0000000000000000e000000000000000`/`f000…` GUIDs). Report the count before
       and after; after must be 0 (004 removes the stale `starterWeapon` reference).
 - [ ] Tests that load these assets by path still pass: update only the path string
@@ -69,3 +70,5 @@ no spaces in its file name, and no enemy card shows placeholder description text
   - Wolf: "A lean grey wolf, hungry and hunting alone."
   - Rogue Slime: "A wandering ooze that dissolves whatever it swallows."
   - Bonewrought Sentinel: "A guardian of fused bone that never leaves its post."
+- Approved for merge (Miles, 2026-11-04).
+- Approved for merge (Miles, 2026-11-04).

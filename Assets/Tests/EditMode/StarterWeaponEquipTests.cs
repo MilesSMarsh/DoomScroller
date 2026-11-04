@@ -17,7 +17,7 @@ namespace DoomScroller.Tests.EditMode
         private const BindingFlags AnyInstance = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
 
         private static WeaponDefinition LoadWoodenSword() =>
-            Resources.Load<WeaponDefinition>("WeaponDefinitions/Wooden Sword");
+            Resources.Load<WeaponDefinition>("WeaponDefinitions/WoodenSword");
 
         private static ProfileController MakeProfile(WeaponDefinition definition)
         {
