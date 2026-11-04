@@ -14,12 +14,11 @@ namespace DoomScroller.Inventory
         [SerializeField] private List<ItemData> startingInventory = new();
         [SerializeField] private Sprite playerSprite;
 
-        [Tooltip("The one item a new game starts equipped with. Explicit rather than " +
-                  "\"whichever weapon happens to be first in startingInventory\" — that was " +
-                  "fragile (adding/reordering inventory content could silently swap in a far " +
-                  "stronger weapon) and every hand-authored weapon so far is really mid/late-" +
-                  "game power once its abilities are all counted, not a genuine starter.")]
-        [SerializeField] private ItemData starterWeapon;
+        [Tooltip("Authored weapon a new game starts equipped with, rolled at Common via " +
+                  "WeaponGenerator.GenerateFromDefinition. Explicit rather than \"whichever " +
+                  "weapon happens to be first in startingInventory\" — that was fragile. " +
+                  "Existing saves keep their own loadout; this only applies to a fresh game.")]
+        [SerializeField] private WeaponDefinition starterWeaponDefinition;
 
         [Header("Health / Energy Gate")]
         [SerializeField] private int maxHealth = 100;
@@ -184,10 +183,15 @@ namespace DoomScroller.Inventory
         // single fight.
         private void EquipStarterWeapon()
         {
-            if (starterWeapon != null)
+            var weapon = StarterWeapon.Create(starterWeaponDefinition, new System.Random());
+            if (weapon == null)
             {
-                _loadout.Equip(starterWeapon);
+                Debug.LogWarning("ProfileController: starterWeaponDefinition is unassigned; new game starts unarmed.");
+                return;
             }
+
+            _loadout.AddToInventory(weapon);
+            _loadout.Equip(weapon);
         }
 
         public void Open()

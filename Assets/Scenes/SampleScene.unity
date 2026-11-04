@@ -4780,7 +4780,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DoomScroller.Inventory.ProfileController
   startingInventory: []
   playerSprite: {fileID: 21300000, guid: c670095de6b4303678d8ef6ce7c98106, type: 3}
-  starterWeapon: {fileID: 11400000, guid: 6ad30cd20c0c9b2b6a898feeb0833914, type: 2}
+  starterWeaponDefinition: {fileID: 11400000, guid: 1cc64e9a05244643ea6a4dc8b088eeb7, type: 2}
   maxHealth: 100
   regenPerInterval: 10
   regenIntervalSeconds: 30
