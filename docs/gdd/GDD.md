@@ -213,7 +213,8 @@ player runs low; the Combat Balance Analyst tunes loss rates toward it.
 - **Restoration potions:** used outside fights, each restores a set percentage of true
   max HP.
 - **Revive potions:** armed before a fight and fired automatically. Limits: one per
-  fight, one per dungeon run, at most three carried.
+  fight, one per dungeon run, at most three carried. A Revive brings the player back at
+  30% HP; Alchemist upgrades raise that percentage.
 
 ### Progression
 
@@ -576,7 +577,8 @@ context small and cached.
 2. Economy table: prices, drop rates, potion values and pacing targets, set before the
    server data model is designed
 3. Backend and persistence, built together as one workstream (service chosen by week 2;
-   it must support live streamed boss fights)
+   it must support live streamed boss fights). It may start before item 2 by storing the
+   current save as one document; the proper data model still waits for item 2
 4. Simulator-based win% badge
 5. Feed generator with two regions, swipe pressure, first-session rules and solo bosses
 6. Live boss system: sharded world bosses and the final raid boss

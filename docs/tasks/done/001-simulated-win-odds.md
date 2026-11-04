@@ -65,7 +65,7 @@ feed card is a follow-up spec.
   practice runs or abilities never fire.
 - `CombatResolver.CreateSimulator` returns null for Treasure; the estimator should
   short-circuit non-fight types before calling it.
-- Decided (Miles): tiers confirmed at 0.70 / 0.35. The card shows only the tier word,
+- Decided (Miles): tiers confirmed at 0.70 / 0.35. Later changed (Miles): Risky cut-off raised to 0.40 to match the GDD. The card shows only the tier word,
   no % (for the future UI task). Dungeon skips the sim for now (returns 1 / Likely;
   revisit later). Null `EncounterData` throws `ArgumentNullException`; null
   loadout/attributes throw only for fight types.

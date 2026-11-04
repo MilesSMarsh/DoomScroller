@@ -120,8 +120,26 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
   (`JsonUtility`). Items re-link to their definitions by id via `Resources.LoadAll`.
 - Key files: `Progression/SaveSystem.cs`, `Progression/SaveData.cs`.
 - Gap: GDD is online-only — server owns profile, seeds, fight results, regen clock,
-  dungeon state, daily reset. No network code exists. Backend not chosen yet
-  (server move planned in tasks 008–018).
+  dungeon state, daily reset. No network code exists (server move: tasks 008–018).
+- Gap: client-authoritative economy (cheatable). After the server move the client still
+  rolls rewards and runs shops and crafting, and uploads the whole save; only fights,
+  seeds, HP loss, Revive use and current max HP (incl. regen) are server-owned.
+
+## Server move (decisions)
+- Server: self-hosted ASP.NET Core (.NET 10) in a container under `Server/`, compiling the
+  shared Unity-free CombatCore source. Client code in `Network/` (`DoomScroller.Network`).
+- Data: managed Postgres; profile = today's `SaveData` as one JSONB document per player
+  (with revision) plus a `fight_records` table. Docker Postgres for local dev. Proper
+  tables come after the economy table.
+- Identity: anonymous sign-in by install id. Game Center / Google Play Games linking is a
+  later task before soft launch.
+- Hosting: chosen after the local slice works (leaning Azure Container Apps); the slice
+  deploys nothing.
+- Combat: no manual ability casting, no mid-fight Revive prompt. Abilities auto-cast; a
+  carried Revive auto-fires when `AutoConsumeRevivePotions` is on, until the per-card
+  armed toggle exists.
+- Authority: server owns fights, seeds, HP loss, Revive use and the regen clock; client
+  owns rewards, shops and crafting (see Gap above).
 
 ## Build and test
 - EditMode tests in `Assets/Tests/EditMode/` (asmdef `DoomScroller.Tests.EditMode`),
