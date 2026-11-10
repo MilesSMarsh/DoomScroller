@@ -167,13 +167,13 @@ namespace DoomScroller.Tests.EditMode
         public void Generate_BonusTreasureRoom_GrantsItsOwnReward_AndNeverEndsTheRun()
         {
             var bonusTable = new float[5];
-            bonusTable[(int)ItemRarity.Legendary] = 1f;
+            bonusTable[(int)ItemRarity.Relic] = 1f;
             var data = MakeDungeon(new DungeonRoomData
             {
                 type = DungeonRoomType.Treasure, appearChance = 100f, goldReward = 42,
                 lootTable = new LootTable { percentByRarity = bonusTable }
             });
-            // Final room's own table is all-Common (default) — distinct from the bonus room's.
+            // Final room's own table is all-Plain (default) — distinct from the bonus room's.
             data.goldReward = 0;
 
             var steps = DungeonGenerator.Generate(data, new System.Random(1));
@@ -185,13 +185,13 @@ namespace DoomScroller.Tests.EditMode
             Assert.AreEqual(0, bonusStep.XpReward, "a bonus pickup never grants XP");
             Assert.AreEqual(42, bonusStep.GoldReward);
             Assert.AreEqual(1, bonusStep.RewardItems.Length);
-            Assert.AreEqual(ItemRarity.Legendary, bonusStep.RewardItems[0].rarity);
+            Assert.AreEqual(ItemRarity.Relic, bonusStep.RewardItems[0].rarity);
 
             var finalStep = steps[1];
             Assert.IsTrue(finalStep.IsFinalTreasureRoom);
             Assert.AreEqual(100, finalStep.XpReward, "the guaranteed reward uses the dungeon's own baseXpReward");
             Assert.AreEqual(1, finalStep.RewardItems.Length);
-            Assert.AreEqual(ItemRarity.Common, finalStep.RewardItems[0].rarity, "the final room rolls from its own separate table");
+            Assert.AreEqual(ItemRarity.Plain, finalStep.RewardItems[0].rarity, "the final room rolls from its own separate table");
         }
 
         [Test]

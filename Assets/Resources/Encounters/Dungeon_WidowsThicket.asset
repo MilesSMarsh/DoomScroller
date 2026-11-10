@@ -31,8 +31,10 @@ MonoBehaviour:
     minItemCount: 1
     maxItemCount: 1
     weapons:
-    - {fileID: 11400000, guid: 2481d0f56959c78f28b12731531300de, type: 2}
-    equipment: []
+    - {fileID: 11400000, guid: d197b10c394947b9bd9f2ceb3fb5fe0b, type: 2}
+    - {fileID: 11400000, guid: a5e8d9ffd72a4d8aa5ccb4f62f53ace8, type: 2}
+    equipment:
+    - {fileID: 11400000, guid: bfa14a6b2c27497cbd9082f448a94ab5, type: 2}
     materials:
     - {fileID: 11400000, guid: 40c677eef933c516baf0b5948c826cf5, type: 2}
   enemyHealth: 80

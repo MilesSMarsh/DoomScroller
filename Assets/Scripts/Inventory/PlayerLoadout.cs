@@ -29,7 +29,7 @@ namespace DoomScroller.Inventory
         // IsRecipeUnlocked). Unlike _knownPotionTypes above, both grow live via
         // AddToInventory/TryCraftRecipe, not just at construction — a material or recipe
         // can be discovered mid-session. Keyed by the pair, never family alone — owning
-        // Common Wood doesn't discover Rare Wood.
+        // Plain Wood doesn't discover Runed Wood.
         private readonly HashSet<(MaterialDefinition Material, ItemRarity Rarity)> _discoveredMaterials;
         private readonly HashSet<string> _craftedRecipeIds = new();
 
@@ -492,7 +492,7 @@ namespace DoomScroller.Inventory
         // Exposed for the Blacksmith's confirm-dialog affordability check; TryCraftRecipe
         // re-checks this itself rather than trusting the caller already did. Crafting a
         // weapon/equipment of rarity X requires materials of rarity X (recipe.OutputRarity
-        // — Common for a FixedItem recipe, which has no rarity of its own to match).
+        // — Plain for a FixedItem recipe, which has no rarity of its own to match).
         public bool HasIngredientsFor(RecipeDefinition recipe) => HasIngredients(recipe.ingredients, recipe.OutputRarity);
 
         // True once every named ingredient has been discovered AT the recipe's own
@@ -561,8 +561,8 @@ namespace DoomScroller.Inventory
         // Blacksmith row/equip-slot display showing this weapon updates live.
         public bool TryEmpowerWeapon(ItemData weapon, PlayerWallet wallet, int goldCost, RecipeIngredient[] ingredients)
         {
-            // Costs materials at the weapon's CURRENT rarity — empowering a Rare weapon
-            // costs Rare materials, same rule as crafting a Rare weapon from scratch.
+            // Costs materials at the weapon's CURRENT rarity — empowering a Runed weapon
+            // costs Runed materials, same rule as crafting a Runed weapon from scratch.
             if (!WeaponUpgrader.CanEmpower(weapon) || !HasIngredients(ingredients, weapon.rarity))
             {
                 return false;

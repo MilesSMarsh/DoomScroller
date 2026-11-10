@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3080f8a71b5317737bcbb1e7d0dc0129, type: 3}
+  m_Name: Recipe_MossweaveGreaves
+  m_EditorClassIdentifier: DoomScroller::DoomScroller.Inventory.RecipeDefinition
+  recipeId: 465bb741-198f-4757-a74a-7c37ebea555f
+  outputKind: 2
+  outputItem: {fileID: 0}
+  outputWeapon: {fileID: 0}
+  outputEquipment: {fileID: 11400000, guid: bfa14a6b2c27497cbd9082f448a94ab5, type: 2}
+  outputMaterial: {fileID: 0}
+  outputRarity: 1
+  goldCost: 27
+  ingredients:
+  - material: {fileID: 11400000, guid: 40c677eef933c516baf0b5948c826cf5, type: 2}
+    count: 3
+  - material: {fileID: 11400000, guid: 1d611f11dfc3d430781a7a7299b625fe, type: 2}
+    count: 2
+  - material: {fileID: 11400000, guid: b19ce57e120ebb5c7827ba8c7f32c082, type: 2}
+    count: 1
+  prerequisiteRecipes:
+  - {fileID: 11400000, guid: 1553f079830c44e38cdba40b10fe5bf7, type: 2}

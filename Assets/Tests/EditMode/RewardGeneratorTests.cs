@@ -13,20 +13,20 @@ namespace DoomScroller.Tests.EditMode
         public void RollRarity_NullOrEmptyOrAllZeroTable_AlwaysReturnsCommon()
         {
             var rng = new System.Random(1);
-            Assert.AreEqual(ItemRarity.Common, RewardGenerator.RollRarity(null, rng));
-            Assert.AreEqual(ItemRarity.Common, RewardGenerator.RollRarity(new float[0], rng));
-            Assert.AreEqual(ItemRarity.Common, RewardGenerator.RollRarity(new float[5], rng));
+            Assert.AreEqual(ItemRarity.Plain, RewardGenerator.RollRarity(null, rng));
+            Assert.AreEqual(ItemRarity.Plain, RewardGenerator.RollRarity(new float[0], rng));
+            Assert.AreEqual(ItemRarity.Plain, RewardGenerator.RollRarity(new float[5], rng));
         }
 
         [Test]
         public void RollRarity_SingleNonZeroRarity_AlwaysWinsRegardlessOfRng()
         {
             var table = new float[5];
-            table[(int)ItemRarity.Legendary] = 1f;
+            table[(int)ItemRarity.Relic] = 1f;
 
             for (var seed = 0; seed < 20; seed++)
             {
-                Assert.AreEqual(ItemRarity.Legendary, RewardGenerator.RollRarity(table, new System.Random(seed)));
+                Assert.AreEqual(ItemRarity.Relic, RewardGenerator.RollRarity(table, new System.Random(seed)));
             }
         }
 
@@ -34,9 +34,9 @@ namespace DoomScroller.Tests.EditMode
         public void RollRarity_WeightedDistribution_MatchesTableProportions()
         {
             var table = new float[5];
-            table[(int)ItemRarity.Common] = 70f;
-            table[(int)ItemRarity.Uncommon] = 25f;
-            table[(int)ItemRarity.Rare] = 5f;
+            table[(int)ItemRarity.Plain] = 70f;
+            table[(int)ItemRarity.Tempered] = 25f;
+            table[(int)ItemRarity.Runed] = 5f;
 
             var rng = new System.Random(12345);
             const int trials = 20000;
@@ -47,11 +47,11 @@ namespace DoomScroller.Tests.EditMode
             }
 
             // Generous tolerance — statistical, not exact.
-            Assert.AreEqual(0.70f, counts[(int)ItemRarity.Common] / (float)trials, 0.02f);
-            Assert.AreEqual(0.25f, counts[(int)ItemRarity.Uncommon] / (float)trials, 0.02f);
-            Assert.AreEqual(0.05f, counts[(int)ItemRarity.Rare] / (float)trials, 0.02f);
-            Assert.AreEqual(0, counts[(int)ItemRarity.Legendary]);
-            Assert.AreEqual(0, counts[(int)ItemRarity.Mythic]);
+            Assert.AreEqual(0.70f, counts[(int)ItemRarity.Plain] / (float)trials, 0.02f);
+            Assert.AreEqual(0.25f, counts[(int)ItemRarity.Tempered] / (float)trials, 0.02f);
+            Assert.AreEqual(0.05f, counts[(int)ItemRarity.Runed] / (float)trials, 0.02f);
+            Assert.AreEqual(0, counts[(int)ItemRarity.Relic]);
+            Assert.AreEqual(0, counts[(int)ItemRarity.Exalted]);
         }
 
         [Test]
@@ -59,15 +59,15 @@ namespace DoomScroller.Tests.EditMode
         {
             // 2:1 ratio regardless of the total being 30, not 100.
             var table = new float[5];
-            table[(int)ItemRarity.Common] = 20f;
-            table[(int)ItemRarity.Uncommon] = 10f;
+            table[(int)ItemRarity.Plain] = 20f;
+            table[(int)ItemRarity.Tempered] = 10f;
 
             var rng = new System.Random(999);
             const int trials = 10000;
             var commonCount = 0;
             for (var i = 0; i < trials; i++)
             {
-                if (RewardGenerator.RollRarity(table, rng) == ItemRarity.Common)
+                if (RewardGenerator.RollRarity(table, rng) == ItemRarity.Plain)
                 {
                     commonCount++;
                 }
@@ -90,57 +90,57 @@ namespace DoomScroller.Tests.EditMode
         [Test]
         public void DescribeLootTable_NullOrAllZeroTable_FallsBackToTheOriginalGenericDefault()
         {
-            Assert.AreEqual("+50 XP · Common Gear", RewardGenerator.DescribeLootTable(null, 50));
-            Assert.AreEqual("+50 XP · Common Gear", RewardGenerator.DescribeLootTable(new LootTable(), 50));
+            Assert.AreEqual("+50 XP · Plain Gear", RewardGenerator.DescribeLootTable(null, 50));
+            Assert.AreEqual("+50 XP · Plain Gear", RewardGenerator.DescribeLootTable(new LootTable(), 50));
         }
 
         [Test]
         public void DescribeLootTable_NamesOnlyRarities_NeverASpecificItem()
         {
-            var table = MakeTable((ItemRarity.Common, 70f), (ItemRarity.Uncommon, 25f), (ItemRarity.Rare, 5f));
+            var table = MakeTable((ItemRarity.Plain, 70f), (ItemRarity.Tempered, 25f), (ItemRarity.Runed, 5f));
 
             var text = RewardGenerator.DescribeLootTable(table, 80);
 
-            Assert.AreEqual("+80 XP · 70% Common, 25% Uncommon, 5% Rare Gear", text);
+            Assert.AreEqual("+80 XP · 70% Plain, 25% Tempered, 5% Runed Gear", text);
         }
 
         [Test]
         public void DescribeLootTable_SkipsZeroWeightRarities()
         {
-            var table = MakeTable((ItemRarity.Common, 1f), (ItemRarity.Mythic, 1f));
+            var table = MakeTable((ItemRarity.Plain, 1f), (ItemRarity.Exalted, 1f));
 
             var text = RewardGenerator.DescribeLootTable(table, 10);
 
-            Assert.AreEqual("+10 XP · 50% Common, 50% Mythic Gear", text);
+            Assert.AreEqual("+10 XP · 50% Plain, 50% Exalted Gear", text);
         }
 
         [Test]
         public void DescribeLootTable_NormalizesAgainstItsOwnTotal_NotRequiringExactlyOneHundred()
         {
-            var table = MakeTable((ItemRarity.Common, 20f), (ItemRarity.Uncommon, 10f));
+            var table = MakeTable((ItemRarity.Plain, 20f), (ItemRarity.Tempered, 10f));
 
             var text = RewardGenerator.DescribeLootTable(table, 10);
 
-            Assert.AreEqual("+10 XP · 67% Common, 33% Uncommon Gear", text);
+            Assert.AreEqual("+10 XP · 67% Plain, 33% Tempered Gear", text);
         }
 
         [Test]
         public void DescribeLootTable_AppendsItemCountSuffix_WhenNotFixedAtOne()
         {
-            var fixedTable = MakeTable((ItemRarity.Common, 100f));
+            var fixedTable = MakeTable((ItemRarity.Plain, 100f));
             fixedTable.minItemCount = 1;
             fixedTable.maxItemCount = 1;
             Assert.IsFalse(RewardGenerator.DescribeLootTable(fixedTable, 10).Contains("×"), "1-1 shouldn't show a suffix at all");
 
-            var fixedCount = MakeTable((ItemRarity.Common, 100f));
+            var fixedCount = MakeTable((ItemRarity.Plain, 100f));
             fixedCount.minItemCount = 3;
             fixedCount.maxItemCount = 3;
-            Assert.AreEqual("+10 XP · 100% Common Gear ×3", RewardGenerator.DescribeLootTable(fixedCount, 10));
+            Assert.AreEqual("+10 XP · 100% Plain Gear ×3", RewardGenerator.DescribeLootTable(fixedCount, 10));
 
-            var rangeCount = MakeTable((ItemRarity.Common, 100f));
+            var rangeCount = MakeTable((ItemRarity.Plain, 100f));
             rangeCount.minItemCount = 1;
             rangeCount.maxItemCount = 3;
-            Assert.AreEqual("+10 XP · 100% Common Gear ×1-3", RewardGenerator.DescribeLootTable(rangeCount, 10));
+            Assert.AreEqual("+10 XP · 100% Plain Gear ×1-3", RewardGenerator.DescribeLootTable(rangeCount, 10));
         }
 
         [Test]
@@ -154,7 +154,7 @@ namespace DoomScroller.Tests.EditMode
         [Test]
         public void RollLootTable_ItemCount_AlwaysFallsWithinMinMax()
         {
-            var table = MakeTable((ItemRarity.Common, 100f));
+            var table = MakeTable((ItemRarity.Plain, 100f));
             table.minItemCount = 2;
             table.maxItemCount = 4;
 
@@ -170,7 +170,7 @@ namespace DoomScroller.Tests.EditMode
         [Test]
         public void RollLootTable_FixedItemCount_AlwaysReturnsExactlyThatMany()
         {
-            var table = MakeTable((ItemRarity.Common, 100f));
+            var table = MakeTable((ItemRarity.Plain, 100f));
             table.minItemCount = 2;
             table.maxItemCount = 2;
 
@@ -196,8 +196,8 @@ namespace DoomScroller.Tests.EditMode
             weapon.possibleAbilities = System.Array.Empty<AbilityDefinition>();
             weapon.possiblePassives = System.Array.Empty<PassiveDefinition>();
 
-            // Only Rare is possible, and the weapon pool is the only candidate.
-            var table = MakeTable((ItemRarity.Rare, 100f));
+            // Only Runed is possible, and the weapon pool is the only candidate.
+            var table = MakeTable((ItemRarity.Runed, 100f));
             table.weapons = new[] { weapon };
             table.minItemCount = 1;
             table.maxItemCount = 1;
@@ -205,22 +205,22 @@ namespace DoomScroller.Tests.EditMode
             var items = RewardGenerator.RollLootTable(table, new System.Random(1));
 
             Assert.AreEqual(1, items.Length);
-            Assert.AreEqual("Test Blade", items[0].title);
-            Assert.AreEqual(ItemRarity.Rare, items[0].rarity);
-            Assert.AreEqual(4, items[0].powerValue, "the Rare-tier row's own baseDamage");
+            Assert.AreEqual("Runed Test Blade", items[0].title);
+            Assert.AreEqual(ItemRarity.Runed, items[0].rarity);
+            Assert.AreEqual(4, items[0].powerValue, "the Runed-tier row's own baseDamage");
         }
 
         [Test]
         public void RollLootTable_EmptyWeaponAndEquipmentPools_FallsBackToGenericItem()
         {
-            var table = MakeTable((ItemRarity.Legendary, 100f));
+            var table = MakeTable((ItemRarity.Relic, 100f));
             table.weapons = System.Array.Empty<WeaponDefinition>();
             table.equipment = System.Array.Empty<EquipmentDefinition>();
 
             var items = RewardGenerator.RollLootTable(table, new System.Random(1));
 
             Assert.AreEqual(1, items.Length);
-            Assert.AreEqual(ItemRarity.Legendary, items[0].rarity);
+            Assert.AreEqual(ItemRarity.Relic, items[0].rarity);
         }
 
         [Test]
@@ -247,7 +247,7 @@ namespace DoomScroller.Tests.EditMode
             equipment.powerByRarity = new[] { 1, 2, 4, 8, 16 };
             equipment.possiblePassives = System.Array.Empty<PassiveDefinition>();
 
-            var table = MakeTable((ItemRarity.Common, 100f));
+            var table = MakeTable((ItemRarity.Plain, 100f));
             table.weapons = new[] { weapon };
             table.equipment = new[] { equipment };
             table.minItemCount = 1;
@@ -258,7 +258,7 @@ namespace DoomScroller.Tests.EditMode
             const int trials = 2000;
             for (var i = 0; i < trials; i++)
             {
-                if (RewardGenerator.RollLootTable(table, rng)[0].title == "Pool Weapon")
+                if (RewardGenerator.RollLootTable(table, rng)[0].title.EndsWith("Pool Weapon"))
                 {
                     weaponCount++;
                 }
@@ -273,7 +273,7 @@ namespace DoomScroller.Tests.EditMode
             var material = ScriptableObject.CreateInstance<MaterialDefinition>();
             material.materialName = "Iron Ore";
 
-            var table = MakeTable((ItemRarity.Mythic, 100f));
+            var table = MakeTable((ItemRarity.Exalted, 100f));
             table.materials = new[] { material };
             table.minItemCount = 1;
             table.maxItemCount = 1;
@@ -283,7 +283,7 @@ namespace DoomScroller.Tests.EditMode
             Assert.AreEqual(1, items.Length);
             Assert.AreEqual("Iron Ore", items[0].title);
             Assert.AreEqual(ItemCategory.Material, items[0].category);
-            Assert.AreEqual(ItemRarity.Mythic, items[0].rarity);
+            Assert.AreEqual(ItemRarity.Exalted, items[0].rarity);
             Assert.AreSame(material, items[0].materialSource);
         }
 
@@ -314,7 +314,7 @@ namespace DoomScroller.Tests.EditMode
             var material = ScriptableObject.CreateInstance<MaterialDefinition>();
             material.materialName = "Pool Material";
 
-            var table = MakeTable((ItemRarity.Common, 100f));
+            var table = MakeTable((ItemRarity.Plain, 100f));
             table.weapons = new[] { weapon };
             table.equipment = new[] { equipment };
             table.materials = new[] { material };

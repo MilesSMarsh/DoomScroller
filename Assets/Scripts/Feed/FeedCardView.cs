@@ -229,8 +229,8 @@ namespace DoomScroller.Feed
         // Treasure's "guaranteed loot" line never states one). Enemy/Ambush/Treasure pull
         // their odds straight from the encounter's own authored loot table (see
         // RewardGenerator.DescribeLootTable) — an all-zero table (every card authored
-        // before loot tables existed) reads identically to the old hardcoded "Common
-        // Gear" default. Dungeon spans Common up to a guaranteed Rare treasure room (see
+        // before loot tables existed) reads identically to the old hardcoded "Plain
+        // Gear" default. Dungeon spans Plain up to a guaranteed Runed treasure room (see
         // DungeonGenerator, which keeps its own hardcoded per-depth progression); Tavern
         // never grants anything.
         private static string ExpectedRewardText(EncounterData data)
@@ -238,12 +238,12 @@ namespace DoomScroller.Feed
             return data.type switch
             {
                 EncounterType.Tavern => "No combat — shop, chat, and upgrade",
-                EncounterType.Dungeon => $"+{data.baseXpReward}+ XP · Common → Rare Gear",
+                EncounterType.Dungeon => $"+{data.baseXpReward}+ XP · Plain → Runed Gear",
                 EncounterType.Resource => $"Deal damage in {data.resourceTimerSeconds:0}s for resources",
                 EncounterType.Landing => "",
                 EncounterType.Enemy or EncounterType.Ambush or EncounterType.Treasure =>
                     DoomScroller.Progression.RewardGenerator.DescribeLootTable(data.lootTable, data.baseXpReward),
-                _ => $"+{data.baseXpReward} XP · Common Gear"
+                _ => $"+{data.baseXpReward} XP · Plain Gear"
             };
         }
 

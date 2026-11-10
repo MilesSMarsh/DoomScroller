@@ -1,0 +1,126 @@
+{
+  "verdict": "revise",
+  "summary": "The draft passes the structural checks: 24 weapons, an 8/8/8 split with 4 Green Valley and 4 Forest in each category, one humble Hallow Wood Sword starter at the bottom of the band, and every damage and speed value inside its band. Every ability and passive is allowed for its weapon type, and the tone is sincere with no banned words. Five things need revising. (1) Many weapons in the same category are reskins: four Ranged weapons share the exact same ability pool, the two crossbows share both pools, three Magic weapons share one arcane pool, and the fire and frost pairs are near-copies. (2) Damage is not matched to speed: whichever way attackSpeed is read, one whole class of weapon is clearly better than the other. (3) Every pool has exactly 4 entries, so every Exalted copy rolls the same fixed kit. (4) Frost weapons in the Forest rely on Mountain-coded Frost Shards. (5) Several drop sources don't make sense, such as wolves, boars and forest predators dropping crafted bows and slings, and an iron-scrap golem dropping a stone mace.",
+  "soundsLikeTheGame": "FarmhandPitchfork: \"A long-hafted pitchfork that has turned a great deal of hay and driven off a few wolves.\" It is plain and sincere, rooted in Green Valley farmland, and has a little warmth without winking at the player. That is the voice the brief asks for.",
+  "issues": [
+    {
+      "target": "MillstoneMaul, OakheartGreatblade, HarvestCrossbow, StagwoodLongbow, GravewoodArbalest, HearthfireStaff, ElderrootStaff, MosswrittenGrimoire, PilferedKitchenKnife, WidowfangDirk, SporepipeBlowgun",
+      "severity": "major",
+      "category": "balance",
+      "problem": "Damage is not matched to speed. The draft reads attackSpeed as seconds per attack, so a higher number means a slower weapon. On that reading the fast one-handers far outdamage the two-handers over time: Exalted Widowfang Dirk 36/0.7 ≈ 51 per second vs Oakheart Greatblade 35/1.4 = 25, and Sporepipe Blowgun 34/0.6 ≈ 57 vs Gravewood Arbalest 46/1.6 ≈ 29, so the two-handers are strictly worse. The automated two-hand check reads a higher number as faster. On that reading the two-handers have both the highest damage and the highest speed, so they are strictly better. Either way, one class of weapon is a trap.",
+      "fix": "Confirm with the Combat Balance Analyst which way attackSpeed works. Then rescale baseDamageByRarity so that damage divided by attack interval lands within about ±15% across each category. Slow two-handers should hit much harder per swing, not about the same."
+    },
+    {
+      "target": "MeadowShortbow, DroversSling, StagwoodLongbow, GravewoodArbalest, HarvestCrossbow",
+      "severity": "major",
+      "category": "duplication",
+      "problem": "Four Ranged weapons (MeadowShortbow, DroversSling, StagwoodLongbow, GravewoodArbalest) have the exact same ability pool: PiercingShot, Volley, Hamstring and Execute. HarvestCrossbow and GravewoodArbalest are both two-handed Pierce crossbows scaling on Expertise at 1.5 and 1.6 speed, with identical passive pools (Sureshot, Vicious, DamageUp, WeakenEnemy). MeadowShortbow and StagwoodLongbow are both two-handed Pierce bows scaling on Agility with three of four passives shared. The task asked for distinct fantasies within a category, and these are reskins.",
+      "fix": "Give each Ranged weapon its own signature. Make the Arbalest the slow execution weapon (Execute, PiercingShot, Hamstring, Winter's Mark; WeakenEnemy, Vicious, Reinforced). Make the Harvest Crossbow a sturdier, defensive farm weapon (Bulwark or Crippling instead of Vicious and DamageUp), or change its scaling attribute. Give the Meadow Shortbow speed passives (Fleetfoot, IncreaseAttackSpeed) and drop Execute, while the Stagwood Longbow keeps the heavy-shot role."
+    },
+    {
+      "target": "HedgewitchWand, ElderrootStaff, MosswrittenGrimoire, HearthfireStaff, EmberboughStaff, DewglassRod, RimeleafScepter",
+      "severity": "major",
+      "category": "duplication",
+      "problem": "The Magic weapons collapse into three reskinned pairs or trios. HedgewitchWand, ElderrootStaff and MosswrittenGrimoire share an identical ability pool (ArcaneBolt, Warcry, Execute, Oblivion). HearthfireStaff and EmberboughStaff share an identical fire pool (Cinderburst, Immolate, ArcaneBolt, Execute). DewglassRod and RimeleafScepter are both one-handed Elemental frost rods with three of four abilities shared. ElderrootStaff is also listed as Elemental but has no elemental abilities, only arcane ones.",
+      "fix": "Give each one role. Keep Oblivion only on the Mosswritten Grimoire, the heavy arcane tome. Make the Hedgewitch Wand a light support wand (ArcaneBolt, Warcry, Frostbind, Execute; Channeled, Bulwark). Make the Elderroot Staff a slow, defensive root-binding staff (Frostbind as the binding effect, Warcry, Cinderburst or Hoarfrost; Reinforced, Bulwark, WeakenEnemy), or switch it to Arcane. Give the two fire staffs and the two frost rods different passives and secondary abilities. Better still, collapse each pair into one weapon and give the freed slot a new fantasy."
+    },
+    {
+      "target": "PilferedKitchenKnife, WidowfangDirk",
+      "severity": "major",
+      "category": "duplication",
+      "problem": "Both are fast (0.7) one-handed daggers scaling on Agility at 0.4, with three of four abilities shared (Lacerate, VenomStrike, Riposte) and three of four passives shared (Agile, IncreaseAttackSpeed, Venomous). A stolen kitchen knife also has no reason to be poisoned. Venom belongs to the spider fang.",
+      "fix": "Remove VenomStrike and Venomous from the Kitchen Knife. Make it a bleed and counter weapon (Lacerate, Riposte, Slash, Sunder; Agile, Vicious, IncreaseAttackSpeed, Crippling) so the Widowfang Dirk is the only venom dagger."
+    },
+    {
+      "target": "All 24 weapons",
+      "severity": "major",
+      "category": "gdd-rule",
+      "problem": "Every possibleAbilities and possiblePassives list has exactly 4 entries. Exalted rolls 4, so every Exalted copy of every weapon gets the same fixed kit. The GDD says weapon ability lists are pools, not fixed kits.",
+      "fix": "Give each pool 5–6 entries where the catalog allows. Melee has 11 eligible abilities, Ranged 6 and Magic 8, and passives have more. That way even Exalted rolls vary."
+    },
+    {
+      "target": "HoarbarkRecurve, RimeleafScepter",
+      "severity": "major",
+      "category": "consistency",
+      "problem": "Frost has no tie to the Forest (dense old woodland). The Hoarbark Recurve is crafted from Frost Shards, which come from the Frozen Ice Shelf, Frostfang Hollow and the Frostbound Wraith, all Mountain-coded. That pulls a region 6 material into region 2 crafting. The Rimeleaf Scepter's never-thawing frost leaf, dropped by golems, is generic and not tied to any Forest creature or place.",
+      "fix": "Rework both around Forest materials, for example a sap-cured or moss-bound bow from Aged Timber and Spider Silk. Keep the slowing kit if you want, but justify it with roots, webs or sap rather than ice. If one frost weapon must stay, move its source to a Forest creature and drop the Frost Shard ingredient."
+    },
+    {
+      "target": "DroversSling, StagwoodLongbow, GravewoodArbalest",
+      "severity": "major",
+      "category": "consistency",
+      "problem": "Natural animals drop crafted weapons: a drover's leather sling from the Grey Wolf and Quillback Boar, and a longbow and an arbalest from forest predators. Animals don't carry bows. The Stagwood flavour text even implies the item belonged to dead hunters.",
+      "fix": "Source these from people or places: bandits on the road (the Highway Cutthroat for the sling), Treasure cards such as an abandoned hunter's camp, crafting, or Forest skeletons only for the Arbalest. Remove the animal sources."
+    },
+    {
+      "target": "GolemstoneMace",
+      "severity": "major",
+      "category": "consistency",
+      "problem": "The flavour text says the head was 'prised from a stone golem', but dropsFrom names the Rustbound Golem, which the catalog describes as 'a hulking construct of scrap iron'.",
+      "fix": "Drop the Rustbound Golem from dropsFrom and source it from the Forest's stone golems. Or rewrite the weapon as an iron mace made from Rustbound scrap."
+    },
+    {
+      "target": "HedgewitchWand",
+      "severity": "major",
+      "category": "balance",
+      "problem": "A humble Green Valley wand ('a small, steady power') includes Oblivion ('the heaviest blow in existence', powerBonus 30), the strongest ability in the game. Because the pool has only 4 entries, every Exalted copy gets it. Warcry, a rallying war cry, also doesn't fit a healer's wand.",
+      "fix": "Remove Oblivion and Warcry. Use Frostbind and Execute or Immolate, and save Oblivion for Forest weapons."
+    },
+    {
+      "target": "DroversSling, GriskThrowingKnives",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "Volley is described as 'a hail of arrows that leaves a bleed', but these weapons throw stones and knives. Piercing Shot on a Blunt sling also reads wrong.",
+      "fix": "Replace Volley on the sling with Winter's Mark or VenomStrike, whichever fits its role. For the knives, Volley is tolerable but Hamstring and Execute fit better. Or ask for a thrown-weapon ability."
+    },
+    {
+      "target": "MillstoneMaul, DewglassRod",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "The Rogue Slime is the weakest enemy in the catalog and 'dissolves whatever it swallows', yet it drops a stone maul and a glass rod. The maul is also the highest-damage Green Valley melee weapon, which is odd loot from a 50 HP ooze.",
+      "fix": "Make the maul crafted only, or have it drop from a mill-side Treasure card. Source the Dewglass Rod from Green Valley treasure only."
+    },
+    {
+      "target": "RibsplitterHatchet",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "The hatchet is 'made for cracking old bones', but it deals Slash. In the catalog, undead are weak to Blunt (Hollow Crown Revenant Blunt ×1.5). 'Ribsplitter' also leans toward gore.",
+      "fix": "Rename it (for example 'Bonecleave Hatchet' or 'Woodsman's Hatchet'), or keep Slash and change the flavour text to woodcutting."
+    },
+    {
+      "target": "SporepipeBlowgun",
+      "severity": "minor",
+      "category": "naming",
+      "problem": "The name promises spores or fungus, but the flavour text says the darts are dipped in spider venom.",
+      "fix": "Rename it to match the venom (for example 'Webreed Blowgun'), or change the flavour text to fungal spores from the forest floor."
+    },
+    {
+      "target": "WoodenSword",
+      "severity": "minor",
+      "category": "clarity",
+      "problem": "'A plain training blade' clashes with the rarity system, since the title will read 'Tempered Hallow Wood Sword' or 'Exalted Hallow Wood Sword'.",
+      "fix": "Use 'A simple training blade carved from hallow wood…' so the word Plain is kept for rarity."
+    },
+    {
+      "target": "EmberboughStaff",
+      "severity": "minor",
+      "category": "clarity",
+      "problem": "It is a one-handed 'Staff' while every other staff is two-handed, which confuses the weapon's silhouette and replay animation.",
+      "fix": "Rename it 'Emberbough Wand' or 'Emberbough Rod', or make it two-handed."
+    },
+    {
+      "target": "OakheartGreatblade",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "dropsFrom says 'Ancient Oak timber', but the Ancient Oak node yields the material Aged Timber.",
+      "fix": "Change dropsFrom to 'Crafted at the Blacksmith from Aged Timber'."
+    },
+    {
+      "target": "PilferedKitchenKnife",
+      "severity": "minor",
+      "category": "tone",
+      "problem": "'Exalted Pilfered Kitchen Knife' reads as a joke at the top rarity, which edges toward campy.",
+      "fix": "Consider a name that holds up at every rarity while keeping the goblin tie, for example 'Grisk Carving Knife'."
+    }
+  ]
+}

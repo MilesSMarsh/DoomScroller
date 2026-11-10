@@ -1,0 +1,98 @@
+{
+  "verdict": "revise",
+  "summary": "The structure and numbers are good. The list is 8/8/8 split across both regions. Every damage curve rises and stays inside its band. Within each region the weapons are close in damage per second, and Forest weapons are clearly stronger: about 30 per second at Exalted against about 21 in the Green Valley. The Hallow Wood Sword is a proper one-handed starter at the bottom of the band. The tone is sincere and grounded, with no banned words, no satire and no hyphens in names. Three majors block approval. The Hollowlight Lantern's description says it gives off a cold light, but its whole kit is fire. The Elderroot Staff, a living-root staff from the tree people, can roll Immolate. The Mosswritten Grimoire puts Oblivion, the game's strongest ability ('the heaviest blow in existence'), on a region-2 weapon that can roll it from Tempered up. Several smaller problems remain. Some ability names don't fit their weapons: frost names on farm bows, arrows on throwing knives, 'Piercing Shot' on a sling. The Hearthfire Staff's description contradicts its `dropsFrom`. The `dropsFrom` notes don't name the six existing cards that need new loot.",
+  "soundsLikeTheGame": "\"A long-hafted pitchfork that has turned a great deal of hay and driven off a few wolves.\" It is sincere, small-scale fantasy rooted in the Green Valley's farms. It is warm and plainly told, and it never winks at the world.",
+  "issues": [
+    {
+      "target": "HollowlightLantern",
+      "severity": "major",
+      "category": "consistency",
+      "problem": "The description says it is 'lit by a cold wisp', but its pool is entirely fire: Cinderburst, Immolate and the Smoldering passive. Its damage type is Arcane. A cold light that sets enemies ablaze contradicts itself, and the tooltip and the effects will disagree.",
+      "fix": "Choose one fantasy. Option one: keep the fire kit and rewrite the description as a pale or ghostly flame, e.g. 'lit by a pale flame that never gutters'. Option two: keep 'cold wisp' and swap Cinderburst/Immolate/Smoldering for Frostbind, Hoarfrost and Passive_Crippling."
+    },
+    {
+      "target": "ElderrootStaff",
+      "severity": "major",
+      "category": "consistency",
+      "problem": "A staff grown from a living elder tree and dropped by the tree people has Ability_Immolate ('Sets the enemy ablaze') in its pool. Fire on a living-wood weapon from a tree-folk drop clashes with the weapon's fantasy and with the creatures that drop it.",
+      "fix": "Replace Ability_Immolate with Ability_Execute or Ability_Hoarfrost. Lean on binding and slowing (Frostbind, Passive_Crippling) as the nearest match for roots holding an enemy fast."
+    },
+    {
+      "target": "MosswrittenGrimoire",
+      "severity": "major",
+      "category": "balance",
+      "problem": "Ability_Oblivion (power 30, 'The heaviest blow in existence') is the strongest ability in the catalog, and here it sits on a region-2 Forest weapon. Pools roll a rarity-sized subset, so a Tempered or Runed Grimoire can carry the game's top ability. That also leaves nothing aspirational for the five later regions.",
+      "fix": "Remove Oblivion from this pool and keep it for late-region weapons. Replace it with Ability_Frostbind, Ability_Immolate or Ability_Cinderburst so the pool still has four entries."
+    },
+    {
+      "target": "HearthfireStaff",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "The description says the coal was 'taken from a farmhouse hearth', but `dropsFrom` says it is crafted at the Blacksmith from Coal and Wood. The pool also includes Passive_Hefty (Constitution scaling) on a Spirit-scaling staff.",
+      "fix": "Align the two. Either change the description to 'set with a hearth coal that never goes cold', or make it a treasure drop. Swap Passive_Hefty for Passive_ArcaneFocus or Passive_Channeled."
+    },
+    {
+      "target": "MeadowShortbow",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "Ability_WintersMark is a frost-named ability on a meadow hunting bow. The same happens on DroversSling, HarvestCrossbow, SapboundRecurve and GravewoodArbalest. Five of the eight ranged weapons can show 'Winter's Mark' in regions with no snow.",
+      "fix": "Keep Winter's Mark on at most one or two of these. Use Hamstring or Passive_Crippling for the slow, and save Winter's Mark for Mountain-region weapons later."
+    },
+    {
+      "target": "DroversSling",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "Ability_PiercingShot ('A heavy single shot') is on a Blunt sling, so the ability name contradicts the damage type on the card.",
+      "fix": "Replace PiercingShot with Ability_VenomStrike or Ability_Volley, or accept Execute as the sling's heavy hit."
+    },
+    {
+      "target": "GriskThrowingKnives",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "Ability_Volley is described as 'A hail of arrows that leaves a bleed', but this weapon throws knives.",
+      "fix": "Replace Volley with Ability_PiercingShot. Otherwise, flag that Volley's description needs to cover any thrown projectile."
+    },
+    {
+      "target": "SapboundRecurve",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "Elemental damage is used for fire and frost elsewhere in the catalog (Frostbound Wraith, Frozen Ice Shelf, Cinder Wisp). Sticky sap arrows don't read as elemental.",
+      "fix": "Make it Pierce with a strong slow kit. If a non-Pierce bow is needed, rework the description so the elemental damage makes sense, e.g. a resin that burns or freezes."
+    },
+    {
+      "target": "GravewoodArbalest",
+      "severity": "minor",
+      "category": "clarity",
+      "problem": "The name 'Gravewood' and the skeleton drop suggest undead, but the description only talks about hunting forest beasts. Name, description and source don't agree.",
+      "fix": "Tie the description to the name and source, e.g. 'A massive arbalest of dark gravewood, still carried by the skeletons of fallen hunters.'"
+    },
+    {
+      "target": "HedgewitchWand",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "A hazel wand carried by village hedge-healers can roll Immolate and Execute ('The heaviest blow you can land'), which are aggressive picks for a healer's tool.",
+      "fix": "Lean protective. Keep Frostbind and ArcaneBolt, replace Immolate with Warcry, and keep the Bulwark/Reinforced passives."
+    },
+    {
+      "target": "OakheartGreatblade",
+      "severity": "minor",
+      "category": "clarity",
+      "problem": "'A broad blade set in a haft of ancient oak': a greatblade has a hilt or grip, not a haft, so the image is muddled.",
+      "fix": "Use 'hilt' or 'grip of ancient oak'. Otherwise, if a polearm-like blade is intended, say so."
+    },
+    {
+      "target": "GriskCarvingKnife",
+      "severity": "minor",
+      "category": "duplication",
+      "problem": "It has the same damage curve as the starter (1/2/4/8/16) and is faster (1.3 vs 1.0), so it is strictly better from the first goblin. Three weapons also share the 'Grisk' prefix, and the knife and throwing knives are both goblin knives.",
+      "fix": "That progression is fine, but rename one of the three: e.g. the rattle could be 'Goblin Shaman Rattle', or the throwing knives a non-Grisk name. That way 'Grisk' doesn't dominate the Green Valley loot."
+    },
+    {
+      "target": "WoodenSword",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "`dropsFrom` notes across the list don't name the six existing cards that lost their weapons (cardsToRewire): Enemy_BonewroughtSentinel, Enemy_HollowCrownRevenant, Dungeon_EmberforgeRuins, Dungeon_HollowCrownCrypt, Enemy_Wolf (Grey Wolf). Dungeon_WidowsThicket is already covered by the Widowfang Dirk. Many notes instead point at creatures that don't exist yet: tree people, stone golems, Grisk Goblin.",
+      "fix": "Point the ancient-race weapons (HollowlightLantern, MosswrittenGrimoire) at Bonewrought Depths, Hollow Crown Crypt and their enemies. Give the Grey Wolf a Green Valley weapon such as MeadowShortbow, and note which weapon replaces the Emberforge Scepter."
+    }
+  ]
+}

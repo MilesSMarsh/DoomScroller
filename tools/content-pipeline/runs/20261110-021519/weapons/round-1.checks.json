@@ -1,0 +1,98 @@
+[
+  {
+    "target": "HallowWoodSword",
+    "severity": "warning",
+    "rule": "dps-spread",
+    "message": "Runed damage × attackSpeed = 4.8, vs the Melee median 9.8 (±30%)"
+  },
+  {
+    "target": "GoblinKitchenKnife",
+    "severity": "warning",
+    "rule": "dps-spread",
+    "message": "Runed damage × attackSpeed = 6.0, vs the Melee median 9.8 (±30%)"
+  },
+  {
+    "target": "ThreshingFlail",
+    "severity": "warning",
+    "rule": "dps-spread",
+    "message": "Runed damage × attackSpeed = 6.3, vs the Melee median 9.8 (±30%)"
+  },
+  {
+    "target": "WheatcutterScythe",
+    "severity": "warning",
+    "rule": "dps-spread",
+    "message": "Runed damage × attackSpeed = 6.3, vs the Melee median 9.8 (±30%)"
+  },
+  {
+    "target": "BoarquillBlowgun",
+    "severity": "warning",
+    "rule": "dps-spread",
+    "message": "Runed damage × attackSpeed = 6.0, vs the Ranged median 9.8 (±30%)"
+  },
+  {
+    "target": "FieldhandSling",
+    "severity": "warning",
+    "rule": "dps-spread",
+    "message": "Runed damage × attackSpeed = 6.5, vs the Ranged median 9.8 (±30%)"
+  },
+  {
+    "target": "MeadowlarkShortbow",
+    "severity": "warning",
+    "rule": "dps-spread",
+    "message": "Runed damage × attackSpeed = 6.6, vs the Ranged median 9.8 (±30%)"
+  },
+  {
+    "target": "HearthfireRod",
+    "severity": "warning",
+    "rule": "dps-spread",
+    "message": "Runed damage × attackSpeed = 6.0, vs the Magic median 9.5 (±30%)"
+  },
+  {
+    "target": "MoonmeadowCrook",
+    "severity": "warning",
+    "rule": "dps-spread",
+    "message": "Runed damage × attackSpeed = 6.3, vs the Magic median 9.5 (±30%)"
+  },
+  {
+    "target": "DewglassStaff",
+    "severity": "warning",
+    "rule": "dps-spread",
+    "message": "Runed damage × attackSpeed = 6.4, vs the Magic median 9.5 (±30%)"
+  },
+  {
+    "target": "GolembreakerMaul",
+    "severity": "error",
+    "rule": "damage-band",
+    "message": "tier 1 damage 7 outside existing Melee range 2–6"
+  },
+  {
+    "target": "GolembreakerMaul",
+    "severity": "error",
+    "rule": "damage-band",
+    "message": "tier 2 damage 14 outside existing Melee range 4–12"
+  },
+  {
+    "target": "GolembreakerMaul",
+    "severity": "error",
+    "rule": "damage-band",
+    "message": "tier 3 damage 26 outside existing Melee range 8–24"
+  },
+  {
+    "target": "ElderboughLongbow",
+    "severity": "error",
+    "rule": "damage-band",
+    "message": "tier 2 damage 13 outside existing Ranged range 4–12"
+  },
+  {
+    "target": "IronboltArbalest",
+    "severity": "error",
+    "rule": "damage-band",
+    "message": "tier 1 damage 7 outside existing Ranged range 2–6"
+  },
+  {
+    "target": "IronboltArbalest",
+    "severity": "error",
+    "rule": "damage-band",
+    "message": "tier 2 damage 13 outside existing Ranged range 4–12"
+  }
+]

@@ -4786,7 +4786,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: c79672b07f97351c4ab76cf972bb3ca8, type: 2}
   - {fileID: 11400000, guid: c79672b07f97351c4ab76cf972bb3ca8, type: 2}
   playerSprite: {fileID: 21300000, guid: c670095de6b4303678d8ef6ce7c98106, type: 3}
-  starterWeaponDefinition: {fileID: 11400000, guid: 1cc64e9a05244643ea6a4dc8b088eeb7, type: 2}
+  starterWeaponDefinition: {fileID: 11400000, guid: a5a7b70eb0c340c696e103c9e33ea065, type: 2}
   maxHealth: 100
   regenPerInterval: 10
   regenIntervalSeconds: 30

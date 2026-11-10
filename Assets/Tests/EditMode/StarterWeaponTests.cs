@@ -8,7 +8,7 @@ namespace DoomScroller.Tests.EditMode
     public class StarterWeaponTests
     {
         private static WeaponDefinition Load() =>
-            Resources.Load<WeaponDefinition>("WeaponDefinitions/WoodenSword");
+            Resources.Load<WeaponDefinition>("WeaponDefinitions/HallowWoodSword");
 
         [Test]
         public void WoodenSwordAsset_Exists()
@@ -24,9 +24,9 @@ namespace DoomScroller.Tests.EditMode
 
             Assert.IsNotNull(item);
             Assert.AreEqual(ItemCategory.Weapon, item.category);
-            Assert.AreEqual(ItemRarity.Common, item.rarity);
+            Assert.AreEqual(ItemRarity.Plain, item.rarity);
             Assert.AreSame(definition, item.sourceDefinition);
-            Assert.AreEqual("Wooden Sword", item.title);
+            Assert.AreEqual("Plain Hallow Wood Sword", item.title);
             Assert.AreEqual(definition.statsByRarity[0].baseDamage, item.powerValue);
         }
 
@@ -71,8 +71,23 @@ namespace DoomScroller.Tests.EditMode
             var loaded = JsonUtility.FromJson<SaveData>(json);
             var restored = loaded.itemPool[0].Restore();
 
-            Assert.AreEqual("Wooden Sword", restored.title);
-            Assert.AreEqual(ItemRarity.Common, restored.rarity);
+            Assert.AreEqual("Plain Hallow Wood Sword", restored.title);
+            Assert.AreEqual(ItemRarity.Plain, restored.rarity);
+            Assert.AreSame(definition, restored.sourceDefinition);
+        }
+
+        [Test]
+        public void Restore_SaveFromBeforeRename_RelinksToHallowWoodSword()
+        {
+            var definition = Load();
+            var item = StarterWeapon.Create(definition, new System.Random(1));
+            var snapshot = ItemSnapshot.Capture(item);
+            snapshot.title = "Wooden Sword";
+            snapshot.sourceWeaponName = "Wooden Sword";
+
+            var restored = snapshot.Restore();
+
+            Assert.AreEqual("Plain Hallow Wood Sword", restored.title);
             Assert.AreSame(definition, restored.sourceDefinition);
         }
     }

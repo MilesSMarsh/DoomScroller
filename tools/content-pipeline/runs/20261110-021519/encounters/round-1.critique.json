@@ -1,0 +1,28 @@
+{
+  "verdict": "approve",
+  "summary": "All five cards obey the GDD. Enemy/Ambush stats sit inside Green Valley's range (HP 20–100, dmg 5–11, XP 50–140), attack speeds are 0.5–1.2, and the Resource never fights back, pays 0 XP/0 gold and has rising thresholds. The mix is 3 Enemy, 1 Ambush and 1 Resource. Naming and tone follow the brief: Grisk is approved, there are no hyphens, banned words or 'you', and there is no satire, which is within limits. Drops line up with the approved weapons' dropsFrom notes (Grisk Skinning Knife from the goblin; Threshing Flail and Barnyard Throwing Axe from the raiding party). Only minor polish remains: a badger dropping Wolf Pelt, the raiding party's spears versus its farm-tool loot, and the new slime's stats sitting close to Rogue Slime's.",
+  "soundsLikeTheGame": "\"A glossy slime that shivers across the meadow, gathering dew as it goes.\" It describes an ordinary valley slime plainly and sincerely, and ties it to a real place.",
+  "issues": [
+    {
+      "target": "Enemy_BurrowBadger",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "A badger drops Wolf Pelt, which makes no sense for the creature that drops it.",
+      "fix": "Replace WolfPelt with a material a badger's den could plausibly yield (e.g. HealingHerbs or Stone), or keep Fibers alone."
+    },
+    {
+      "target": "Ambush_GoblinRaidingParty",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "The card text says 'Spears rattle', but the party drops a blunt flail and a throwing axe, with no spear or Pierce weapon.",
+      "fix": "Either add a Pierce weapon to the loot, or reword so the goblins carry stolen farm tools (e.g. 'Goblins burst from the tall grass waving stolen farm tools.')."
+    },
+    {
+      "target": "Enemy_DewdropSlime",
+      "severity": "minor",
+      "category": "duplication",
+      "problem": "Its stats (55 HP / 6 dmg / 0.7 speed / 60 XP) nearly repeat Rogue Slime's (50 / 6 / 0.7 / 50) in the same region; only the weaknesses set it apart.",
+      "fix": "Push the stats further apart, e.g. a slower, tankier slime (around 70 HP, 0.6 speed), so the two slime cards play differently."
+    }
+  ]
+}

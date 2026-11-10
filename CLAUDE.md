@@ -25,6 +25,8 @@ Git + Git LFS for binary assets (check `.gitattributes` before adding new types)
   — exits 2 if the Editor has the project open; use Unity MCP then
 - Server tests (headless): `tools/run-server-tests.sh`
 - Server local dev (Docker Compose + Postgres): `tools/run-server-dev.sh` → http://localhost:8088/health
+- Content pipeline (generate → check → critic loop → install as assets):
+  `tools/content-pipeline/` — see its README; needs `memory/narrative.md` written
 - Play Mode tests: none yet
 - Build (Android / iOS): not configured yet
 

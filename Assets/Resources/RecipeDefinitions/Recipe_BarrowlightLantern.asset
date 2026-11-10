@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3080f8a71b5317737bcbb1e7d0dc0129, type: 3}
+  m_Name: Recipe_BarrowlightLantern
+  m_EditorClassIdentifier: DoomScroller::DoomScroller.Inventory.RecipeDefinition
+  recipeId: 80d38853-0752-4e58-ba4c-4fdb0658635c
+  outputKind: 1
+  outputItem: {fileID: 0}
+  outputWeapon: {fileID: 11400000, guid: 874cf68b8ceb4bd5b90f8f9c6a753f57, type: 2}
+  outputEquipment: {fileID: 0}
+  outputMaterial: {fileID: 0}
+  outputRarity: 2
+  goldCost: 35
+  ingredients:
+  - material: {fileID: 11400000, guid: b1d9f6b31e8bbd2b08181ccb59fec1e8, type: 2}
+    count: 2
+  - material: {fileID: 11400000, guid: 041e344ce9fdeca7c9e17fa02911aba9, type: 2}
+    count: 2
+  - material: {fileID: 11400000, guid: 99ddb6251a940e92bb402ee1b187b071, type: 2}
+    count: 1
+  prerequisiteRecipes:
+  - {fileID: 11400000, guid: a7f41891c19f4a77a4dcf97b6a128f49, type: 2}
+  - {fileID: 11400000, guid: df29d6a04d5797123a14f10112779c48, type: 2}

@@ -1,0 +1,56 @@
+{
+  "verdict": "approve",
+  "summary": "I'm approving this set. Both major problems from the last review are fixed. Wispfire Recurve is now Stormbough Recurve: a lightning bow from the Forest, sourced from tree people, with no Volcano echo and no frost or poison in its pool. Dewglass Staff is now Rainglass Staff, crafted from Wood and Healing Herbs, both Green Valley materials. Most of the earlier minor notes are also fixed: loot sources now fit the items, Lacerate is off the flail, the knife has a sincere name, the starter says \"A simple blade\", the throwing axe has Agility passives, the bow names no longer clash, Emberbark leads with Execute and scales with Agility, frost abilities are off the stone and wood ranged weapons, and the Elderroot flavour is now tied to the Forest. The starter is still humble and at the bottom of the band, Forest gear sits above Green Valley gear, damage per second stays close to even within each category, and Oblivion only appears on Forest gear. There are no banned words, no hyphens in names, no unapproved made-up words and no satire. The new notes below are all minor polish: loot sources that don't fit (a wolf drops a bow, a boar drops a blowgun, skeletons drop the lantern that repels them), mixed elements on the Magic weapons (a limit of the small catalog) and one damage-per-second outlier.",
+  "soundsLikeTheGame": "\"A long harvest scythe that cuts as cleanly through goblins as through wheat.\" It is plain and sincere, rooted in the Green Valley's farms and goblins, and the tool turned into a weapon tells the player exactly what the item is.",
+  "issues": [
+    {
+      "target": "MeadowlarkShortbow",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "It drops from the Grey Wolf. A wolf doesn't carry a bow, which is the same loot-sense problem the last review flagged for predators. This probably comes from rewiring the old Enemy_Wolf 'Bow' drop.",
+      "fix": "Source it from goblins, the Wandering Merchant or a Blacksmith recipe (Wood plus Rope). Leave the Grey Wolf with materials such as Wolf Pelt."
+    },
+    {
+      "target": "BoarquillBlowgun",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "It drops whole from the Quillback Boar. The boar would give quills, not a finished reed blowgun.",
+      "fix": "Make it a Blacksmith recipe (Fibers plus Wood), or source it from goblins. The flavour can still say it fires boar quills."
+    },
+    {
+      "target": "BarrowlightLantern",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "The lantern 'drives back the skeletons', yet the skeletons drop it. It also has a 'pale flame', but its pool leads with frost (Frostbind, Hoarfrost).",
+      "fix": "Source it from the Bonewrought Sentinel's dungeon loot or a recipe (Bone Fragment plus Iron Ingot). Lead the pool with Arcane Bolt and Execute, or describe the flame as a cold light."
+    },
+    {
+      "target": "MoonmeadowCrook",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "This is an Arcane shepherd's crook, but its pool includes frost and fire (Frostbind, Cinderburst, Immolate). HedgewitchWand has the same mix. The small Magic catalog limits the options, but three off-element entries out of five is a lot.",
+      "fix": "Keep at most one elemental entry on each Arcane weapon. Fill the pool with Arcane Bolt, Execute and Warcry (4 entries is acceptable)."
+    },
+    {
+      "target": "GolembreakerMaul",
+      "severity": "minor",
+      "category": "balance",
+      "problem": "It is the flagship Forest two-hander, but it has the lowest Exalted damage per second of the Forest melee weapons (48 × 0.7 ≈ 33.6, against 41.6 for Heartwood Hatchet). Its damage is already at the band cap.",
+      "fix": "Raise attackSpeed to about 0.8, or lower Heartwood Hatchet slightly, to tighten the Forest melee spread."
+    },
+    {
+      "target": "RainglassStaff",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "The recipe is now fixed, but the pool still leads with Frostbind and Hoarfrost (a 'killing frost'), which is strong for 'cool as dawn' rainwater.",
+      "fix": "Accept this as a catalog limit, or lead with Crippling and Weaken Enemy passives so the staff reads as a soaking slow rather than hard frost."
+    },
+    {
+      "target": "GnarlrootQuarterstaff",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "Frostbind is still in the pool of an oak-root staff (a leftover from the last review).",
+      "fix": "Replace it with Hoarfrost-free options if possible, or accept it as the fourth entry forced by the catalog."
+    }
+  ]
+}

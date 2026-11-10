@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3080f8a71b5317737bcbb1e7d0dc0129, type: 3}
+  m_Name: Recipe_ThornwoodBoarspear
+  m_EditorClassIdentifier: DoomScroller::DoomScroller.Inventory.RecipeDefinition
+  recipeId: b0f4cecd-1d12-4ea1-8ad1-8a7ab8b35138
+  outputKind: 1
+  outputItem: {fileID: 0}
+  outputWeapon: {fileID: 11400000, guid: 3097887f6b45460b93ec9b14de58ead7, type: 2}
+  outputEquipment: {fileID: 0}
+  outputMaterial: {fileID: 0}
+  outputRarity: 2
+  goldCost: 30
+  ingredients:
+  - material: {fileID: 11400000, guid: 1d611f11dfc3d430781a7a7299b625fe, type: 2}
+    count: 3
+  - material: {fileID: 11400000, guid: b1d9f6b31e8bbd2b08181ccb59fec1e8, type: 2}
+    count: 2
+  prerequisiteRecipes:
+  - {fileID: 11400000, guid: d1f5926270f1496f9bc361947de39ce1, type: 2}

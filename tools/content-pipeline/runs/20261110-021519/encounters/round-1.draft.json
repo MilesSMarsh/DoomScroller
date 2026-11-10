@@ -1,0 +1,239 @@
+{
+  "encounters": [
+    {
+      "id": "Enemy_GriskGoblin",
+      "title": "Grisk Goblin",
+      "type": "Enemy",
+      "description": "A wiry goblin clutching a stolen kitchen knife.",
+      "cardColor": {
+        "r": 0.45,
+        "g": 0.6,
+        "b": 0.3
+      },
+      "baseXpReward": 65,
+      "goldReward": 6,
+      "percentByRarity": [
+        60,
+        28,
+        8,
+        3,
+        1
+      ],
+      "minItemCount": 1,
+      "maxItemCount": 1,
+      "lootWeapons": [
+        "GriskSkinningKnife"
+      ],
+      "lootEquipment": [],
+      "lootMaterials": [
+        "Fibers",
+        "IronOre"
+      ],
+      "enemyHealth": 45,
+      "enemyAttackDamage": 6,
+      "enemyAttackSpeed": 1,
+      "damageTypeModifiers": [
+        {
+          "type": "Blunt",
+          "multiplier": 1.15
+        }
+      ],
+      "resourceTimerSeconds": 0,
+      "resourceWeaknesses": [],
+      "resourceThresholds": []
+    },
+    {
+      "id": "Enemy_BurrowBadger",
+      "title": "Burrow Badger",
+      "type": "Enemy",
+      "description": "A stocky badger fresh from its den, claws out and in no mood to share the field.",
+      "cardColor": {
+        "r": 0.5,
+        "g": 0.45,
+        "b": 0.4
+      },
+      "baseXpReward": 80,
+      "goldReward": 7,
+      "percentByRarity": [
+        55,
+        30,
+        10,
+        4,
+        1
+      ],
+      "minItemCount": 1,
+      "maxItemCount": 1,
+      "lootWeapons": [],
+      "lootEquipment": [
+        "DroverLeggings"
+      ],
+      "lootMaterials": [
+        "WolfPelt",
+        "Fibers"
+      ],
+      "enemyHealth": 65,
+      "enemyAttackDamage": 8,
+      "enemyAttackSpeed": 0.8,
+      "damageTypeModifiers": [
+        {
+          "type": "Pierce",
+          "multiplier": 1.25
+        }
+      ],
+      "resourceTimerSeconds": 0,
+      "resourceWeaknesses": [],
+      "resourceThresholds": []
+    },
+    {
+      "id": "Enemy_DewdropSlime",
+      "title": "Dewdrop Slime",
+      "type": "Enemy",
+      "description": "A glossy slime that shivers across the meadow, gathering dew as it goes.",
+      "cardColor": {
+        "r": 0.5,
+        "g": 0.8,
+        "b": 0.75
+      },
+      "baseXpReward": 60,
+      "goldReward": 4,
+      "percentByRarity": [
+        65,
+        25,
+        7,
+        2,
+        1
+      ],
+      "minItemCount": 1,
+      "maxItemCount": 1,
+      "lootWeapons": [],
+      "lootEquipment": [
+        "HedgerowCharm"
+      ],
+      "lootMaterials": [
+        "HealingHerbs",
+        "Fibers"
+      ],
+      "enemyHealth": 55,
+      "enemyAttackDamage": 6,
+      "enemyAttackSpeed": 0.7,
+      "damageTypeModifiers": [
+        {
+          "type": "Elemental",
+          "multiplier": 1.5
+        },
+        {
+          "type": "Pierce",
+          "multiplier": 0.7
+        }
+      ],
+      "resourceTimerSeconds": 0,
+      "resourceWeaknesses": [],
+      "resourceThresholds": []
+    },
+    {
+      "id": "Ambush_GoblinRaidingParty",
+      "title": "Goblin Raiding Party",
+      "type": "Ambush",
+      "description": "Spears rattle in the tall grass as goblins rush the road.",
+      "cardColor": {
+        "r": 0.4,
+        "g": 0.5,
+        "b": 0.25
+      },
+      "baseXpReward": 135,
+      "goldReward": 18,
+      "percentByRarity": [
+        35,
+        35,
+        20,
+        8,
+        2
+      ],
+      "minItemCount": 1,
+      "maxItemCount": 1,
+      "lootWeapons": [
+        "ThreshingFlail",
+        "BarnyardThrowingAxe"
+      ],
+      "lootEquipment": [
+        "GatepostBuckler"
+      ],
+      "lootMaterials": [
+        "Rope",
+        "IronOre"
+      ],
+      "enemyHealth": 100,
+      "enemyAttackDamage": 10,
+      "enemyAttackSpeed": 1,
+      "damageTypeModifiers": [
+        {
+          "type": "Slash",
+          "multiplier": 1.15
+        },
+        {
+          "type": "Pierce",
+          "multiplier": 0.9
+        }
+      ],
+      "resourceTimerSeconds": 0,
+      "resourceWeaknesses": [],
+      "resourceThresholds": []
+    },
+    {
+      "id": "Resource_WildHerbPatch",
+      "title": "Wild Herb Patch",
+      "type": "Resource",
+      "description": "Fragrant healing herbs growing thick along a sunny hedgerow.",
+      "cardColor": {
+        "r": 0.4,
+        "g": 0.7,
+        "b": 0.35
+      },
+      "baseXpReward": 0,
+      "goldReward": 0,
+      "percentByRarity": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "minItemCount": 0,
+      "maxItemCount": 0,
+      "lootWeapons": [],
+      "lootEquipment": [],
+      "lootMaterials": [],
+      "enemyHealth": 0,
+      "enemyAttackDamage": 0,
+      "enemyAttackSpeed": 0,
+      "damageTypeModifiers": [],
+      "resourceTimerSeconds": 10,
+      "resourceWeaknesses": [
+        {
+          "type": "Slash",
+          "multiplier": 2
+        }
+      ],
+      "resourceThresholds": [
+        {
+          "damageRequired": 20,
+          "material": "HealingHerbs",
+          "rarity": "Plain",
+          "amount": 3
+        },
+        {
+          "damageRequired": 60,
+          "material": "Fibers",
+          "rarity": "Plain",
+          "amount": 3
+        },
+        {
+          "damageRequired": 100,
+          "material": "HealingHerbs",
+          "rarity": "Tempered",
+          "amount": 1
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "verdict": "revise",
+  "summary": "The structure is solid. There is exactly one recipe for each of the 34 non-starter items, and every rarity fits its region (Green Valley at Plain or Tempered, Forest at Tempered, Runed or Relic). Every gold cost and ingredient total is inside recipeBand. No prerequisite crafts at a higher rarity than the recipe that needs it, there are no cycles, and the tree climbs from Green Valley basics into Forest gear. Most ingredients match the item's own text and the weapons-stage notes (Golembreaker Maul, Cairn Slingstaff, Yewbough Longbow, Antlerbark Helm). Two Green Valley recipes are locked behind materials from later regions, which breaks the region-by-region progression this recipe tree is meant to build: Rainglass Staff needs a Frost Shard (ice content) and Boarquill Blowgun needs a Venom Sac (Widow Spider). There are also a few small mismatches between materials and item text, and the catalog has no way to smelt Iron Ingot.",
+  "soundsLikeTheGame": "Recipe_GolembreakerMaul (3 Stone + 3 Aged Timber) is the best fit. It builds exactly what its card promises, \"a great maul of stone and ironwood, made to crack golems at the joints\", and needs a Green Valley scythe first, so the crafting tree reads like the hero's own road from the farms into the old woods.",
+  "issues": [
+    {
+      "target": "Recipe_RainglassStaff",
+      "severity": "major",
+      "category": "consistency",
+      "problem": "This Green Valley Tempered staff needs 1 Frost Shard. Frost Shard only comes from ice content (Frozen Ice Shelf, Frostfang Hollow, Frostbound Wraith), which fits the Mountain's ice golems and dire wolves, not the valley. A region 1 weapon can't be crafted until much later, which breaks the climb from Green Valley basics. It also goes against the approved weapons-stage note ('Crafted at the Blacksmith from Wood and Healing Herbs') and the item's own fantasy (a bead of rainwater, not ice).",
+      "fix": "Remove Frost Shard. Use Wood 4 + Healing Herbs 3 (7 total), or add 1 Stone or Arcane Gem for the glass bead. Keep the total at 5–8 and the gold at 25–28."
+    },
+    {
+      "target": "Recipe_BoarquillBlowgun",
+      "severity": "major",
+      "category": "consistency",
+      "problem": "This Green Valley Plain blowgun needs 1 Venom Sac. Venom Sac only drops from the Widow Spider, the same creature as Spider Silk, which the task lists as a Forest material. An entry-level region 1 weapon is locked behind a later region. The item's text is about hardened boar quills, not venom.",
+      "fix": "Replace Venom Sac with Green Valley materials that match the quill and reed fantasy. For example: Wood 3 + Fibers 3 + Rope 1 (add the Recipe_Rope prerequisite), or Wood 4 + Fibers 3. Quillback Boar already drops Wood and Fibers, which ties the recipe to the item's source."
+    },
+    {
+      "target": "Recipe_BarnyardThrowingAxe",
+      "severity": "minor",
+      "category": "balance",
+      "problem": "The catalog has no Recipe_IronIngot, so Iron Ingot only drops from Rustbound Golem, Bonewrought Sentinel and Bonewrought Depths, which look like Forest or ancient content. That makes several Green Valley Plain and Tempered recipes (Barnyard Throwing Axe, Gatepost Buckler, Hearthfire Rod, Wheatcutter Scythe, Boarhide Jerkin) depend on drops from outside the region. Hearthfire Rod and Wheatcutter Scythe have Iron Ingot fixed by their approved notes; Barnyard Throwing Axe and Gatepost Buckler were the designer's choice.",
+      "fix": "In Recipe_BarnyardThrowingAxe and Recipe_GatepostBuckler, use Iron Ore instead of Iron Ingot (the designer already does this in Recipe_HayfieldHelm and Recipe_GriskSkinningKnife). Separately, tell the creative director that the material recipe tree needs a Recipe_IronIngot (Iron Ore + Coal) so Green Valley iron gear can actually be crafted in Green Valley."
+    },
+    {
+      "target": "Recipe_BoarhideJerkin",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "The item is described as 'a tough jerkin of boar hide', but the recipe uses 4 Wolf Pelt as its main material. No boar hide material exists, so this is a catalog limit, but the hide doesn't match the item's text.",
+      "fix": "Keep Wolf Pelt as the closest hide for now, but flag that a Boar Hide material is needed (dropped by Quillback Boar). Or drop the pelt count to 2 and make up the total with Fibers or Rope so the recipe reads less like a wolf-pelt jerkin."
+    },
+    {
+      "target": "Recipe_HeartsapPendant",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "The item is 'a pendant of amber hardened from the sap of an elder tree', but the recipe uses no wood at all (Arcane Gem, Healing Herbs, Silver Ingot).",
+      "fix": "Replace Healing Herbs with Aged Timber 2 so the sap and tree source shows in the recipe. The total stays at 5."
+    }
+  ]
+}

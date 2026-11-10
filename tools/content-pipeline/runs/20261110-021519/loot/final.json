@@ -1,0 +1,68 @@
+{
+  "rewired": [
+    {
+      "encounter": "Dungeon_EmberforgeRuins",
+      "lootWeapons": [
+        "EmberbarkWand",
+        "HearthfireRod"
+      ],
+      "lootEquipment": [],
+      "reason": "Fire scepter replaced by the two elemental fire casters; mid-tier ruin mixes Forest and Green Valley gear."
+    },
+    {
+      "encounter": "Dungeon_HollowCrownCrypt",
+      "lootWeapons": [
+        "GravewardenMace",
+        "BarrowlightLantern",
+        "ElderrootStaff"
+      ],
+      "lootEquipment": [
+        "OakheartCuirass"
+      ],
+      "reason": "Hardest dungeon gets top Forest gear: bone-breaking mace for the cleaver, arcane Relic staff and lantern for the grimoire, plus Relic chest armor."
+    },
+    {
+      "encounter": "Dungeon_WidowsThicket",
+      "lootWeapons": [
+        "GriskSkinningKnife",
+        "BoarquillBlowgun"
+      ],
+      "lootEquipment": [
+        "MossweaveGreaves"
+      ],
+      "reason": "Venom-friendly pierce weapons replace the fang dagger; Mossweave Greaves tie to the spider silk the lair holds."
+    },
+    {
+      "encounter": "Enemy_BonewroughtSentinel",
+      "lootWeapons": [
+        "GravewardenMace",
+        "GolembreakerMaul"
+      ],
+      "lootEquipment": [
+        "AntlerbarkHelm"
+      ],
+      "reason": "Blunt weapons replace the cleaver and war hammer, and a Forest helm replaces the leather helmet; both weapons suit a bone guardian."
+    },
+    {
+      "encounter": "Enemy_HollowCrownRevenant",
+      "lootWeapons": [
+        "GravewardenMace",
+        "BarrowlightLantern"
+      ],
+      "lootEquipment": [
+        "MossbackShield"
+      ],
+      "reason": "Toughest enemy: undead-slaying Forest gear, with a mace for the cleaver and a lantern for the grimoire, plus a Relic shield."
+    },
+    {
+      "encounter": "Enemy_Wolf",
+      "lootWeapons": [
+        "MeadowlarkShortbow"
+      ],
+      "lootEquipment": [
+        "DroverLeggings"
+      ],
+      "reason": "Easiest card gets Green Valley gear: a hunting shortbow replaces the bow, and leggings fit a hunter's pelt."
+    }
+  ]
+}

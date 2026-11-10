@@ -22,7 +22,7 @@ namespace DoomScroller.Inventory
         public Color itemColor = Color.gray;
 
         [Tooltip("Power (defence) for each rarity tier — always 5 entries, index 0..4 = " +
-                  "Common/Uncommon/Rare/Legendary/Mythic.")]
+                  "Plain/Tempered/Runed/Relic/Exalted.")]
         public int[] powerByRarity = new int[5];
 
         [Tooltip("The pool this piece can roll passives from when generated (same " +

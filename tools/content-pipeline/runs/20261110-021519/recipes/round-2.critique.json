@@ -1,0 +1,14 @@
+{
+  "verdict": "approve",
+  "summary": "All five issues from the last review are fixed. Rainglass Staff is now Wood 4 + Healing Herbs 3, which matches its approved note and no longer needs Frost Shard. Boarquill Blowgun is now Wood 3 + Fibers 3 + Rope 1 (with the Rope prerequisite), so Venom Sac is gone. Barnyard Throwing Axe and Gatepost Buckler now use Iron Ore. Boarhide Jerkin is less pelt-heavy, and Heartsap Pendant now uses Aged Timber. Every recipe still sits inside recipeBand for its rarity. Region rarities are correct, and no prerequisite crafts at a higher rarity than the recipe that needs it. The tree climbs cleanly from Green Valley basics into Forest gear. One catalog-level note remains: there is no way to smelt Iron Ingot.",
+  "soundsLikeTheGame": "The best fit is Recipe_GolembreakerMaul (3 Stone + 3 Aged Timber, after the Wheatcutter Scythe). It builds exactly the \"great maul of stone and ironwood\" its card promises, and the tree reads like the hero's own road from the valley farms into the old woods.",
+  "issues": [
+    {
+      "target": "Recipe_HearthfireRod",
+      "severity": "minor",
+      "category": "balance",
+      "problem": "The catalog has no Recipe_IronIngot, so Iron Ingot only drops from Forest and ancient content (Rustbound Golem, Bonewrought Sentinel, Bonewrought Depths). Green Valley recipes Recipe_HearthfireRod and Recipe_WheatcutterScythe still need it. Their approved weapons notes fix Iron Ingot as an ingredient, so this is a catalog gap, not a design error.",
+      "fix": "Tell the creative director to add a Plain material recipe, Recipe_IronIngot (for example Iron Ore 3 + Coal 1 for 10 gold, the same as Silver Ingot), and add it as a prerequisite on Recipe_HearthfireRod and Recipe_WheatcutterScythe so Green Valley iron gear can be crafted in Green Valley."
+    }
+  ]
+}

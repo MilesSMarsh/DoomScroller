@@ -10,10 +10,10 @@ namespace DoomScroller.Feed
     [Serializable]
     public class LootTable
     {
-        [Tooltip("Drop chance per ItemRarity tier (index 0..4 = Common/Uncommon/Rare/" +
-                  "Legendary/Mythic) — doesn't need to sum to exactly 100, RewardGenerator." +
+        [Tooltip("Drop chance per ItemRarity tier (index 0..4 = Plain/Tempered/Runed/" +
+                  "Relic/Exalted) — doesn't need to sum to exactly 100, RewardGenerator." +
                   "RollRarity normalizes against whatever the total actually is. All-zero " +
-                  "(the default) always rolls Common.")]
+                  "(the default) always rolls Plain.")]
         public float[] percentByRarity = new float[5];
 
         [Tooltip("How many separate items one reward grants — each rolled independently " +

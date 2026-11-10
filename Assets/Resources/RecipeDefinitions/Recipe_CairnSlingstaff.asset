@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3080f8a71b5317737bcbb1e7d0dc0129, type: 3}
+  m_Name: Recipe_CairnSlingstaff
+  m_EditorClassIdentifier: DoomScroller::DoomScroller.Inventory.RecipeDefinition
+  recipeId: af6b7908-b781-4845-86d5-5c64ea3d027c
+  outputKind: 1
+  outputItem: {fileID: 0}
+  outputWeapon: {fileID: 11400000, guid: 24849fb6b4254f8da0822116a22e014f, type: 2}
+  outputEquipment: {fileID: 0}
+  outputMaterial: {fileID: 0}
+  outputRarity: 2
+  goldCost: 30
+  ingredients:
+  - material: {fileID: 11400000, guid: 554ad8eca2d3b9eb9b9e0f5aec1b0247, type: 2}
+    count: 3
+  - material: {fileID: 11400000, guid: b6dbba29b3b1dec1d91de9e7e07a1dbd, type: 2}
+    count: 2
+  prerequisiteRecipes:
+  - {fileID: 11400000, guid: 0d71ff0d84e34f028c46725d34a07752, type: 2}

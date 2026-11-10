@@ -119,16 +119,16 @@ namespace DoomScroller.Tests.EditMode
             wood.materialName = "Wood";
             var loadout = new PlayerLoadout(new List<ItemData>
             {
-                MaterialGenerator.GenerateFromDefinition(wood, ItemRarity.Common),
-                MaterialGenerator.GenerateFromDefinition(wood, ItemRarity.Rare)
+                MaterialGenerator.GenerateFromDefinition(wood, ItemRarity.Plain),
+                MaterialGenerator.GenerateFromDefinition(wood, ItemRarity.Runed)
             });
 
             var ingredient = new RecipeIngredient { material = wood, count = 2 };
 
-            // Only 1 unit at each rarity is owned — 2 Common Wood isn't satisfied by
-            // owning 1 Common + 1 Rare, and vice versa. Stacks never merge across rarity.
-            Assert.IsFalse(loadout.HasIngredients(new[] { ingredient }, ItemRarity.Common));
-            Assert.IsFalse(loadout.HasIngredients(new[] { ingredient }, ItemRarity.Rare));
+            // Only 1 unit at each rarity is owned — 2 Plain Wood isn't satisfied by
+            // owning 1 Plain + 1 Runed, and vice versa. Stacks never merge across rarity.
+            Assert.IsFalse(loadout.HasIngredients(new[] { ingredient }, ItemRarity.Plain));
+            Assert.IsFalse(loadout.HasIngredients(new[] { ingredient }, ItemRarity.Runed));
         }
 
         [Test]
@@ -138,15 +138,15 @@ namespace DoomScroller.Tests.EditMode
             wood.materialName = "Wood";
             var loadout = new PlayerLoadout(new List<ItemData>
             {
-                MaterialGenerator.GenerateFromDefinition(wood, ItemRarity.Common),
-                MaterialGenerator.GenerateFromDefinition(wood, ItemRarity.Common),
-                MaterialGenerator.GenerateFromDefinition(wood, ItemRarity.Rare)
+                MaterialGenerator.GenerateFromDefinition(wood, ItemRarity.Plain),
+                MaterialGenerator.GenerateFromDefinition(wood, ItemRarity.Plain),
+                MaterialGenerator.GenerateFromDefinition(wood, ItemRarity.Runed)
             });
 
             var ingredient = new RecipeIngredient { material = wood, count = 2 };
 
-            Assert.IsTrue(loadout.HasIngredients(new[] { ingredient }, ItemRarity.Common));
-            Assert.IsFalse(loadout.HasIngredients(new[] { ingredient }, ItemRarity.Rare));
+            Assert.IsTrue(loadout.HasIngredients(new[] { ingredient }, ItemRarity.Plain));
+            Assert.IsFalse(loadout.HasIngredients(new[] { ingredient }, ItemRarity.Runed));
         }
 
         [Test]
@@ -156,11 +156,11 @@ namespace DoomScroller.Tests.EditMode
             wood.materialName = "Wood";
             var loadout = new PlayerLoadout(new List<ItemData>
             {
-                MaterialGenerator.GenerateFromDefinition(wood, ItemRarity.Common)
+                MaterialGenerator.GenerateFromDefinition(wood, ItemRarity.Plain)
             });
 
-            Assert.IsTrue(loadout.HasDiscovered(wood, ItemRarity.Common));
-            Assert.IsFalse(loadout.HasDiscovered(wood, ItemRarity.Rare));
+            Assert.IsTrue(loadout.HasDiscovered(wood, ItemRarity.Plain));
+            Assert.IsFalse(loadout.HasDiscovered(wood, ItemRarity.Runed));
         }
 
         [Test]
@@ -175,25 +175,25 @@ namespace DoomScroller.Tests.EditMode
             recipe.recipeId = "test-rope";
             recipe.outputKind = RecipeOutputKind.Material;
             recipe.outputMaterial = rope;
-            recipe.outputRarity = ItemRarity.Rare;
+            recipe.outputRarity = ItemRarity.Runed;
             recipe.goldCost = 5;
             recipe.ingredients = new[] { new RecipeIngredient { material = fibers, count = 2 } };
 
-            var rareFibersA = MaterialGenerator.GenerateFromDefinition(fibers, ItemRarity.Rare);
-            var rareFibersB = MaterialGenerator.GenerateFromDefinition(fibers, ItemRarity.Rare);
-            var commonFibers = MaterialGenerator.GenerateFromDefinition(fibers, ItemRarity.Common);
+            var rareFibersA = MaterialGenerator.GenerateFromDefinition(fibers, ItemRarity.Runed);
+            var rareFibersB = MaterialGenerator.GenerateFromDefinition(fibers, ItemRarity.Runed);
+            var commonFibers = MaterialGenerator.GenerateFromDefinition(fibers, ItemRarity.Plain);
             var loadout = new PlayerLoadout(new List<ItemData> { rareFibersA, rareFibersB, commonFibers });
             var wallet = new PlayerWallet(5);
 
             var crafted = loadout.TryCraftRecipe(recipe, wallet, 5);
 
             Assert.IsTrue(crafted);
-            // Both Rare Fibers consumed; the Common one is untouched — rarity, not just
+            // Both Runed Fibers consumed; the Plain one is untouched — rarity, not just
             // family, determines what a recipe actually spends.
             Assert.IsFalse(loadout.GetAllInventory().Contains(rareFibersA));
             Assert.IsFalse(loadout.GetAllInventory().Contains(rareFibersB));
             Assert.IsTrue(loadout.GetAllInventory().Contains(commonFibers));
-            Assert.IsTrue(loadout.GetAllInventory().Any(i => i.materialSource == rope && i.rarity == ItemRarity.Rare));
+            Assert.IsTrue(loadout.GetAllInventory().Any(i => i.materialSource == rope && i.rarity == ItemRarity.Runed));
         }
     }
 }

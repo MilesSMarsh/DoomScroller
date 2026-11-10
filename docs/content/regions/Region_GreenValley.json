@@ -1,0 +1,100 @@
+{
+  "region": {
+    "id": "Region_GreenValley",
+    "name": "Green Valley",
+    "tagline": "Rolling fields and farm roads where every adventurer begins.",
+    "description": "Rolling grassland, patchwork farms and winding roads, with villages tucked between the hills. Slimes, wolves and goblin raiders prowl the edges of the fields, but old coin and good timber reward anyone who looks. High above it all, a roc wheels over the valley.",
+    "hiddenSatire": "Designer note only: the valley mocks the habit of skimming past the easy, quiet cards. Its safe-looking farmland hides the same rewards and ambushes as anywhere else, so the player who rushes past without looking finds fewer resources and meets more forced fights. Also plan a valley rename for Enemy_MarshLeech (e.g. Ditch Leech) and a loot and attack speed retune of Enemy_Wolf for the balance analysts.",
+    "difficulty": {
+      "enemyHealth": [
+        20,
+        100
+      ],
+      "enemyAttackDamage": [
+        5,
+        11
+      ],
+      "baseXpReward": [
+        50,
+        140
+      ]
+    },
+    "existingCards": [
+      "Enemy_Wolf",
+      "Enemy_RogueSlime",
+      "Enemy_QuillbackBoar",
+      "Enemy_MarshLeech",
+      "Enemy_WidowSpider",
+      "Ambush_Bandit",
+      "Ambush_HighwayCutthroat",
+      "Dungeon_WidowsThicket",
+      "Resource_SturdyTree",
+      "Resource_LargeThicket",
+      "Resource_LargeBoulder",
+      "Resource_IronVein",
+      "Resource_SilverVein",
+      "Resource_WebbedHollow",
+      "Treasure_GlitteringChest",
+      "Merchant_WanderingTrader",
+      "Tavern_TheTavern"
+    ],
+    "cardMix": "Mostly Combat against slimes, boars, wolves, leeches and spiders, with a smaller share of Resource nodes and the Glittering Chest. Wandering Merchants and the Widow's Thicket appear only occasionally, and the two bandit Ambushes are rare."
+  },
+  "soloBoss": {
+    "id": "Boss_UlmarStormRoc",
+    "name": "Ulmar the Storm Roc",
+    "epithet": "Storm Roc",
+    "description": "A roc so vast its wings shade whole farms, with one great pinion longer than a barn beam.",
+    "introLine": "A shriek rolls across the valley as vast wings shut out the sun.",
+    "victoryLine": "The great roc crashes into the tall grass, its storm spent.",
+    "defeatLine": "The roc wheels away on the wind, wings beating strong.",
+    "enemyHealth": 320,
+    "enemyAttackDamage": 13,
+    "enemyAttackSpeed": 0.9,
+    "hpRegenPercentPerHour": 10,
+    "damageTypeModifiers": [
+      {
+        "type": "Pierce",
+        "multiplier": 1.5
+      },
+      {
+        "type": "Slash",
+        "multiplier": 1.15
+      },
+      {
+        "type": "Blunt",
+        "multiplier": 0.75
+      }
+    ],
+    "baseXpReward": 300,
+    "goldReward": 120,
+    "percentByRarity": [
+      10,
+      30,
+      35,
+      20,
+      5
+    ],
+    "lootWeapons": [
+      "MeadowlarkShortbow",
+      "BarnyardThrowingAxe",
+      "ThreshingFlail"
+    ],
+    "lootEquipment": [
+      "HayfieldHelm",
+      "GatepostBuckler",
+      "HedgerowCharm"
+    ],
+    "lootMaterials": [
+      "SilverOre",
+      "IronOre",
+      "HealingHerbs",
+      "Wood"
+    ],
+    "keyItem": {
+      "name": "Roc Pinion",
+      "description": "A pinion from the Storm Roc, long as a barn beam and light as air. It opens the road into the Forest."
+    }
+  },
+  "sourceRun": "20261110-021519"
+}

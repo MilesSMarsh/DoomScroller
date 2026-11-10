@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 88cf4697ec7a1bc16a48ee70e839b15d, type: 3}
+  m_Name: RootstrideBoots
+  m_EditorClassIdentifier: DoomScroller::DoomScroller.Inventory.EquipmentDefinition
+  equipmentName: 'Rootstride Boots'
+  category: 0
+  slotType: 3
+  icon: {fileID: 0}
+  itemColor: {r: 0.35, g: 0.28, b: 0.15, a: 1}
+  powerByRarity: 070000000c000000130000001d0000002c000000
+  possiblePassives:
+  - {fileID: 11400000, guid: 2354c15b773f1aaefb76ee6c1c3369ad, type: 2}
+  - {fileID: 11400000, guid: 51c089a1f4a84efe5bc2d0a643ab925f, type: 2}
+  - {fileID: 11400000, guid: 0f3ec3b779e8316e28c35c15ad1c7c12, type: 2}
+  - {fileID: 11400000, guid: 86ed47f3e8d37b5dd99437e56d0e6cbf, type: 2}

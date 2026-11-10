@@ -162,7 +162,7 @@ namespace DoomScroller.Tests.EditMode
         {
             // Mirrors the user's real content shape: 2 abilities authored, 3 passives
             // authored (an intentionally asymmetric pool) — SkillCountByRarity is a
-            // TOTAL across both, not a count for each independently, so an Uncommon
+            // TOTAL across both, not a count for each independently, so an Tempered
             // weapon here gets exactly 1 skill total (ability or passive), never 1 of
             // each (the bug being fixed).
             var definition = MakeDefinition();
@@ -184,7 +184,7 @@ namespace DoomScroller.Tests.EditMode
         [Test]
         public void GenerateFromDefinition_AtUncommonRarity_NeverGrantsBothAnAbilityAndAPassive()
         {
-            // The exact bug report: Uncommon (SkillCountByRarity == 1) used to give 1
+            // The exact bug report: Tempered (SkillCountByRarity == 1) used to give 1
             // ability AND 1 passive — it should give exactly one skill, either kind.
             var definition = MakeDefinition();
             definition.possibleAbilities = new[] { MakeAbility("A1"), MakeAbility("A2") };
@@ -192,7 +192,7 @@ namespace DoomScroller.Tests.EditMode
 
             for (var seed = 0; seed < 30; seed++)
             {
-                var item = WeaponGenerator.GenerateFromDefinition(definition, ItemRarity.Uncommon, new System.Random(seed));
+                var item = WeaponGenerator.GenerateFromDefinition(definition, ItemRarity.Tempered, new System.Random(seed));
 
                 Assert.AreEqual(1, item.abilities.Length + item.passiveEffects.Length);
                 Assert.IsFalse(item.abilities.Length == 1 && item.passiveEffects.Length == 1);

@@ -413,8 +413,8 @@ namespace DoomScroller.Inventory
         }
 
         // Grouped by (family, rarity) — each generated instance is now its own unique
-        // ItemData (see MaterialGenerator.GenerateFromDefinition), so N owned Common
-        // Wood and M owned Rare Wood are always two separate rows/stacks, never merged
+        // ItemData (see MaterialGenerator.GenerateFromDefinition), so N owned Plain
+        // Wood and M owned Runed Wood are always two separate rows/stacks, never merged
         // into one "Wood" total (the user's own explicit call).
         private void RefreshMaterials()
         {

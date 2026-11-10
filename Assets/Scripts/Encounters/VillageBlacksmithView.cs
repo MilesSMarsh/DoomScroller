@@ -306,7 +306,7 @@ namespace DoomScroller.Encounters
             row.RowButton.interactable = unlocked;
         }
 
-        // "2 Rare Iron Ore, 1 Rare Wood" — or "no materials" for a gold-only recipe (the
+        // "2 Runed Iron Ore, 1 Runed Wood" — or "no materials" for a gold-only recipe (the
         // Materials tab's own recipes, which craft a raw material for gold alone) or an
         // unconfigured Empower/Reroll tier. Every ingredient in one list shares the same
         // rarity — whatever's being crafted/upgraded at (see PlayerLoadout's

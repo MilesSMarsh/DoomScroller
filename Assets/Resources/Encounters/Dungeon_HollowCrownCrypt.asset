@@ -18,7 +18,7 @@ MonoBehaviour:
   foregroundArt: {fileID: 0}
   cardColor: {r: 0.18, g: 0.08, b: 0.22, a: 1}
   description: "A necrotic crypt sealed beneath Bonewrought Depths \u2014 the hardest
-    dungeon yet, guaranteed Mythic loot at the end."
+    dungeon yet, guaranteed Exalted loot at the end."
   baseXpReward: 300
   goldReward: 80
   lootTable:
@@ -31,9 +31,11 @@ MonoBehaviour:
     minItemCount: 1
     maxItemCount: 1
     weapons:
-    - {fileID: 11400000, guid: d0404bafcc176f6e192d169ff3eb8ef3, type: 2}
-    - {fileID: 11400000, guid: 7bb077ca75ebd6e0ba8e64b4cfd86361, type: 2}
-    equipment: []
+    - {fileID: 11400000, guid: 275bf14ff11c47319f473fba2082b36c, type: 2}
+    - {fileID: 11400000, guid: 874cf68b8ceb4bd5b90f8f9c6a753f57, type: 2}
+    - {fileID: 11400000, guid: 2e172e9457c34ca1b6a824591a53a10d, type: 2}
+    equipment:
+    - {fileID: 11400000, guid: ed633eb4e8c241b5ab0edb55644737af, type: 2}
     materials:
     - {fileID: 11400000, guid: 4a81b7e64056c877ca7ce5514d54d251, type: 2}
   enemyHealth: 80

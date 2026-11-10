@@ -15,7 +15,7 @@ namespace DoomScroller.Tests.EditMode
         public void Material_RestoresIcon_FromItsDefinition()
         {
             var definition = Resources.Load<MaterialDefinition>("MaterialDefinitions/Wood");
-            var item = MaterialGenerator.GenerateFromDefinition(definition, ItemRarity.Common);
+            var item = MaterialGenerator.GenerateFromDefinition(definition, ItemRarity.Plain);
 
             var restored = ItemSnapshot.Capture(item).Restore();
 
@@ -27,7 +27,7 @@ namespace DoomScroller.Tests.EditMode
         public void Material_SavedBeforeIconWasAssigned_PicksUpCurrentIcon()
         {
             var definition = Resources.Load<MaterialDefinition>("MaterialDefinitions/Wood");
-            var item = MaterialGenerator.GenerateFromDefinition(definition, ItemRarity.Common);
+            var item = MaterialGenerator.GenerateFromDefinition(definition, ItemRarity.Plain);
             item.icon = null;
 
             var restored = ItemSnapshot.Capture(item).Restore();
@@ -38,8 +38,8 @@ namespace DoomScroller.Tests.EditMode
         [Test]
         public void Equipment_RoundTrips_SourceDefinition_AndIcon()
         {
-            var definition = Resources.Load<EquipmentDefinition>("EquipmentDefinitions/LeatherHelmet");
-            var item = EquipmentGenerator.GenerateFromDefinition(definition, ItemRarity.Common, new System.Random(1));
+            var definition = Resources.Load<EquipmentDefinition>("EquipmentDefinitions/HayfieldHelm");
+            var item = EquipmentGenerator.GenerateFromDefinition(definition, ItemRarity.Plain, new System.Random(1));
             Assert.AreSame(definition, item.equipmentSource);
 
             var restored = ItemSnapshot.Capture(item).Restore();

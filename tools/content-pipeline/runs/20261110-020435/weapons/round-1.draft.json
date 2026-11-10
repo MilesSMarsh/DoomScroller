@@ -1,0 +1,916 @@
+{
+  "weapons": [
+    {
+      "id": "WoodenSword",
+      "weaponName": "Hallow Wood Sword",
+      "flavorText": "A plain training blade carved from hallow wood, the first weapon of every new adventurer.",
+      "dropsFrom": "Starting weapon; every new adventurer carries one",
+      "region": "Green Valley",
+      "isStarter": true,
+      "weaponType": "Melee",
+      "damageType": "Slash",
+      "isTwoHanded": false,
+      "attackSpeed": 1,
+      "itemColor": {
+        "r": 0.65,
+        "g": 0.5,
+        "b": 0.3
+      },
+      "baseDamageByRarity": [
+        1,
+        2,
+        4,
+        8,
+        16
+      ],
+      "scalingAttribute": "Constitution",
+      "scalingCoefficient": 0.5,
+      "possibleAbilities": [
+        "Ability_Slash",
+        "Ability_Cleave",
+        "Ability_Riposte",
+        "Ability_Warcry"
+      ],
+      "possiblePassives": [
+        "Passive_DamageUp",
+        "Passive_Bulwark",
+        "Passive_Hefty",
+        "Passive_IncreaseAttackSpeed"
+      ]
+    },
+    {
+      "id": "PilferedKitchenKnife",
+      "weaponName": "Pilfered Kitchen Knife",
+      "flavorText": "A nicked kitchen knife taken from a farmhouse by a goblin, quick and mean in close.",
+      "dropsFrom": "Grisk Goblin",
+      "region": "Green Valley",
+      "isStarter": false,
+      "weaponType": "Melee",
+      "damageType": "Slash",
+      "isTwoHanded": false,
+      "attackSpeed": 0.7,
+      "itemColor": {
+        "r": 0.75,
+        "g": 0.75,
+        "b": 0.78
+      },
+      "baseDamageByRarity": [
+        1,
+        2,
+        4,
+        9,
+        17
+      ],
+      "scalingAttribute": "Agility",
+      "scalingCoefficient": 0.4,
+      "possibleAbilities": [
+        "Ability_Lacerate",
+        "Ability_VenomStrike",
+        "Ability_Riposte",
+        "Ability_Slash"
+      ],
+      "possiblePassives": [
+        "Passive_Agile",
+        "Passive_IncreaseAttackSpeed",
+        "Passive_Vicious",
+        "Passive_Venomous"
+      ]
+    },
+    {
+      "id": "FarmhandPitchfork",
+      "weaponName": "Farmhand Pitchfork",
+      "flavorText": "A long-hafted pitchfork that has turned a great deal of hay and driven off a few wolves.",
+      "dropsFrom": "Farm quest rewards and Green Valley treasure",
+      "region": "Green Valley",
+      "isStarter": false,
+      "weaponType": "Melee",
+      "damageType": "Pierce",
+      "isTwoHanded": true,
+      "attackSpeed": 1.2,
+      "itemColor": {
+        "r": 0.6,
+        "g": 0.45,
+        "b": 0.25
+      },
+      "baseDamageByRarity": [
+        1,
+        3,
+        6,
+        11,
+        22
+      ],
+      "scalingAttribute": "Agility",
+      "scalingCoefficient": 0.5,
+      "possibleAbilities": [
+        "Ability_Lacerate",
+        "Ability_Execute",
+        "Ability_Sunder",
+        "Ability_Slash"
+      ],
+      "possiblePassives": [
+        "Passive_Agile",
+        "Passive_DamageUp",
+        "Passive_Thickhide",
+        "Passive_Crippling"
+      ]
+    },
+    {
+      "id": "MillstoneMaul",
+      "weaponName": "Millstone Maul",
+      "flavorText": "A maul headed with a chipped millstone, slow to swing and heavy enough to burst a slime.",
+      "dropsFrom": "Rogue Slime; crafted at the Blacksmith from Stone",
+      "region": "Green Valley",
+      "isStarter": false,
+      "weaponType": "Melee",
+      "damageType": "Blunt",
+      "isTwoHanded": true,
+      "attackSpeed": 1.5,
+      "itemColor": {
+        "r": 0.55,
+        "g": 0.55,
+        "b": 0.5
+      },
+      "baseDamageByRarity": [
+        2,
+        4,
+        7,
+        13,
+        26
+      ],
+      "scalingAttribute": "Constitution",
+      "scalingCoefficient": 0.6,
+      "possibleAbilities": [
+        "Ability_Cleave",
+        "Ability_Deathblow",
+        "Ability_Sunder",
+        "Ability_Warcry"
+      ],
+      "possiblePassives": [
+        "Passive_Hefty",
+        "Passive_Thickhide",
+        "Passive_Ironwilled",
+        "Passive_Reinforced"
+      ]
+    },
+    {
+      "id": "OakheartGreatblade",
+      "weaponName": "Oakheart Greatblade",
+      "flavorText": "A broad blade set in a haft of ancient oak, cut for the deep woods.",
+      "dropsFrom": "Crafted at the Blacksmith from Ancient Oak timber",
+      "region": "Forest",
+      "isStarter": false,
+      "weaponType": "Melee",
+      "damageType": "Slash",
+      "isTwoHanded": true,
+      "attackSpeed": 1.4,
+      "itemColor": {
+        "r": 0.4,
+        "g": 0.3,
+        "b": 0.15
+      },
+      "baseDamageByRarity": [
+        2,
+        5,
+        9,
+        17,
+        35
+      ],
+      "scalingAttribute": "Constitution",
+      "scalingCoefficient": 0.6,
+      "possibleAbilities": [
+        "Ability_Cleave",
+        "Ability_Execute",
+        "Ability_Deathblow",
+        "Ability_Warcry"
+      ],
+      "possiblePassives": [
+        "Passive_Hefty",
+        "Passive_Vicious",
+        "Passive_DamageUp",
+        "Passive_Thickhide"
+      ]
+    },
+    {
+      "id": "GolemstoneMace",
+      "weaponName": "Golemstone Mace",
+      "flavorText": "A mace whose head was prised from a stone golem and still hums faintly.",
+      "dropsFrom": "Rustbound Golem and other golems of the Forest",
+      "region": "Forest",
+      "isStarter": false,
+      "weaponType": "Melee",
+      "damageType": "Blunt",
+      "isTwoHanded": false,
+      "attackSpeed": 1.2,
+      "itemColor": {
+        "r": 0.5,
+        "g": 0.5,
+        "b": 0.45
+      },
+      "baseDamageByRarity": [
+        2,
+        5,
+        9,
+        16,
+        32
+      ],
+      "scalingAttribute": "Constitution",
+      "scalingCoefficient": 0.5,
+      "possibleAbilities": [
+        "Ability_Sunder",
+        "Ability_Cleave",
+        "Ability_Riposte",
+        "Ability_Warcry"
+      ],
+      "possiblePassives": [
+        "Passive_Ironwilled",
+        "Passive_Bulwark",
+        "Passive_Reinforced",
+        "Passive_Thickhide"
+      ]
+    },
+    {
+      "id": "WidowfangDirk",
+      "weaponName": "Widowfang Dirk",
+      "flavorText": "A slim dirk made from a giant spider's fang, its point still wet with venom.",
+      "dropsFrom": "Widow Spider; the Widow's Thicket",
+      "region": "Forest",
+      "isStarter": false,
+      "weaponType": "Melee",
+      "damageType": "Pierce",
+      "isTwoHanded": false,
+      "attackSpeed": 0.7,
+      "itemColor": {
+        "r": 0.3,
+        "g": 0.5,
+        "b": 0.3
+      },
+      "baseDamageByRarity": [
+        3,
+        5,
+        10,
+        18,
+        36
+      ],
+      "scalingAttribute": "Agility",
+      "scalingCoefficient": 0.4,
+      "possibleAbilities": [
+        "Ability_VenomStrike",
+        "Ability_Venomfang",
+        "Ability_Lacerate",
+        "Ability_Riposte"
+      ],
+      "possiblePassives": [
+        "Passive_Venomous",
+        "Passive_Agile",
+        "Passive_IncreaseAttackSpeed",
+        "Passive_Crippling"
+      ]
+    },
+    {
+      "id": "RibsplitterHatchet",
+      "weaponName": "Ribsplitter Hatchet",
+      "flavorText": "A woodsman's hatchet with a notched edge, made for cracking old bones.",
+      "dropsFrom": "Skeletons of the Forest",
+      "region": "Forest",
+      "isStarter": false,
+      "weaponType": "Melee",
+      "damageType": "Slash",
+      "isTwoHanded": false,
+      "attackSpeed": 0.9,
+      "itemColor": {
+        "r": 0.8,
+        "g": 0.78,
+        "b": 0.7
+      },
+      "baseDamageByRarity": [
+        3,
+        6,
+        11,
+        20,
+        40
+      ],
+      "scalingAttribute": "Expertise",
+      "scalingCoefficient": 0.5,
+      "possibleAbilities": [
+        "Ability_Lacerate",
+        "Ability_Execute",
+        "Ability_Slash",
+        "Ability_Deathblow"
+      ],
+      "possiblePassives": [
+        "Passive_Vicious",
+        "Passive_WeakenEnemy",
+        "Passive_DamageUp",
+        "Passive_Crippling"
+      ]
+    },
+    {
+      "id": "MeadowShortbow",
+      "weaponName": "Meadow Shortbow",
+      "flavorText": "A supple ash shortbow strung for hunting hares and rooks along the farm fields.",
+      "dropsFrom": "Crafted at the Blacksmith from Wood and Fibers",
+      "region": "Green Valley",
+      "isStarter": false,
+      "weaponType": "Ranged",
+      "damageType": "Pierce",
+      "isTwoHanded": true,
+      "attackSpeed": 1,
+      "itemColor": {
+        "r": 0.7,
+        "g": 0.6,
+        "b": 0.35
+      },
+      "baseDamageByRarity": [
+        1,
+        3,
+        5,
+        10,
+        20
+      ],
+      "scalingAttribute": "Agility",
+      "scalingCoefficient": 0.5,
+      "possibleAbilities": [
+        "Ability_PiercingShot",
+        "Ability_Volley",
+        "Ability_Hamstring",
+        "Ability_Execute"
+      ],
+      "possiblePassives": [
+        "Passive_Sureshot",
+        "Passive_Fleetfoot",
+        "Passive_Agile",
+        "Passive_DamageUp"
+      ]
+    },
+    {
+      "id": "DroversSling",
+      "weaponName": "Drover's Sling",
+      "flavorText": "A leather sling used by cattle drovers to turn a stray beast with a well-flung stone.",
+      "dropsFrom": "Grey Wolf and Quillback Boar",
+      "region": "Green Valley",
+      "isStarter": false,
+      "weaponType": "Ranged",
+      "damageType": "Blunt",
+      "isTwoHanded": false,
+      "attackSpeed": 0.8,
+      "itemColor": {
+        "r": 0.6,
+        "g": 0.4,
+        "b": 0.25
+      },
+      "baseDamageByRarity": [
+        1,
+        2,
+        5,
+        9,
+        19
+      ],
+      "scalingAttribute": "Agility",
+      "scalingCoefficient": 0.4,
+      "possibleAbilities": [
+        "Ability_PiercingShot",
+        "Ability_Hamstring",
+        "Ability_Volley",
+        "Ability_Execute"
+      ],
+      "possiblePassives": [
+        "Passive_Fleetfoot",
+        "Passive_Sureshot",
+        "Passive_Crippling",
+        "Passive_IncreaseAttackSpeed"
+      ]
+    },
+    {
+      "id": "HarvestCrossbow",
+      "weaponName": "Harvest Crossbow",
+      "flavorText": "A farm crossbow with a heavy stock, slow to wind and sure to land.",
+      "dropsFrom": "Goblin Raiding Party",
+      "region": "Green Valley",
+      "isStarter": false,
+      "weaponType": "Ranged",
+      "damageType": "Pierce",
+      "isTwoHanded": true,
+      "attackSpeed": 1.5,
+      "itemColor": {
+        "r": 0.55,
+        "g": 0.4,
+        "b": 0.2
+      },
+      "baseDamageByRarity": [
+        2,
+        4,
+        8,
+        14,
+        28
+      ],
+      "scalingAttribute": "Expertise",
+      "scalingCoefficient": 0.5,
+      "possibleAbilities": [
+        "Ability_PiercingShot",
+        "Ability_Execute",
+        "Ability_Hamstring",
+        "Ability_VenomStrike"
+      ],
+      "possiblePassives": [
+        "Passive_Sureshot",
+        "Passive_Vicious",
+        "Passive_DamageUp",
+        "Passive_WeakenEnemy"
+      ]
+    },
+    {
+      "id": "GriskThrowingKnives",
+      "weaponName": "Grisk Throwing Knives",
+      "flavorText": "A bundle of goblin-made knives, crudely balanced and thrown in rapid handfuls.",
+      "dropsFrom": "Grisk Goblin",
+      "region": "Green Valley",
+      "isStarter": false,
+      "weaponType": "Ranged",
+      "damageType": "Slash",
+      "isTwoHanded": false,
+      "attackSpeed": 0.7,
+      "itemColor": {
+        "r": 0.5,
+        "g": 0.6,
+        "b": 0.4
+      },
+      "baseDamageByRarity": [
+        1,
+        2,
+        4,
+        9,
+        18
+      ],
+      "scalingAttribute": "Agility",
+      "scalingCoefficient": 0.4,
+      "possibleAbilities": [
+        "Ability_VenomStrike",
+        "Ability_Volley",
+        "Ability_Hamstring",
+        "Ability_PiercingShot"
+      ],
+      "possiblePassives": [
+        "Passive_Venomous",
+        "Passive_Agile",
+        "Passive_Fleetfoot",
+        "Passive_IncreaseAttackSpeed"
+      ]
+    },
+    {
+      "id": "StagwoodLongbow",
+      "weaponName": "Stagwood Longbow",
+      "flavorText": "A tall longbow of pale stagwood, drawn by hunters who track the great forest predators.",
+      "dropsFrom": "Large predators of the Forest",
+      "region": "Forest",
+      "isStarter": false,
+      "weaponType": "Ranged",
+      "damageType": "Pierce",
+      "isTwoHanded": true,
+      "attackSpeed": 1.4,
+      "itemColor": {
+        "r": 0.75,
+        "g": 0.65,
+        "b": 0.4
+      },
+      "baseDamageByRarity": [
+        3,
+        6,
+        11,
+        20,
+        40
+      ],
+      "scalingAttribute": "Agility",
+      "scalingCoefficient": 0.6,
+      "possibleAbilities": [
+        "Ability_PiercingShot",
+        "Ability_Volley",
+        "Ability_Execute",
+        "Ability_Hamstring"
+      ],
+      "possiblePassives": [
+        "Passive_Sureshot",
+        "Passive_Fleetfoot",
+        "Passive_Vicious",
+        "Passive_Agile"
+      ]
+    },
+    {
+      "id": "SporepipeBlowgun",
+      "weaponName": "Sporepipe Blowgun",
+      "flavorText": "A hollow reed blowgun loaded with darts dipped in spider venom.",
+      "dropsFrom": "Widow Spider; the Widow's Thicket",
+      "region": "Forest",
+      "isStarter": false,
+      "weaponType": "Ranged",
+      "damageType": "Pierce",
+      "isTwoHanded": false,
+      "attackSpeed": 0.6,
+      "itemColor": {
+        "r": 0.4,
+        "g": 0.55,
+        "b": 0.3
+      },
+      "baseDamageByRarity": [
+        3,
+        5,
+        9,
+        17,
+        34
+      ],
+      "scalingAttribute": "Agility",
+      "scalingCoefficient": 0.4,
+      "possibleAbilities": [
+        "Ability_VenomStrike",
+        "Ability_Hamstring",
+        "Ability_PiercingShot",
+        "Ability_Volley"
+      ],
+      "possiblePassives": [
+        "Passive_Venomous",
+        "Passive_Fleetfoot",
+        "Passive_Crippling",
+        "Passive_Sureshot"
+      ]
+    },
+    {
+      "id": "HoarbarkRecurve",
+      "weaponName": "Hoarbark Recurve",
+      "flavorText": "A recurve bow cut from frost-silvered bark that slows whatever it strikes.",
+      "dropsFrom": "Crafted at the Blacksmith from Frost Shards and Aged Timber",
+      "region": "Forest",
+      "isStarter": false,
+      "weaponType": "Ranged",
+      "damageType": "Elemental",
+      "isTwoHanded": true,
+      "attackSpeed": 1.1,
+      "itemColor": {
+        "r": 0.6,
+        "g": 0.8,
+        "b": 0.85
+      },
+      "baseDamageByRarity": [
+        3,
+        6,
+        12,
+        21,
+        42
+      ],
+      "scalingAttribute": "Agility",
+      "scalingCoefficient": 0.5,
+      "possibleAbilities": [
+        "Ability_WintersMark",
+        "Ability_Hamstring",
+        "Ability_PiercingShot",
+        "Ability_Volley"
+      ],
+      "possiblePassives": [
+        "Passive_Crippling",
+        "Passive_Fleetfoot",
+        "Passive_Sureshot",
+        "Passive_WeakenEnemy"
+      ]
+    },
+    {
+      "id": "GravewoodArbalest",
+      "weaponName": "Gravewood Arbalest",
+      "flavorText": "A massive arbalest strung with sinew, built to drop a charging forest beast in one shot.",
+      "dropsFrom": "Skeletons and large predators of the Forest",
+      "region": "Forest",
+      "isStarter": false,
+      "weaponType": "Ranged",
+      "damageType": "Pierce",
+      "isTwoHanded": true,
+      "attackSpeed": 1.6,
+      "itemColor": {
+        "r": 0.35,
+        "g": 0.3,
+        "b": 0.25
+      },
+      "baseDamageByRarity": [
+        3,
+        6,
+        12,
+        23,
+        46
+      ],
+      "scalingAttribute": "Expertise",
+      "scalingCoefficient": 0.6,
+      "possibleAbilities": [
+        "Ability_Execute",
+        "Ability_PiercingShot",
+        "Ability_Hamstring",
+        "Ability_Volley"
+      ],
+      "possiblePassives": [
+        "Passive_Vicious",
+        "Passive_DamageUp",
+        "Passive_Sureshot",
+        "Passive_WeakenEnemy"
+      ]
+    },
+    {
+      "id": "HedgewitchWand",
+      "weaponName": "Hedgewitch Wand",
+      "flavorText": "A hazel wand carried by village hedge-healers, humming with a small, steady power.",
+      "dropsFrom": "Green Valley treasure",
+      "region": "Green Valley",
+      "isStarter": false,
+      "weaponType": "Magic",
+      "damageType": "Arcane",
+      "isTwoHanded": false,
+      "attackSpeed": 0.9,
+      "itemColor": {
+        "r": 0.6,
+        "g": 0.45,
+        "b": 0.8
+      },
+      "baseDamageByRarity": [
+        1,
+        3,
+        5,
+        10,
+        20
+      ],
+      "scalingAttribute": "Spirit",
+      "scalingCoefficient": 0.5,
+      "possibleAbilities": [
+        "Ability_ArcaneBolt",
+        "Ability_Warcry",
+        "Ability_Execute",
+        "Ability_Oblivion"
+      ],
+      "possiblePassives": [
+        "Passive_ArcaneFocus",
+        "Passive_Channeled",
+        "Passive_Spiritful",
+        "Passive_DamageUp"
+      ]
+    },
+    {
+      "id": "HearthfireStaff",
+      "weaponName": "Hearthfire Staff",
+      "flavorText": "A staff topped with a coal that never goes cold, taken from a farmhouse hearth.",
+      "dropsFrom": "Crafted at the Blacksmith from Coal and Wood",
+      "region": "Green Valley",
+      "isStarter": false,
+      "weaponType": "Magic",
+      "damageType": "Elemental",
+      "isTwoHanded": true,
+      "attackSpeed": 1.3,
+      "itemColor": {
+        "r": 0.95,
+        "g": 0.5,
+        "b": 0.2
+      },
+      "baseDamageByRarity": [
+        1,
+        3,
+        6,
+        12,
+        24
+      ],
+      "scalingAttribute": "Spirit",
+      "scalingCoefficient": 0.5,
+      "possibleAbilities": [
+        "Ability_Cinderburst",
+        "Ability_Immolate",
+        "Ability_ArcaneBolt",
+        "Ability_Execute"
+      ],
+      "possiblePassives": [
+        "Passive_Smoldering",
+        "Passive_ArcaneFocus",
+        "Passive_Channeled",
+        "Passive_Spiritful"
+      ]
+    },
+    {
+      "id": "DewglassRod",
+      "weaponName": "Dewglass Rod",
+      "flavorText": "A glass rod beaded with morning dew that chills the air around its tip.",
+      "dropsFrom": "Rogue Slime and Green Valley treasure",
+      "region": "Green Valley",
+      "isStarter": false,
+      "weaponType": "Magic",
+      "damageType": "Elemental",
+      "isTwoHanded": false,
+      "attackSpeed": 0.8,
+      "itemColor": {
+        "r": 0.55,
+        "g": 0.8,
+        "b": 0.9
+      },
+      "baseDamageByRarity": [
+        1,
+        2,
+        5,
+        9,
+        19
+      ],
+      "scalingAttribute": "Spirit",
+      "scalingCoefficient": 0.4,
+      "possibleAbilities": [
+        "Ability_Frostbind",
+        "Ability_Hoarfrost",
+        "Ability_ArcaneBolt",
+        "Ability_Execute"
+      ],
+      "possiblePassives": [
+        "Passive_Channeled",
+        "Passive_Crippling",
+        "Passive_ArcaneFocus",
+        "Passive_WeakenEnemy"
+      ]
+    },
+    {
+      "id": "GriskShamanRattle",
+      "weaponName": "Grisk Shaman Rattle",
+      "flavorText": "A goblin shaman's rattle of knucklebones and beads, shaken to call up crackling sparks.",
+      "dropsFrom": "Goblin Raiding Party",
+      "region": "Green Valley",
+      "isStarter": false,
+      "weaponType": "Magic",
+      "damageType": "Arcane",
+      "isTwoHanded": false,
+      "attackSpeed": 0.7,
+      "itemColor": {
+        "r": 0.5,
+        "g": 0.7,
+        "b": 0.35
+      },
+      "baseDamageByRarity": [
+        1,
+        2,
+        4,
+        9,
+        18
+      ],
+      "scalingAttribute": "Spirit",
+      "scalingCoefficient": 0.4,
+      "possibleAbilities": [
+        "Ability_Warcry",
+        "Ability_Immolate",
+        "Ability_ArcaneBolt",
+        "Ability_Frostbind"
+      ],
+      "possiblePassives": [
+        "Passive_Spiritful",
+        "Passive_WeakenEnemy",
+        "Passive_Crippling",
+        "Passive_Channeled"
+      ]
+    },
+    {
+      "id": "ElderrootStaff",
+      "weaponName": "Elderroot Staff",
+      "flavorText": "A gnarled staff grown from the root of an elder tree, thrumming with the old forest's strength.",
+      "dropsFrom": "Tree people of the Forest",
+      "region": "Forest",
+      "isStarter": false,
+      "weaponType": "Magic",
+      "damageType": "Elemental",
+      "isTwoHanded": true,
+      "attackSpeed": 1.4,
+      "itemColor": {
+        "r": 0.3,
+        "g": 0.5,
+        "b": 0.25
+      },
+      "baseDamageByRarity": [
+        3,
+        6,
+        11,
+        21,
+        42
+      ],
+      "scalingAttribute": "Spirit",
+      "scalingCoefficient": 0.6,
+      "possibleAbilities": [
+        "Ability_ArcaneBolt",
+        "Ability_Warcry",
+        "Ability_Execute",
+        "Ability_Oblivion"
+      ],
+      "possiblePassives": [
+        "Passive_ArcaneFocus",
+        "Passive_Spiritful",
+        "Passive_Channeled",
+        "Passive_Reinforced"
+      ]
+    },
+    {
+      "id": "EmberboughStaff",
+      "weaponName": "Emberbough Staff",
+      "flavorText": "A charred bough that glows with embers, cut from a tree struck in a summer storm.",
+      "dropsFrom": "Tree people of the Forest",
+      "region": "Forest",
+      "isStarter": false,
+      "weaponType": "Magic",
+      "damageType": "Elemental",
+      "isTwoHanded": false,
+      "attackSpeed": 1,
+      "itemColor": {
+        "r": 0.85,
+        "g": 0.35,
+        "b": 0.15
+      },
+      "baseDamageByRarity": [
+        3,
+        5,
+        10,
+        19,
+        38
+      ],
+      "scalingAttribute": "Spirit",
+      "scalingCoefficient": 0.5,
+      "possibleAbilities": [
+        "Ability_Cinderburst",
+        "Ability_Immolate",
+        "Ability_ArcaneBolt",
+        "Ability_Execute"
+      ],
+      "possiblePassives": [
+        "Passive_Smoldering",
+        "Passive_ArcaneFocus",
+        "Passive_Vicious",
+        "Passive_DamageUp"
+      ]
+    },
+    {
+      "id": "RimeleafScepter",
+      "weaponName": "Rimeleaf Scepter",
+      "flavorText": "A scepter bearing a single frost-edged leaf that never thaws, even in summer.",
+      "dropsFrom": "Golems of the Forest",
+      "region": "Forest",
+      "isStarter": false,
+      "weaponType": "Magic",
+      "damageType": "Elemental",
+      "isTwoHanded": false,
+      "attackSpeed": 0.9,
+      "itemColor": {
+        "r": 0.65,
+        "g": 0.85,
+        "b": 0.8
+      },
+      "baseDamageByRarity": [
+        3,
+        6,
+        10,
+        18,
+        36
+      ],
+      "scalingAttribute": "Spirit",
+      "scalingCoefficient": 0.5,
+      "possibleAbilities": [
+        "Ability_Frostbind",
+        "Ability_Hoarfrost",
+        "Ability_ArcaneBolt",
+        "Ability_Warcry"
+      ],
+      "possiblePassives": [
+        "Passive_Crippling",
+        "Passive_Channeled",
+        "Passive_WeakenEnemy",
+        "Passive_Spiritful"
+      ]
+    },
+    {
+      "id": "MosswrittenGrimoire",
+      "weaponName": "Mosswritten Grimoire",
+      "flavorText": "A moss-covered tome of the ancient race, its runes glowing faintly among the old trees.",
+      "dropsFrom": "Ancient dungeons of the Forest; skeleton guardians",
+      "region": "Forest",
+      "isStarter": false,
+      "weaponType": "Magic",
+      "damageType": "Arcane",
+      "isTwoHanded": true,
+      "attackSpeed": 1.6,
+      "itemColor": {
+        "r": 0.45,
+        "g": 0.35,
+        "b": 0.7
+      },
+      "baseDamageByRarity": [
+        3,
+        6,
+        12,
+        23,
+        46
+      ],
+      "scalingAttribute": "Spirit",
+      "scalingCoefficient": 0.6,
+      "possibleAbilities": [
+        "Ability_ArcaneBolt",
+        "Ability_Oblivion",
+        "Ability_Execute",
+        "Ability_Warcry"
+      ],
+      "possiblePassives": [
+        "Passive_ArcaneFocus",
+        "Passive_Vicious",
+        "Passive_Spiritful",
+        "Passive_WeakenEnemy"
+      ]
+    }
+  ]
+}

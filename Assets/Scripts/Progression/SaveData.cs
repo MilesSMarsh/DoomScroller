@@ -48,6 +48,14 @@ namespace DoomScroller.Progression
         // archetype-rolled weapon, which never had a source definition to begin with.
         public string sourceWeaponName;
 
+        // Saves written before a WeaponDefinition was renamed still hold its old
+        // weaponName; map old → current so those items keep their source definition.
+        // Add an entry whenever a weaponName changes.
+        private static readonly Dictionary<string, string> FormerWeaponNames = new()
+        {
+            { "Wooden Sword", "Hallow Wood Sword" }
+        };
+
         // Same convention as sourceWeaponName above, but for ItemData.materialSource —
         // every Material-category item has one (see MaterialGenerator.GenerateFromDefinition),
         // re-resolved against the live MaterialDefinitions catalog on Restore.
@@ -119,8 +127,16 @@ namespace DoomScroller.Progression
             item.attributeScalingEntries = attributeScalingEntries;
             if (!string.IsNullOrEmpty(sourceWeaponName))
             {
+                var weaponName = FormerWeaponNames.TryGetValue(sourceWeaponName, out var renamed)
+                    ? renamed
+                    : sourceWeaponName;
                 item.sourceDefinition = Resources.LoadAll<WeaponDefinition>("WeaponDefinitions")
-                    .FirstOrDefault(d => d.weaponName == sourceWeaponName);
+                    .FirstOrDefault(d => d.weaponName == weaponName);
+                // Saves from before rarity-prefixed titles hold the bare weaponName.
+                if (item.title == sourceWeaponName || item.title == weaponName)
+                {
+                    item.title = WeaponGenerator.TitleFor(rarity, weaponName);
+                }
             }
 
             if (!string.IsNullOrEmpty(sourceMaterialName))

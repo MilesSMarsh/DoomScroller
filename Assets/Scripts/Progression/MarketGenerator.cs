@@ -73,7 +73,7 @@ namespace DoomScroller.Progression
             return item != null ? new MarketEntry(item, MaterialPrice) : GenerateGear(rng);
         }
 
-        // Rolls a random authored MaterialDefinition and generates a fresh Common-rarity
+        // Rolls a random authored MaterialDefinition and generates a fresh Plain-rarity
         // instance from it (MaterialGenerator.GenerateFromDefinition) — materials are
         // generated instances now, same as weapons/equipment, not shared singleton
         // ItemData assets (see MaterialDefinition's own doc comment). Null if the
@@ -87,7 +87,7 @@ namespace DoomScroller.Progression
             }
 
             var definition = definitions[rng.Next(definitions.Length)];
-            return MaterialGenerator.GenerateFromDefinition(definition, ItemRarity.Common);
+            return MaterialGenerator.GenerateFromDefinition(definition, ItemRarity.Plain);
         }
     }
 }

@@ -273,7 +273,7 @@ namespace DoomScroller.Encounters
 
                 // Items now come from the encounter's own authored loot table (all-zero
                 // on anything created before loot tables existed, which RollLootTable
-                // treats as "exactly one, always Common" — the exact behavior this
+                // treats as "exactly one, always Plain" — the exact behavior this
                 // replaced).
                 var items = RewardGenerator.RollLootTable(_data.lootTable);
                 foreach (var rolledItem in items)

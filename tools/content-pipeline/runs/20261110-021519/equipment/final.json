@@ -1,0 +1,319 @@
+{
+  "equipment": [
+    {
+      "id": "HayfieldHelm",
+      "equipmentName": "Hayfield Helm",
+      "flavorText": "A dented iron cap stuffed with straw padding, worn by farmhands who turn out to guard the harvest.",
+      "region": "Green Valley",
+      "category": "Armor",
+      "slotType": "Head",
+      "itemColor": {
+        "r": 0.8,
+        "g": 0.7,
+        "b": 0.4
+      },
+      "powerByRarity": [
+        6,
+        10,
+        16,
+        25,
+        38
+      ],
+      "possiblePassives": [
+        "Passive_Bulwark",
+        "Passive_Reinforced",
+        "Passive_Hefty",
+        "Passive_DamageUp"
+      ]
+    },
+    {
+      "id": "AntlerbarkHelm",
+      "equipmentName": "Antlerbark Helm",
+      "flavorText": "A helm of hardened bark crowned with shed antlers from the deep woods.",
+      "region": "Forest",
+      "category": "Armor",
+      "slotType": "Head",
+      "itemColor": {
+        "r": 0.4,
+        "g": 0.3,
+        "b": 0.2
+      },
+      "powerByRarity": [
+        8,
+        14,
+        22,
+        34,
+        50
+      ],
+      "possiblePassives": [
+        "Passive_Reinforced",
+        "Passive_Bulwark",
+        "Passive_WeakenEnemy",
+        "Passive_Vicious"
+      ]
+    },
+    {
+      "id": "BoarhideJerkin",
+      "equipmentName": "Boarhide Jerkin",
+      "flavorText": "A tough jerkin of boar hide, stitched to turn aside tusks and quills.",
+      "region": "Green Valley",
+      "category": "Armor",
+      "slotType": "Chest",
+      "itemColor": {
+        "r": 0.6,
+        "g": 0.45,
+        "b": 0.3
+      },
+      "powerByRarity": [
+        8,
+        13,
+        20,
+        31,
+        46
+      ],
+      "possiblePassives": [
+        "Passive_Bulwark",
+        "Passive_Reinforced",
+        "Passive_Hefty",
+        "Passive_WeakenEnemy"
+      ]
+    },
+    {
+      "id": "OakheartCuirass",
+      "equipmentName": "Oakheart Cuirass",
+      "flavorText": "A breastplate of seasoned oak bound in iron, as sturdy as the trees it was cut from.",
+      "region": "Forest",
+      "category": "Armor",
+      "slotType": "Chest",
+      "itemColor": {
+        "r": 0.45,
+        "g": 0.32,
+        "b": 0.18
+      },
+      "powerByRarity": [
+        10,
+        17,
+        26,
+        40,
+        60
+      ],
+      "possiblePassives": [
+        "Passive_Reinforced",
+        "Passive_Bulwark",
+        "Passive_Hefty",
+        "Passive_WeakenEnemy",
+        "Passive_DamageUp"
+      ]
+    },
+    {
+      "id": "DroverLeggings",
+      "equipmentName": "Drover Leggings",
+      "flavorText": "Hard-wearing leggings of waxed canvas, made for long days herding cattle along the valley roads.",
+      "region": "Green Valley",
+      "category": "Armor",
+      "slotType": "Legs",
+      "itemColor": {
+        "r": 0.65,
+        "g": 0.55,
+        "b": 0.35
+      },
+      "powerByRarity": [
+        7,
+        11,
+        17,
+        26,
+        40
+      ],
+      "possiblePassives": [
+        "Passive_Bulwark",
+        "Passive_Agile",
+        "Passive_Hefty",
+        "Passive_IncreaseAttackSpeed"
+      ]
+    },
+    {
+      "id": "MossweaveGreaves",
+      "equipmentName": "Mossweave Greaves",
+      "flavorText": "Leg guards woven from living moss and cord, quiet among the roots of the old woods.",
+      "region": "Forest",
+      "category": "Armor",
+      "slotType": "Legs",
+      "itemColor": {
+        "r": 0.3,
+        "g": 0.5,
+        "b": 0.25
+      },
+      "powerByRarity": [
+        9,
+        15,
+        23,
+        35,
+        52
+      ],
+      "possiblePassives": [
+        "Passive_Reinforced",
+        "Passive_Agile",
+        "Passive_Bulwark",
+        "Passive_Crippling"
+      ]
+    },
+    {
+      "id": "FurrowBoots",
+      "equipmentName": "Furrow Boots",
+      "flavorText": "Mud-caked leather boots that have walked every furrow of the valley farms.",
+      "region": "Green Valley",
+      "category": "Armor",
+      "slotType": "Boots",
+      "itemColor": {
+        "r": 0.5,
+        "g": 0.38,
+        "b": 0.25
+      },
+      "powerByRarity": [
+        5,
+        9,
+        14,
+        22,
+        33
+      ],
+      "possiblePassives": [
+        "Passive_Agile",
+        "Passive_IncreaseAttackSpeed",
+        "Passive_Bulwark",
+        "Passive_DamageUp"
+      ]
+    },
+    {
+      "id": "RootstrideBoots",
+      "equipmentName": "Rootstride Boots",
+      "flavorText": "Boots with gnarled root soles that grip the forest floor over stone and fallen timber.",
+      "region": "Forest",
+      "category": "Armor",
+      "slotType": "Boots",
+      "itemColor": {
+        "r": 0.35,
+        "g": 0.28,
+        "b": 0.15
+      },
+      "powerByRarity": [
+        7,
+        12,
+        19,
+        29,
+        44
+      ],
+      "possiblePassives": [
+        "Passive_Agile",
+        "Passive_IncreaseAttackSpeed",
+        "Passive_Reinforced",
+        "Passive_Vicious"
+      ]
+    },
+    {
+      "id": "GatepostBuckler",
+      "equipmentName": "Gatepost Buckler",
+      "flavorText": "A round buckler cut from an old farm gatepost, still bearing its iron hinge.",
+      "region": "Green Valley",
+      "category": "Shield",
+      "slotType": "LeftHand",
+      "itemColor": {
+        "r": 0.62,
+        "g": 0.5,
+        "b": 0.32
+      },
+      "powerByRarity": [
+        7,
+        12,
+        18,
+        28,
+        42
+      ],
+      "possiblePassives": [
+        "Passive_Bulwark",
+        "Passive_Reinforced",
+        "Passive_Hefty",
+        "Passive_WeakenEnemy"
+      ]
+    },
+    {
+      "id": "MossbackShield",
+      "equipmentName": "Mossback Shield",
+      "flavorText": "A broad shield of stone and ironwood, furred with moss and heavy enough to stop a golem's fist.",
+      "region": "Forest",
+      "category": "Shield",
+      "slotType": "LeftHand",
+      "itemColor": {
+        "r": 0.4,
+        "g": 0.48,
+        "b": 0.35
+      },
+      "powerByRarity": [
+        9,
+        16,
+        24,
+        37,
+        56
+      ],
+      "possiblePassives": [
+        "Passive_Reinforced",
+        "Passive_Bulwark",
+        "Passive_Hefty",
+        "Passive_WeakenEnemy",
+        "Passive_Crippling"
+      ]
+    },
+    {
+      "id": "HedgerowCharm",
+      "equipmentName": "Hedgerow Charm",
+      "flavorText": "A small charm of woven hawthorn twigs, carried for luck along the meadow roads.",
+      "region": "Green Valley",
+      "category": "Talisman",
+      "slotType": "Talisman1",
+      "itemColor": {
+        "r": 0.6,
+        "g": 0.75,
+        "b": 0.4
+      },
+      "powerByRarity": [
+        6,
+        10,
+        16,
+        24,
+        36
+      ],
+      "possiblePassives": [
+        "Passive_ArcaneFocus",
+        "Passive_Spiritful",
+        "Passive_Channeled",
+        "Passive_DamageUp"
+      ]
+    },
+    {
+      "id": "HeartsapPendant",
+      "equipmentName": "Heartsap Pendant",
+      "flavorText": "A pendant of amber hardened from the sap of an elder tree, warm to the touch and faintly glowing.",
+      "region": "Forest",
+      "category": "Talisman",
+      "slotType": "Talisman1",
+      "itemColor": {
+        "r": 0.85,
+        "g": 0.6,
+        "b": 0.2
+      },
+      "powerByRarity": [
+        8,
+        14,
+        21,
+        33,
+        48
+      ],
+      "possiblePassives": [
+        "Passive_ArcaneFocus",
+        "Passive_Spiritful",
+        "Passive_Channeled",
+        "Passive_Vicious",
+        "Passive_WeakenEnemy"
+      ]
+    }
+  ]
+}

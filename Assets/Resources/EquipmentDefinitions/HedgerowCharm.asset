@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 88cf4697ec7a1bc16a48ee70e839b15d, type: 3}
+  m_Name: HedgerowCharm
+  m_EditorClassIdentifier: DoomScroller::DoomScroller.Inventory.EquipmentDefinition
+  equipmentName: 'Hedgerow Charm'
+  category: 3
+  slotType: 6
+  icon: {fileID: 0}
+  itemColor: {r: 0.6, g: 0.75, b: 0.4, a: 1}
+  powerByRarity: 060000000a000000100000001800000024000000
+  possiblePassives:
+  - {fileID: 11400000, guid: e35046d2415e3ec51bdd6ac78ce2611e, type: 2}
+  - {fileID: 11400000, guid: 71209c2572471d47e8ac044f828b1e56, type: 2}
+  - {fileID: 11400000, guid: ffac593b9f2222bc28aafd673cbb6087, type: 2}
+  - {fileID: 11400000, guid: 3c1f34edd4daf1a0f8aa4666a83c1088, type: 2}

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9a8294fed99c4ae1880d2e20e4ba7a0b, type: 3}
   m_Name: Resource_FrozenCache
   m_EditorClassIdentifier: DoomScroller::DoomScroller.Feed.EncounterData
-  title: Frozen Cache
+  title: Frozen Ice Shelf
   type: 4
   artwork: {fileID: 0}
   foregroundArt: {fileID: 0}

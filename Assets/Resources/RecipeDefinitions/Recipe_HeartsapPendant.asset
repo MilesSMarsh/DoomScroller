@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3080f8a71b5317737bcbb1e7d0dc0129, type: 3}
+  m_Name: Recipe_HeartsapPendant
+  m_EditorClassIdentifier: DoomScroller::DoomScroller.Inventory.RecipeDefinition
+  recipeId: 48d82643-5f8b-43e1-8a77-513826bc8276
+  outputKind: 2
+  outputItem: {fileID: 0}
+  outputWeapon: {fileID: 0}
+  outputEquipment: {fileID: 11400000, guid: 2c472724a26f4119bf13b334ea7eb506, type: 2}
+  outputMaterial: {fileID: 0}
+  outputRarity: 2
+  goldCost: 34
+  ingredients:
+  - material: {fileID: 11400000, guid: 041e344ce9fdeca7c9e17fa02911aba9, type: 2}
+    count: 2
+  - material: {fileID: 11400000, guid: 1d611f11dfc3d430781a7a7299b625fe, type: 2}
+    count: 2
+  - material: {fileID: 11400000, guid: 4694f55f5297917a0a95fc701908267c, type: 2}
+    count: 1
+  prerequisiteRecipes:
+  - {fileID: 11400000, guid: 02e690ccfe8740bcbc02350d2227b74d, type: 2}
+  - {fileID: 11400000, guid: 4e75660529271ea2fb7e9ffed12d9ddf, type: 2}

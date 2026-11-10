@@ -4,10 +4,10 @@ namespace DoomScroller.Inventory
     // same rule as ItemCategory/EncounterType.
     public enum ItemRarity
     {
-        Common,
-        Uncommon,
-        Rare,
-        Legendary,
-        Mythic
+        Plain,
+        Tempered,
+        Runed,
+        Relic,
+        Exalted
     }
 }

@@ -16,8 +16,8 @@ namespace DoomScroller.Progression
         private const string ConfigResourcesPath = "WeaponUpgradeConfig";
 
         // Placeholder, tuned later like every other number introduced this session.
-        // Indexed by the weapon's CURRENT rarity (index 4/Mythic is never read, since
-        // CanEmpower is false there — Mythic is the max tier).
+        // Indexed by the weapon's CURRENT rarity (index 4/Exalted is never read, since
+        // CanEmpower is false there — Exalted is the max tier).
         private static readonly float[] EmpowerGoldMultiplierByRarity = { 1.5f, 2.5f, 4f, 6f, 0f };
         private const float RerollGoldMultiplier = 1.5f;
 
@@ -28,7 +28,7 @@ namespace DoomScroller.Progression
 
         public static bool CanEmpower(ItemData weapon)
         {
-            return weapon != null && weapon.category == ItemCategory.Weapon && weapon.rarity < ItemRarity.Mythic;
+            return weapon != null && weapon.category == ItemCategory.Weapon && weapon.rarity < ItemRarity.Exalted;
         }
 
         public static int EmpowerGoldCost(ItemData weapon)
@@ -91,6 +91,9 @@ namespace DoomScroller.Progression
             var (power, scaling) = WeaponGenerator.ComputeArchetypeStats(weapon.weaponType, newRarity);
 
             weapon.rarity = newRarity;
+            weapon.title = WeaponGenerator.TitleFor(newRarity, weapon.sourceDefinition != null
+                ? weapon.sourceDefinition.weaponName
+                : weapon.weaponType.ToString());
             weapon.powerValue = power;
             weapon.statSummary = $"+{power} {ItemCategoryInfo.Label(ItemCategory.Weapon)}";
             weapon.attributeScalingEntries = scaling;

@@ -94,7 +94,7 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
   `Inventory/AttributesPanelView.cs`, `Progression/PlayerProgression.cs`,
   `Progression/PlayerAttributes.cs`, `Progression/StarterWeapon.cs`,
   `Inventory/ProfileController.cs`, `UI/NavBarController.cs`.
-- New game (`StartFresh` only) adds and equips a Common Wooden Sword rolled by
+- New game (`StartFresh` only) adds and equips a Plain Hallow Wood Sword rolled by
   `Progression/StarterWeapon.Create` → `WeaponGenerator.GenerateFromDefinition`, from
   `ProfileController.starterWeaponDefinition` (scene: `WeaponDefinitions/WoodenSword`).
   Unassigned → warning, starts unarmed. Loaded saves keep their loadout (no migration

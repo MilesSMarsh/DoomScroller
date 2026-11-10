@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d028f9cfb60c907859353caf36b56d5c, type: 3}
+  m_Name: ElderrootStaff
+  m_EditorClassIdentifier: DoomScroller::DoomScroller.Inventory.WeaponDefinition
+  weaponName: 'Elderroot Staff'
+  weaponType: 2
+  damageType: 3
+  isTwoHanded: 1
+  attackSpeed: 0.85
+  itemColor: {r: 0.4, g: 0.3, b: 0.6, a: 1}
+  icon: {fileID: 0}
+  statsByRarity:
+  - baseDamage: 3
+    attributeScalingEntries:
+    - attribute: 2
+      coefficient: 0.7
+  - baseDamage: 6
+    attributeScalingEntries:
+    - attribute: 2
+      coefficient: 0.7
+  - baseDamage: 12
+    attributeScalingEntries:
+    - attribute: 2
+      coefficient: 0.7
+  - baseDamage: 22
+    attributeScalingEntries:
+    - attribute: 2
+      coefficient: 0.7
+  - baseDamage: 44
+    attributeScalingEntries:
+    - attribute: 2
+      coefficient: 0.7
+  possibleAbilities:
+  - {fileID: 11400000, guid: f57e83ac28a0f8a369af3ce454a13397, type: 2}
+  - {fileID: 11400000, guid: 84764e86924ffe200a450b692647a848, type: 2}
+  - {fileID: 11400000, guid: e1002e6a9bea192249b1f9da2dbda00b, type: 2}
+  - {fileID: 11400000, guid: 0baf47a125f6f0d6592b0a5f11f25378, type: 2}
+  - {fileID: 11400000, guid: f7a8aa2cd8c5d0e7f99cecafc7a98921, type: 2}
+  possiblePassives:
+  - {fileID: 11400000, guid: e35046d2415e3ec51bdd6ac78ce2611e, type: 2}
+  - {fileID: 11400000, guid: 71209c2572471d47e8ac044f828b1e56, type: 2}
+  - {fileID: 11400000, guid: 86ed47f3e8d37b5dd99437e56d0e6cbf, type: 2}
+  - {fileID: 11400000, guid: 3c1f34edd4daf1a0f8aa4666a83c1088, type: 2}
+  - {fileID: 11400000, guid: ffac593b9f2222bc28aafd673cbb6087, type: 2}
+  - {fileID: 11400000, guid: 7c26ef40a1d924e878ed721f4b7dc10f, type: 2}

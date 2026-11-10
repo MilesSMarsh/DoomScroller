@@ -10,7 +10,7 @@ namespace DoomScroller.Progression
     // so what the encounter-detail screen promised is exactly what gets granted.
     public static class RewardGenerator
     {
-        private static readonly string[] RarityNames = { "Common", "Uncommon", "Rare", "Legendary", "Mythic" };
+        private static readonly string[] RarityNames = { "Plain", "Tempered", "Runed", "Relic", "Exalted" };
 
         // Shared across every category — WeaponGenerator reuses this same table for a
         // rolled weapon's base damage (the user's own call: base damage comes from
@@ -45,14 +45,14 @@ namespace DoomScroller.Progression
         // EncounterData.lootTablePercentByRarity's roll — normalizes against whatever the
         // table's own total actually is, so an author doesn't have to hit exactly 100.
         // Null/empty/all-zero (every pre-existing encounter, before loot tables existed)
-        // always rolls Common, matching this project's original hardcoded behavior.
+        // always rolls Plain, matching this project's original hardcoded behavior.
         public static ItemRarity RollRarity(float[] percentByRarity, System.Random rng = null)
         {
             rng ??= new System.Random();
             var total = percentByRarity?.Sum() ?? 0f;
             if (total <= 0f)
             {
-                return ItemRarity.Common;
+                return ItemRarity.Plain;
             }
 
             var roll = rng.NextDouble() * total;
@@ -69,7 +69,7 @@ namespace DoomScroller.Progression
             return (ItemRarity)(percentByRarity.Length - 1);
         }
 
-        // "+50 XP · 70% Common, 25% Uncommon, 5% Rare Gear" — generated straight from the
+        // "+50 XP · 70% Plain, 25% Tempered, 5% Runed Gear" — generated straight from the
         // same table RollRarity itself rolls against, so the feed card's stated odds can
         // never drift from what actually drops. Deliberately never names a specific
         // weapon/item, only rarity (the user's own call) — even when the table has
@@ -85,7 +85,7 @@ namespace DoomScroller.Progression
 
             if (total <= 0f)
             {
-                return $"+{xpReward} XP · Common Gear{countSuffix}";
+                return $"+{xpReward} XP · Plain Gear{countSuffix}";
             }
 
             var parts = new List<string>();
@@ -176,7 +176,7 @@ namespace DoomScroller.Progression
             rng ??= new System.Random();
 
             // Potion and Material are excluded from the default pool — a randomly-generated
-            // "Common Potion" doesn't mean anything the way "Common Head" does (potions are
+            // "Plain Potion" doesn't mean anything the way "Plain Head" does (potions are
             // hand-authored content only), and Material has no equip slots at all (would
             // throw below when picking one).
             var categories = allowedCategories ?? ((ItemCategory[])System.Enum.GetValues(typeof(ItemCategory)))

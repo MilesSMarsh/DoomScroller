@@ -1,0 +1,236 @@
+{
+  "started": "2026-11-10T02:15:19",
+  "draftBrief": false,
+  "args": {
+    "stages": "weapons,equipment,recipes,loot,region,encounters",
+    "weapons": 3,
+    "per_type": 8,
+    "equipment_plan": "Head:2,Chest:2,Legs:2,Boots:2,LeftHand:2,Talisman1:2",
+    "replace": "weapons,equipment",
+    "encounters": 5,
+    "rounds": 4,
+    "gen_model": "sonnet",
+    "critic_model": "opus",
+    "from_run": null,
+    "out": null,
+    "allow_draft_brief": false,
+    "keep_going": false
+  },
+  "replace": [
+    "equipment",
+    "weapon"
+  ],
+  "stages": {
+    "weapons": {
+      "status": "approved",
+      "rounds": [
+        {
+          "round": 1,
+          "errors": 6,
+          "warnings": 10,
+          "criticMustFix": 2,
+          "criticMinor": 11,
+          "passed": false,
+          "usage": [
+            {
+              "model": "sonnet",
+              "costUsd": 0.3184496,
+              "durationMs": 138551
+            },
+            {
+              "model": "opus",
+              "costUsd": 0.4827204,
+              "durationMs": 82668
+            }
+          ]
+        },
+        {
+          "round": 2,
+          "errors": 0,
+          "warnings": 0,
+          "criticMustFix": 0,
+          "criticMinor": 7,
+          "passed": true,
+          "usage": [
+            {
+              "model": "sonnet",
+              "costUsd": 0.2942976,
+              "durationMs": 75756
+            },
+            {
+              "model": "opus",
+              "costUsd": 0.39955640000000003,
+              "durationMs": 40375
+            }
+          ]
+        }
+      ]
+    },
+    "equipment": {
+      "status": "approved",
+      "rounds": [
+        {
+          "round": 1,
+          "errors": 0,
+          "warnings": 0,
+          "criticMustFix": 0,
+          "criticMinor": 6,
+          "passed": true,
+          "usage": [
+            {
+              "model": "sonnet",
+              "costUsd": 0.18196,
+              "durationMs": 23815
+            },
+            {
+              "model": "opus",
+              "costUsd": 0.4027364,
+              "durationMs": 44455
+            }
+          ]
+        }
+      ]
+    },
+    "recipes": {
+      "status": "approved",
+      "rounds": [
+        {
+          "round": 1,
+          "errors": 0,
+          "warnings": 0,
+          "criticMustFix": 2,
+          "criticMinor": 3,
+          "passed": false,
+          "usage": [
+            {
+              "model": "sonnet",
+              "costUsd": 0.23614999999999997,
+              "durationMs": 40172
+            },
+            {
+              "model": "opus",
+              "costUsd": 0.5246164,
+              "durationMs": 71149
+            }
+          ]
+        },
+        {
+          "round": 2,
+          "errors": 0,
+          "warnings": 0,
+          "criticMustFix": 0,
+          "criticMinor": 1,
+          "passed": true,
+          "usage": [
+            {
+              "model": "sonnet",
+              "costUsd": 0.2376982,
+              "durationMs": 25217
+            },
+            {
+              "model": "opus",
+              "costUsd": 0.4228164,
+              "durationMs": 20417
+            }
+          ]
+        }
+      ]
+    },
+    "loot": {
+      "status": "approved",
+      "rounds": [
+        {
+          "round": 1,
+          "errors": 0,
+          "warnings": 0,
+          "criticMustFix": 0,
+          "criticMinor": 5,
+          "passed": true,
+          "usage": [
+            {
+              "model": "sonnet",
+              "costUsd": 0.19769799999999998,
+              "durationMs": 11276
+            },
+            {
+              "model": "opus",
+              "costUsd": 0.4389884,
+              "durationMs": 36062
+            }
+          ]
+        }
+      ]
+    },
+    "region": {
+      "status": "approved",
+      "rounds": [
+        {
+          "round": 1,
+          "errors": 0,
+          "warnings": 0,
+          "criticMustFix": 1,
+          "criticMinor": 6,
+          "passed": false,
+          "usage": [
+            {
+              "model": "sonnet",
+              "costUsd": 0.223108,
+              "durationMs": 23714
+            },
+            {
+              "model": "opus",
+              "costUsd": 0.47808439999999996,
+              "durationMs": 46405
+            }
+          ]
+        },
+        {
+          "round": 2,
+          "errors": 0,
+          "warnings": 0,
+          "criticMustFix": 0,
+          "criticMinor": 3,
+          "passed": true,
+          "usage": [
+            {
+              "model": "sonnet",
+              "costUsd": 0.2126806,
+              "durationMs": 10353
+            },
+            {
+              "model": "opus",
+              "costUsd": 0.45100439999999997,
+              "durationMs": 24135
+            }
+          ]
+        }
+      ]
+    },
+    "encounters": {
+      "status": "approved",
+      "rounds": [
+        {
+          "round": 1,
+          "errors": 0,
+          "warnings": 0,
+          "criticMustFix": 0,
+          "criticMinor": 3,
+          "passed": true,
+          "usage": [
+            {
+              "model": "sonnet",
+              "costUsd": 0.227522,
+              "durationMs": 20613
+            },
+            {
+              "model": "opus",
+              "costUsd": 0.4656164,
+              "durationMs": 30914
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "finished": "2026-11-10T02:28:18"
+}

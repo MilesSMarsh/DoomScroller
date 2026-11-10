@@ -19,7 +19,7 @@ namespace DoomScroller.Feed.Editor
     public class EncounterCreatorWindow : EditorWindow
     {
         private const string EncountersResourcesPath = "Assets/Resources/Encounters";
-        private static readonly string[] RarityLabels = { "Common", "Uncommon", "Rare", "Legendary", "Mythic" };
+        private static readonly string[] RarityLabels = { "Plain", "Tempered", "Runed", "Relic", "Exalted" };
 
         private Vector2 _scroll;
 

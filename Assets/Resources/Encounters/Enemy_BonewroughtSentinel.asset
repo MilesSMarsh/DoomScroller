@@ -17,7 +17,7 @@ MonoBehaviour:
   artwork: {fileID: 21300000, guid: f911d6c54aef7449eb2bf44d3489cc69, type: 3}
   foregroundArt: {fileID: 0}
   cardColor: {r: 0.35, g: 0.08, b: 0.08, a: 1}
-  description: A guardian of fused bone that never leaves its post.
+  description: A guardian of fused bone, still standing watch for the ancient race.
   baseXpReward: 200
   goldReward: 0
   lootTable:
@@ -30,10 +30,10 @@ MonoBehaviour:
     minItemCount: 1
     maxItemCount: 2
     weapons:
-    - {fileID: 11400000, guid: d0404bafcc176f6e192d169ff3eb8ef3, type: 2}
-    - {fileID: 11400000, guid: 1dbc299078fb700bba149b01bf86c195, type: 2}
+    - {fileID: 11400000, guid: 275bf14ff11c47319f473fba2082b36c, type: 2}
+    - {fileID: 11400000, guid: 1c5cf3276ea44c4f827787ed2d6962a6, type: 2}
     equipment:
-    - {fileID: 11400000, guid: 54da90afdcdf24529a0f97d192b4c386, type: 2}
+    - {fileID: 11400000, guid: 93ccfe3ba10d4a06bc1a2c4a1f4294ec, type: 2}
     materials:
     - {fileID: 11400000, guid: b1d9f6b31e8bbd2b08181ccb59fec1e8, type: 2}
     - {fileID: 11400000, guid: 1508bc622581c60e29af1a86d33610f2, type: 2}

@@ -14,7 +14,7 @@ namespace DoomScroller.Inventory
         public Sprite icon;
         public Color itemColor = Color.gray;
 
-        [Tooltip("Base value at Common rarity — scaled by RewardGenerator.RarityGoldValue's " +
+        [Tooltip("Base value at Plain rarity — scaled by RewardGenerator.RarityGoldValue's " +
                   "own ratios for higher tiers, same table every other rarity-scaled value uses.")]
         public int goldValue = 5;
     }

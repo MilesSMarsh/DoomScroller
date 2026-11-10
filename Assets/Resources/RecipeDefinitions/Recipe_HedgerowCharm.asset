@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3080f8a71b5317737bcbb1e7d0dc0129, type: 3}
+  m_Name: Recipe_HedgerowCharm
+  m_EditorClassIdentifier: DoomScroller::DoomScroller.Inventory.RecipeDefinition
+  recipeId: 01c520e5-0bc6-4f2f-b854-2851ed859f35
+  outputKind: 2
+  outputItem: {fileID: 0}
+  outputWeapon: {fileID: 0}
+  outputEquipment: {fileID: 11400000, guid: 99890e49d9de4df49384da561de25362, type: 2}
+  outputMaterial: {fileID: 0}
+  outputRarity: 0
+  goldCost: 10
+  ingredients:
+  - material: {fileID: 11400000, guid: 72c7d605fc3829b4899f1ed6f0194bf9, type: 2}
+    count: 3
+  - material: {fileID: 11400000, guid: b19ce57e120ebb5c7827ba8c7f32c082, type: 2}
+    count: 2
+  - material: {fileID: 11400000, guid: 041e344ce9fdeca7c9e17fa02911aba9, type: 2}
+    count: 1
+  prerequisiteRecipes: []

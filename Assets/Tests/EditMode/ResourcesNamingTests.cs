@@ -31,10 +31,6 @@ namespace DoomScroller.Tests.EditMode
             new Rename { OldRelPath = "Abilities/Passive_New 1", NewRelPath = "Abilities/Passive_WeakenEnemy", Guid = "96e6b2e96b01b0b66852578e3a9942af", AssetType = typeof(PassiveDefinition) },
             new Rename { OldRelPath = "Abilities/Passive_New 2", NewRelPath = "Abilities/Passive_IncreaseAttackSpeed", Guid = "51c089a1f4a84efe5bc2d0a643ab925f", AssetType = typeof(PassiveDefinition) },
             new Rename { OldRelPath = "Encounters/Wolf", NewRelPath = "Encounters/Enemy_Wolf", Guid = "c56531fad4e2993b5b405c6a7ed78878", AssetType = typeof(EncounterData) },
-            new Rename { OldRelPath = "WeaponDefinitions/Stone Sword", NewRelPath = "WeaponDefinitions/StoneSword", Guid = "fd1b4aa393510a943a82c27e208dfba4", AssetType = typeof(WeaponDefinition) },
-            new Rename { OldRelPath = "WeaponDefinitions/Wooden Sword", NewRelPath = "WeaponDefinitions/WoodenSword", Guid = "1cc64e9a05244643ea6a4dc8b088eeb7", AssetType = typeof(WeaponDefinition) },
-            new Rename { OldRelPath = "EquipmentDefinitions/Leather Helmet", NewRelPath = "EquipmentDefinitions/LeatherHelmet", Guid = "54da90afdcdf24529a0f97d192b4c386", AssetType = typeof(EquipmentDefinition) },
-            new Rename { OldRelPath = "RecipeDefinitions/Recipe_Leather Helmet", NewRelPath = "RecipeDefinitions/Recipe_LeatherHelmet", Guid = "2d335f28e6762bbee83938b1d5d81128", AssetType = typeof(RecipeDefinition) },
             new Rename { OldRelPath = "Encounters/Enemy_Standard", NewRelPath = "Encounters/Enemy_RogueSlime", Guid = "8be2bb5911ac42e19cb34e8748102e74", AssetType = typeof(EncounterData) },
             new Rename { OldRelPath = "Encounters/Enemy_Hard", NewRelPath = "Encounters/Enemy_BonewroughtSentinel", Guid = "62f0ddde53814707a67df18b9aaf254b", AssetType = typeof(EncounterData) },
         };
@@ -115,29 +111,15 @@ namespace DoomScroller.Tests.EditMode
         [Test]
         public void Identity_EncounterTitles_Unchanged()
         {
-            Assert.AreEqual("Wolf", LoadOrFail<EncounterData>("Encounters/Enemy_Wolf").title);
+            Assert.AreEqual("Grey Wolf", LoadOrFail<EncounterData>("Encounters/Enemy_Wolf").title);
             Assert.AreEqual("Rogue Slime", LoadOrFail<EncounterData>("Encounters/Enemy_RogueSlime").title);
             Assert.AreEqual("Bonewrought Sentinel", LoadOrFail<EncounterData>("Encounters/Enemy_BonewroughtSentinel").title);
         }
 
         [Test]
-        public void Identity_WeaponNames_Unchanged()
+        public void Identity_StarterWeaponName()
         {
-            Assert.AreEqual("Stone Sword", LoadOrFail<WeaponDefinition>("WeaponDefinitions/StoneSword").weaponName);
-            Assert.AreEqual("Wooden Sword", LoadOrFail<WeaponDefinition>("WeaponDefinitions/WoodenSword").weaponName);
-        }
-
-        [Test]
-        public void Identity_EquipmentName_Unchanged()
-        {
-            Assert.AreEqual("Leather Helmet", LoadOrFail<EquipmentDefinition>("EquipmentDefinitions/LeatherHelmet").equipmentName);
-        }
-
-        [Test]
-        public void Identity_RecipeId_Unchanged()
-        {
-            Assert.AreEqual("86500eae-b76c-414e-bfd8-c04f57730d10",
-                LoadOrFail<RecipeDefinition>("RecipeDefinitions/Recipe_LeatherHelmet").recipeId);
+            Assert.AreEqual("Hallow Wood Sword", LoadOrFail<WeaponDefinition>("WeaponDefinitions/HallowWoodSword").weaponName);
         }
 
         private static void AssertPassiveName(string relPath, string expected)
@@ -173,7 +155,7 @@ namespace DoomScroller.Tests.EditMode
         [Test]
         public void Description_EnemyBonewroughtSentinel_IsApprovedText()
         {
-            Assert.AreEqual("A guardian of fused bone that never leaves its post.",
+            Assert.AreEqual("A guardian of fused bone, still standing watch for the ancient race.",
                 LoadOrFail<EncounterData>("Encounters/Enemy_BonewroughtSentinel").description);
         }
 

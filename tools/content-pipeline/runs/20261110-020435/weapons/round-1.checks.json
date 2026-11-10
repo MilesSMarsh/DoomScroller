@@ -1,0 +1,50 @@
+[
+  {
+    "target": "MillstoneMaul",
+    "severity": "warning",
+    "rule": "two-hand-speed",
+    "message": "two-handed weapons are usually ≤1.2 attack speed"
+  },
+  {
+    "target": "OakheartGreatblade",
+    "severity": "warning",
+    "rule": "two-hand-speed",
+    "message": "two-handed weapons are usually ≤1.2 attack speed"
+  },
+  {
+    "target": "HarvestCrossbow",
+    "severity": "warning",
+    "rule": "two-hand-speed",
+    "message": "two-handed weapons are usually ≤1.2 attack speed"
+  },
+  {
+    "target": "StagwoodLongbow",
+    "severity": "warning",
+    "rule": "two-hand-speed",
+    "message": "two-handed weapons are usually ≤1.2 attack speed"
+  },
+  {
+    "target": "GravewoodArbalest",
+    "severity": "warning",
+    "rule": "two-hand-speed",
+    "message": "two-handed weapons are usually ≤1.2 attack speed"
+  },
+  {
+    "target": "HearthfireStaff",
+    "severity": "warning",
+    "rule": "two-hand-speed",
+    "message": "two-handed weapons are usually ≤1.2 attack speed"
+  },
+  {
+    "target": "ElderrootStaff",
+    "severity": "warning",
+    "rule": "two-hand-speed",
+    "message": "two-handed weapons are usually ≤1.2 attack speed"
+  },
+  {
+    "target": "MosswrittenGrimoire",
+    "severity": "warning",
+    "rule": "two-hand-speed",
+    "message": "two-handed weapons are usually ≤1.2 attack speed"
+  }
+]

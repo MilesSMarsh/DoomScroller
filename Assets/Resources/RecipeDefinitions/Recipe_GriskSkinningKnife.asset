@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3080f8a71b5317737bcbb1e7d0dc0129, type: 3}
+  m_Name: Recipe_GriskSkinningKnife
+  m_EditorClassIdentifier: DoomScroller::DoomScroller.Inventory.RecipeDefinition
+  recipeId: 645c4b69-c50d-45c2-8e9b-8dda3a3add24
+  outputKind: 1
+  outputItem: {fileID: 0}
+  outputWeapon: {fileID: 11400000, guid: d197b10c394947b9bd9f2ceb3fb5fe0b, type: 2}
+  outputEquipment: {fileID: 0}
+  outputMaterial: {fileID: 0}
+  outputRarity: 0
+  goldCost: 10
+  ingredients:
+  - material: {fileID: 11400000, guid: fd13e7c61e6f74e0cb289324075bf947, type: 2}
+    count: 3
+  - material: {fileID: 11400000, guid: 5a5fce6e43c19dbbfadc81ba4fd05e13, type: 2}
+    count: 1
+  - material: {fileID: 11400000, guid: c71036a0438862ffab7ab63d24b26a3e, type: 2}
+    count: 1
+  prerequisiteRecipes: []

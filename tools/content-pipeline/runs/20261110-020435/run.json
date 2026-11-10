@@ -1,0 +1,91 @@
+{
+  "started": "2026-11-10T02:04:35",
+  "draftBrief": false,
+  "args": {
+    "stages": "weapons,equipment,recipes,loot,region,encounters",
+    "weapons": 3,
+    "per_type": 8,
+    "equipment_plan": "Head:2,Chest:2,Legs:2,Boots:2,LeftHand:2,Talisman1:2",
+    "replace": "weapons,equipment",
+    "encounters": 5,
+    "rounds": 3,
+    "gen_model": "sonnet",
+    "critic_model": "opus",
+    "from_run": null,
+    "out": null,
+    "allow_draft_brief": false,
+    "keep_going": false
+  },
+  "replace": [
+    "equipment",
+    "weapon"
+  ],
+  "stages": {
+    "weapons": {
+      "status": "needs-review",
+      "rounds": [
+        {
+          "round": 1,
+          "errors": 0,
+          "warnings": 8,
+          "criticMustFix": 9,
+          "criticMinor": 8,
+          "passed": false,
+          "usage": [
+            {
+              "model": "sonnet",
+              "costUsd": 0.250118,
+              "durationMs": 89510
+            },
+            {
+              "model": "opus",
+              "costUsd": 0.6071,
+              "durationMs": 141846
+            }
+          ]
+        },
+        {
+          "round": 2,
+          "errors": 0,
+          "warnings": 0,
+          "criticMustFix": 3,
+          "criticMinor": 10,
+          "passed": false,
+          "usage": [
+            {
+              "model": "sonnet",
+              "costUsd": 0.32912359999999996,
+              "durationMs": 98313
+            },
+            {
+              "model": "opus",
+              "costUsd": 0.4621692,
+              "durationMs": 82947
+            }
+          ]
+        },
+        {
+          "round": 3,
+          "errors": 0,
+          "warnings": 0,
+          "criticMustFix": 6,
+          "criticMinor": 7,
+          "passed": false,
+          "usage": [
+            {
+              "model": "sonnet",
+              "costUsd": 0.2562396,
+              "durationMs": 52953
+            },
+            {
+              "model": "opus",
+              "costUsd": 0.5295812,
+              "durationMs": 113715
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "finished": "2026-11-10T02:14:20"
+}

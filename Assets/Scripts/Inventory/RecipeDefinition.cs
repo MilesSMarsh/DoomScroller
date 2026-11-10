@@ -87,7 +87,7 @@ namespace DoomScroller.Inventory
         public ItemRarity OutputRarity => outputKind switch
         {
             RecipeOutputKind.Weapon or RecipeOutputKind.Equipment or RecipeOutputKind.Material => outputRarity,
-            _ => outputItem != null ? outputItem.rarity : ItemRarity.Common
+            _ => outputItem != null ? outputItem.rarity : ItemRarity.Plain
         };
 
         // "+22 Dmg · 1.1/s" / "+18 Defence" — the Blacksmith Craft tab's damage/speed

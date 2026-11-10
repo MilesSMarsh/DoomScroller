@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3080f8a71b5317737bcbb1e7d0dc0129, type: 3}
+  m_Name: Recipe_ElderrootStaff
+  m_EditorClassIdentifier: DoomScroller::DoomScroller.Inventory.RecipeDefinition
+  recipeId: 973d6d35-41bb-4184-a5b3-e4e187701e46
+  outputKind: 1
+  outputItem: {fileID: 0}
+  outputWeapon: {fileID: 11400000, guid: 2e172e9457c34ca1b6a824591a53a10d, type: 2}
+  outputEquipment: {fileID: 0}
+  outputMaterial: {fileID: 0}
+  outputRarity: 3
+  goldCost: 70
+  ingredients:
+  - material: {fileID: 11400000, guid: 1d611f11dfc3d430781a7a7299b625fe, type: 2}
+    count: 3
+  - material: {fileID: 11400000, guid: 041e344ce9fdeca7c9e17fa02911aba9, type: 2}
+    count: 3
+  - material: {fileID: 11400000, guid: b19ce57e120ebb5c7827ba8c7f32c082, type: 2}
+    count: 1
+  prerequisiteRecipes:
+  - {fileID: 11400000, guid: 1a41b0fd50f74abd8bab164dc929053d, type: 2}

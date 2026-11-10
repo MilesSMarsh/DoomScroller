@@ -1,0 +1,766 @@
+{
+  "recipes": [
+    {
+      "id": "Recipe_ThreshingFlail",
+      "outputKind": "Weapon",
+      "output": "ThreshingFlail",
+      "outputRarity": "Plain",
+      "goldCost": 12,
+      "ingredients": [
+        {
+          "material": "Wood",
+          "count": 3
+        },
+        {
+          "material": "Rope",
+          "count": 2
+        },
+        {
+          "material": "Stone",
+          "count": 2
+        }
+      ],
+      "prerequisites": [
+        "Recipe_Rope"
+      ]
+    },
+    {
+      "id": "Recipe_GriskSkinningKnife",
+      "outputKind": "Weapon",
+      "output": "GriskSkinningKnife",
+      "outputRarity": "Plain",
+      "goldCost": 10,
+      "ingredients": [
+        {
+          "material": "IronOre",
+          "count": 3
+        },
+        {
+          "material": "Wood",
+          "count": 1
+        },
+        {
+          "material": "WolfPelt",
+          "count": 1
+        }
+      ],
+      "prerequisites": []
+    },
+    {
+      "id": "Recipe_WheatcutterScythe",
+      "outputKind": "Weapon",
+      "output": "WheatcutterScythe",
+      "outputRarity": "Tempered",
+      "goldCost": 26,
+      "ingredients": [
+        {
+          "material": "Wood",
+          "count": 3
+        },
+        {
+          "material": "IronIngot",
+          "count": 3
+        }
+      ],
+      "prerequisites": [
+        "Recipe_ThreshingFlail"
+      ]
+    },
+    {
+      "id": "Recipe_FieldhandSling",
+      "outputKind": "Weapon",
+      "output": "FieldhandSling",
+      "outputRarity": "Plain",
+      "goldCost": 8,
+      "ingredients": [
+        {
+          "material": "Rope",
+          "count": 2
+        },
+        {
+          "material": "Stone",
+          "count": 2
+        }
+      ],
+      "prerequisites": [
+        "Recipe_Rope"
+      ]
+    },
+    {
+      "id": "Recipe_MeadowlarkShortbow",
+      "outputKind": "Weapon",
+      "output": "MeadowlarkShortbow",
+      "outputRarity": "Tempered",
+      "goldCost": 25,
+      "ingredients": [
+        {
+          "material": "Wood",
+          "count": 4
+        },
+        {
+          "material": "Rope",
+          "count": 2
+        },
+        {
+          "material": "WolfPelt",
+          "count": 1
+        }
+      ],
+      "prerequisites": [
+        "Recipe_FieldhandSling"
+      ]
+    },
+    {
+      "id": "Recipe_BarnyardThrowingAxe",
+      "outputKind": "Weapon",
+      "output": "BarnyardThrowingAxe",
+      "outputRarity": "Plain",
+      "goldCost": 14,
+      "ingredients": [
+        {
+          "material": "Wood",
+          "count": 2
+        },
+        {
+          "material": "IronIngot",
+          "count": 2
+        },
+        {
+          "material": "Rope",
+          "count": 1
+        }
+      ],
+      "prerequisites": [
+        "Recipe_Rope"
+      ]
+    },
+    {
+      "id": "Recipe_BoarquillBlowgun",
+      "outputKind": "Weapon",
+      "output": "BoarquillBlowgun",
+      "outputRarity": "Plain",
+      "goldCost": 12,
+      "ingredients": [
+        {
+          "material": "Wood",
+          "count": 3
+        },
+        {
+          "material": "Fibers",
+          "count": 3
+        },
+        {
+          "material": "VenomSac",
+          "count": 1
+        }
+      ],
+      "prerequisites": []
+    },
+    {
+      "id": "Recipe_HedgewitchWand",
+      "outputKind": "Weapon",
+      "output": "HedgewitchWand",
+      "outputRarity": "Plain",
+      "goldCost": 16,
+      "ingredients": [
+        {
+          "material": "Wood",
+          "count": 3
+        },
+        {
+          "material": "ArcaneGem",
+          "count": 2
+        }
+      ],
+      "prerequisites": []
+    },
+    {
+      "id": "Recipe_HearthfireRod",
+      "outputKind": "Weapon",
+      "output": "HearthfireRod",
+      "outputRarity": "Plain",
+      "goldCost": 16,
+      "ingredients": [
+        {
+          "material": "Coal",
+          "count": 3
+        },
+        {
+          "material": "IronIngot",
+          "count": 2
+        }
+      ],
+      "prerequisites": []
+    },
+    {
+      "id": "Recipe_RainglassStaff",
+      "outputKind": "Weapon",
+      "output": "RainglassStaff",
+      "outputRarity": "Tempered",
+      "goldCost": 27,
+      "ingredients": [
+        {
+          "material": "Wood",
+          "count": 4
+        },
+        {
+          "material": "HealingHerbs",
+          "count": 2
+        },
+        {
+          "material": "FrostShard",
+          "count": 1
+        }
+      ],
+      "prerequisites": [
+        "Recipe_HedgewitchWand"
+      ]
+    },
+    {
+      "id": "Recipe_MoonmeadowCrook",
+      "outputKind": "Weapon",
+      "output": "MoonmeadowCrook",
+      "outputRarity": "Tempered",
+      "goldCost": 28,
+      "ingredients": [
+        {
+          "material": "Wood",
+          "count": 3
+        },
+        {
+          "material": "ArcaneGem",
+          "count": 3
+        },
+        {
+          "material": "SilverIngot",
+          "count": 1
+        }
+      ],
+      "prerequisites": [
+        "Recipe_HedgewitchWand",
+        "Recipe_SilverIngot"
+      ]
+    },
+    {
+      "id": "Recipe_HayfieldHelm",
+      "outputKind": "Equipment",
+      "output": "HayfieldHelm",
+      "outputRarity": "Plain",
+      "goldCost": 12,
+      "ingredients": [
+        {
+          "material": "IronOre",
+          "count": 3
+        },
+        {
+          "material": "Fibers",
+          "count": 3
+        }
+      ],
+      "prerequisites": []
+    },
+    {
+      "id": "Recipe_BoarhideJerkin",
+      "outputKind": "Equipment",
+      "output": "BoarhideJerkin",
+      "outputRarity": "Tempered",
+      "goldCost": 25,
+      "ingredients": [
+        {
+          "material": "WolfPelt",
+          "count": 4
+        },
+        {
+          "material": "Rope",
+          "count": 2
+        },
+        {
+          "material": "IronIngot",
+          "count": 1
+        }
+      ],
+      "prerequisites": [
+        "Recipe_Rope"
+      ]
+    },
+    {
+      "id": "Recipe_DroverLeggings",
+      "outputKind": "Equipment",
+      "output": "DroverLeggings",
+      "outputRarity": "Plain",
+      "goldCost": 10,
+      "ingredients": [
+        {
+          "material": "WolfPelt",
+          "count": 2
+        },
+        {
+          "material": "Fibers",
+          "count": 5
+        }
+      ],
+      "prerequisites": []
+    },
+    {
+      "id": "Recipe_FurrowBoots",
+      "outputKind": "Equipment",
+      "output": "FurrowBoots",
+      "outputRarity": "Plain",
+      "goldCost": 8,
+      "ingredients": [
+        {
+          "material": "WolfPelt",
+          "count": 2
+        },
+        {
+          "material": "Fibers",
+          "count": 3
+        }
+      ],
+      "prerequisites": []
+    },
+    {
+      "id": "Recipe_GatepostBuckler",
+      "outputKind": "Equipment",
+      "output": "GatepostBuckler",
+      "outputRarity": "Plain",
+      "goldCost": 14,
+      "ingredients": [
+        {
+          "material": "Wood",
+          "count": 4
+        },
+        {
+          "material": "IronIngot",
+          "count": 2
+        }
+      ],
+      "prerequisites": []
+    },
+    {
+      "id": "Recipe_HedgerowCharm",
+      "outputKind": "Equipment",
+      "output": "HedgerowCharm",
+      "outputRarity": "Plain",
+      "goldCost": 10,
+      "ingredients": [
+        {
+          "material": "Fibers",
+          "count": 3
+        },
+        {
+          "material": "HealingHerbs",
+          "count": 2
+        },
+        {
+          "material": "ArcaneGem",
+          "count": 1
+        }
+      ],
+      "prerequisites": []
+    },
+    {
+      "id": "Recipe_GolembreakerMaul",
+      "outputKind": "Weapon",
+      "output": "GolembreakerMaul",
+      "outputRarity": "Runed",
+      "goldCost": 32,
+      "ingredients": [
+        {
+          "material": "Stone",
+          "count": 3
+        },
+        {
+          "material": "AgedTimber",
+          "count": 3
+        }
+      ],
+      "prerequisites": [
+        "Recipe_WheatcutterScythe"
+      ]
+    },
+    {
+      "id": "Recipe_GravewardenMace",
+      "outputKind": "Weapon",
+      "output": "GravewardenMace",
+      "outputRarity": "Tempered",
+      "goldCost": 26,
+      "ingredients": [
+        {
+          "material": "BoneFragment",
+          "count": 3
+        },
+        {
+          "material": "IronIngot",
+          "count": 2
+        }
+      ],
+      "prerequisites": [
+        "Recipe_ThreshingFlail"
+      ]
+    },
+    {
+      "id": "Recipe_ThornwoodBoarspear",
+      "outputKind": "Weapon",
+      "output": "ThornwoodBoarspear",
+      "outputRarity": "Runed",
+      "goldCost": 30,
+      "ingredients": [
+        {
+          "material": "AgedTimber",
+          "count": 3
+        },
+        {
+          "material": "BoneFragment",
+          "count": 2
+        }
+      ],
+      "prerequisites": [
+        "Recipe_GriskSkinningKnife"
+      ]
+    },
+    {
+      "id": "Recipe_HeartwoodHatchet",
+      "outputKind": "Weapon",
+      "output": "HeartwoodHatchet",
+      "outputRarity": "Tempered",
+      "goldCost": 27,
+      "ingredients": [
+        {
+          "material": "AgedTimber",
+          "count": 3
+        },
+        {
+          "material": "IronIngot",
+          "count": 2
+        }
+      ],
+      "prerequisites": [
+        "Recipe_WheatcutterScythe"
+      ]
+    },
+    {
+      "id": "Recipe_YewboughLongbow",
+      "outputKind": "Weapon",
+      "output": "YewboughLongbow",
+      "outputRarity": "Runed",
+      "goldCost": 33,
+      "ingredients": [
+        {
+          "material": "AgedTimber",
+          "count": 3
+        },
+        {
+          "material": "Rope",
+          "count": 2
+        }
+      ],
+      "prerequisites": [
+        "Recipe_MeadowlarkShortbow",
+        "Recipe_Rope"
+      ]
+    },
+    {
+      "id": "Recipe_IronboltArbalest",
+      "outputKind": "Weapon",
+      "output": "IronboltArbalest",
+      "outputRarity": "Relic",
+      "goldCost": 60,
+      "ingredients": [
+        {
+          "material": "SteelIngot",
+          "count": 3
+        },
+        {
+          "material": "AgedTimber",
+          "count": 2
+        },
+        {
+          "material": "Rope",
+          "count": 2
+        }
+      ],
+      "prerequisites": [
+        "Recipe_SteelIngot",
+        "Recipe_YewboughLongbow"
+      ]
+    },
+    {
+      "id": "Recipe_StormboughRecurve",
+      "outputKind": "Weapon",
+      "output": "StormboughRecurve",
+      "outputRarity": "Relic",
+      "goldCost": 65,
+      "ingredients": [
+        {
+          "material": "AgedTimber",
+          "count": 3
+        },
+        {
+          "material": "ArcaneGem",
+          "count": 2
+        },
+        {
+          "material": "SpiderSilk",
+          "count": 2
+        }
+      ],
+      "prerequisites": [
+        "Recipe_YewboughLongbow"
+      ]
+    },
+    {
+      "id": "Recipe_CairnSlingstaff",
+      "outputKind": "Weapon",
+      "output": "CairnSlingstaff",
+      "outputRarity": "Runed",
+      "goldCost": 30,
+      "ingredients": [
+        {
+          "material": "Stone",
+          "count": 3
+        },
+        {
+          "material": "Rope",
+          "count": 2
+        }
+      ],
+      "prerequisites": [
+        "Recipe_FieldhandSling"
+      ]
+    },
+    {
+      "id": "Recipe_ElderrootStaff",
+      "outputKind": "Weapon",
+      "output": "ElderrootStaff",
+      "outputRarity": "Relic",
+      "goldCost": 70,
+      "ingredients": [
+        {
+          "material": "AgedTimber",
+          "count": 3
+        },
+        {
+          "material": "ArcaneGem",
+          "count": 3
+        },
+        {
+          "material": "HealingHerbs",
+          "count": 1
+        }
+      ],
+      "prerequisites": [
+        "Recipe_MoonmeadowCrook"
+      ]
+    },
+    {
+      "id": "Recipe_EmberbarkWand",
+      "outputKind": "Weapon",
+      "output": "EmberbarkWand",
+      "outputRarity": "Tempered",
+      "goldCost": 26,
+      "ingredients": [
+        {
+          "material": "Coal",
+          "count": 3
+        },
+        {
+          "material": "AgedTimber",
+          "count": 3
+        }
+      ],
+      "prerequisites": [
+        "Recipe_HearthfireRod"
+      ]
+    },
+    {
+      "id": "Recipe_BarrowlightLantern",
+      "outputKind": "Weapon",
+      "output": "BarrowlightLantern",
+      "outputRarity": "Runed",
+      "goldCost": 35,
+      "ingredients": [
+        {
+          "material": "BoneFragment",
+          "count": 2
+        },
+        {
+          "material": "ArcaneGem",
+          "count": 2
+        },
+        {
+          "material": "SteelIngot",
+          "count": 1
+        }
+      ],
+      "prerequisites": [
+        "Recipe_HedgewitchWand",
+        "Recipe_SteelIngot"
+      ]
+    },
+    {
+      "id": "Recipe_GnarlrootQuarterstaff",
+      "outputKind": "Weapon",
+      "output": "GnarlrootQuarterstaff",
+      "outputRarity": "Runed",
+      "goldCost": 32,
+      "ingredients": [
+        {
+          "material": "AgedTimber",
+          "count": 4
+        },
+        {
+          "material": "HealingHerbs",
+          "count": 2
+        }
+      ],
+      "prerequisites": [
+        "Recipe_RainglassStaff"
+      ]
+    },
+    {
+      "id": "Recipe_AntlerbarkHelm",
+      "outputKind": "Equipment",
+      "output": "AntlerbarkHelm",
+      "outputRarity": "Runed",
+      "goldCost": 31,
+      "ingredients": [
+        {
+          "material": "AgedTimber",
+          "count": 2
+        },
+        {
+          "material": "BoneFragment",
+          "count": 2
+        },
+        {
+          "material": "SteelIngot",
+          "count": 1
+        }
+      ],
+      "prerequisites": [
+        "Recipe_HayfieldHelm",
+        "Recipe_SteelIngot"
+      ]
+    },
+    {
+      "id": "Recipe_OakheartCuirass",
+      "outputKind": "Equipment",
+      "output": "OakheartCuirass",
+      "outputRarity": "Relic",
+      "goldCost": 75,
+      "ingredients": [
+        {
+          "material": "AgedTimber",
+          "count": 4
+        },
+        {
+          "material": "SteelIngot",
+          "count": 2
+        },
+        {
+          "material": "Rope",
+          "count": 1
+        }
+      ],
+      "prerequisites": [
+        "Recipe_BoarhideJerkin",
+        "Recipe_SteelIngot"
+      ]
+    },
+    {
+      "id": "Recipe_MossweaveGreaves",
+      "outputKind": "Equipment",
+      "output": "MossweaveGreaves",
+      "outputRarity": "Tempered",
+      "goldCost": 27,
+      "ingredients": [
+        {
+          "material": "SpiderSilk",
+          "count": 3
+        },
+        {
+          "material": "AgedTimber",
+          "count": 2
+        },
+        {
+          "material": "HealingHerbs",
+          "count": 1
+        }
+      ],
+      "prerequisites": [
+        "Recipe_DroverLeggings"
+      ]
+    },
+    {
+      "id": "Recipe_RootstrideBoots",
+      "outputKind": "Equipment",
+      "output": "RootstrideBoots",
+      "outputRarity": "Runed",
+      "goldCost": 30,
+      "ingredients": [
+        {
+          "material": "AgedTimber",
+          "count": 3
+        },
+        {
+          "material": "SpiderSilk",
+          "count": 2
+        }
+      ],
+      "prerequisites": [
+        "Recipe_FurrowBoots"
+      ]
+    },
+    {
+      "id": "Recipe_MossbackShield",
+      "outputKind": "Equipment",
+      "output": "MossbackShield",
+      "outputRarity": "Relic",
+      "goldCost": 60,
+      "ingredients": [
+        {
+          "material": "Stone",
+          "count": 3
+        },
+        {
+          "material": "AgedTimber",
+          "count": 3
+        },
+        {
+          "material": "SteelIngot",
+          "count": 1
+        }
+      ],
+      "prerequisites": [
+        "Recipe_GatepostBuckler",
+        "Recipe_SteelIngot"
+      ]
+    },
+    {
+      "id": "Recipe_HeartsapPendant",
+      "outputKind": "Equipment",
+      "output": "HeartsapPendant",
+      "outputRarity": "Runed",
+      "goldCost": 34,
+      "ingredients": [
+        {
+          "material": "ArcaneGem",
+          "count": 2
+        },
+        {
+          "material": "HealingHerbs",
+          "count": 2
+        },
+        {
+          "material": "SilverIngot",
+          "count": 1
+        }
+      ],
+      "prerequisites": [
+        "Recipe_HedgerowCharm",
+        "Recipe_SilverIngot"
+      ]
+    }
+  ]
+}

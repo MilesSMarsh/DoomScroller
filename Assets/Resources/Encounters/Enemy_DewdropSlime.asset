@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a8294fed99c4ae1880d2e20e4ba7a0b, type: 3}
+  m_Name: Enemy_DewdropSlime
+  m_EditorClassIdentifier: DoomScroller::DoomScroller.Feed.EncounterData
+  title: 'Dewdrop Slime'
+  type: 1
+  artwork: {fileID: 0}
+  foregroundArt: {fileID: 0}
+  cardColor: {r: 0.5, g: 0.8, b: 0.75, a: 1}
+  description: 'A glossy slime that shivers across the meadow, gathering dew as it goes.'
+  baseXpReward: 60
+  goldReward: 4
+  lootTable:
+    percentByRarity:
+    - 65
+    - 25
+    - 7
+    - 2
+    - 1
+    minItemCount: 1
+    maxItemCount: 1
+    weapons: []
+    equipment:
+    - {fileID: 11400000, guid: 99890e49d9de4df49384da561de25362, type: 2}
+    materials:
+    - {fileID: 11400000, guid: b19ce57e120ebb5c7827ba8c7f32c082, type: 2}
+    - {fileID: 11400000, guid: 72c7d605fc3829b4899f1ed6f0194bf9, type: 2}
+  enemyHealth: 55
+  enemyAttackDamage: 6
+  enemyAttackSpeed: 0.7
+  damageTypeModifiers:
+  - type: 4
+    multiplier: 1.5
+  - type: 2
+    multiplier: 0.7
+  dungeonRooms: []
+  resourceTimerSeconds: 10
+  resourceWeaknesses: []
+  resourceThresholds: []

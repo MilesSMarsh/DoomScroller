@@ -1,0 +1,42 @@
+{
+  "verdict": "approve",
+  "summary": "Loot rewire keeps each card's spirit (the fire scepter becomes two fire casters, the bone cleaver becomes the Gravewarden Mace, the grimoire becomes the Barrowlight Lantern, the wolf's bow becomes the Meadowlark Shortbow). Difficulty tiers match: Forest gear on the hardest cards, Green Valley gear on the Grey Wolf. It agrees with the dropsFrom notes approved in the weapons stage. Item counts are all within 1 to 4. The only issues are weak lore fits for a few items, which are optional polish.",
+  "soundsLikeTheGame": "\"A lantern whose pale flame drives back the skeletons of the old woods.\" (Barrowlight Lantern, chosen for the crypt and the Revenant): plain, sincere fantasy with real danger and a clear purpose, and choosing it as an undead drop makes the loot tell a story.",
+  "issues": [
+    {
+      "target": "Dungeon_HollowCrownCrypt",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "ElderrootStaff's own flavour text says it is tended by the tree people of the old woods (dropsFrom: tree people), so it is an odd find in a necrotic crypt sealed beneath Bonewrought Depths. The crypt already has BarrowlightLantern as its arcane weapon.",
+      "fix": "Remove ElderrootStaff, or swap in a weapon not tied to the tree people (e.g. GolembreakerMaul), keeping 4 items at most."
+    },
+    {
+      "target": "Enemy_BonewroughtSentinel",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "GolembreakerMaul is 'made to crack golems at the joints', which is a weak fit for a fused-bone guardian. GravewardenMace and AntlerbarkHelm already suit it.",
+      "fix": "Drop GolembreakerMaul, or say in the reason why a bone guardian of the ancient race would hold it (e.g. tools found in ancient-race ruins)."
+    },
+    {
+      "target": "Enemy_HollowCrownRevenant",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "MossbackShield (moss-covered, 'heavy enough to stop a golem's fist') doesn't fit a crowned horror risen from the deepest crypt.",
+      "fix": "Replace it with armour that fits a crowned undead warrior better, e.g. OakheartCuirass or AntlerbarkHelm."
+    },
+    {
+      "target": "Dungeon_WidowsThicket",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "GriskSkinningKnife is named and described as a goblin's knife, which reads oddly as spider-lair loot. Two Green Valley weapons are also on the low side for a mid-level dungeon (140 XP).",
+      "fix": "Swap GriskSkinningKnife for ThornwoodBoarspear (Forest-tier pierce weapon with Venom Strike and Venomous in its pools), which also keeps the venom theme of the old fang dagger."
+    },
+    {
+      "target": "Enemy_Wolf",
+      "severity": "minor",
+      "category": "balance",
+      "problem": "Out of scope for this draft: the existing card's rarity odds are 0/0/0/0/100, so the easiest card always drops Exalted MeadowlarkShortbow or DroverLeggings.",
+      "fix": "Flag for the balance pass: give the Grey Wolf odds weighted towards Plain, like other starter enemies (e.g. 70/20/6/3/1)."
+    }
+  ]
+}

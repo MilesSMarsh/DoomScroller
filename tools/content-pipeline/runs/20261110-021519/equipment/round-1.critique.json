@@ -1,0 +1,49 @@
+{
+  "verdict": "approve",
+  "summary": "The full set of 12 follows the rules: two pieces per slot, split by region; every power value rises tier by tier and stays in the band; each Forest piece is stronger than its Green Valley partner; Chest pieces are stronger than Boots; every passive pool has at least four ids; names have no hyphens and are 35 characters or fewer; all flavour lines are under 120 characters. The tone is sincere and grounded in the catalog (Quillback Boar, golems, the elder tree, valley farms). Remaining notes are polish: one name contains \"post\", there are some similar names across items, two lines of flavour text don't fit their item well, and a few damage passives sit on armour.",
+  "soundsLikeTheGame": "\"A tough jerkin of boar hide, stitched to turn aside tusks and quills.\" It is plain and sincere, and ties the gear to the Quillback Boar already in the valley, so the armour feels earned from this world rather than generic.",
+  "issues": [
+    {
+      "target": "GatepostBuckler",
+      "severity": "minor",
+      "category": "tone",
+      "problem": "The name and flavour text contain \"post\" (inside \"gatepost\"), one of the brief's banned feed words. The automated word check passed it, but on a card title it can read as a wink at social media, outside the satire budget.",
+      "fix": "Rename to something like \"Barngate Buckler\" or \"Fencerail Buckler\" and update the flavour text to match (e.g. \"cut from an old farm gate\")."
+    },
+    {
+      "target": "MossweaveGreaves",
+      "severity": "minor",
+      "category": "naming",
+      "problem": "Mossweave Greaves and Mossback Shield are both Forest pieces starting with \"Moss\", which makes them easy to confuse on a phone card.",
+      "fix": "Rename one, e.g. Mossweave Greaves → \"Fernweave Greaves\" (or another distinct Forest word)."
+    },
+    {
+      "target": "MossweaveGreaves",
+      "severity": "minor",
+      "category": "clarity",
+      "problem": "\"Greaves\" means rigid shin plates, but the flavour text describes leg guards woven from moss and cord.",
+      "fix": "Call them \"Leggings\" or \"Leg Wraps\", or add bark or wood plates to the flavour text."
+    },
+    {
+      "target": "MossbackShield",
+      "severity": "minor",
+      "category": "duplication",
+      "problem": "\"Stone and ironwood\" repeats the Golembreaker Maul's flavour text word for word, and ironwood is not a material in the catalog.",
+      "fix": "Use catalog materials and fresh wording, e.g. \"A broad shield of stone slabs and aged timber, furred with moss…\"."
+    },
+    {
+      "target": "HedgerowCharm",
+      "severity": "minor",
+      "category": "duplication",
+      "problem": "The woven hawthorn and the \"Hedge…\" name echo the Hedgewitch Wand (\"A hawthorn wand\"), another Green Valley item.",
+      "fix": "Use a different plant or object (e.g. rowan berries, a corn dolly) and a name that doesn't start with \"Hedge\"."
+    },
+    {
+      "target": "RootstrideBoots",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "The task asks for defensive passives on sturdy armour, but Vicious (flat damage) sits on boots. Hayfield Helm (Damage Up, Hefty) and Antlerbark Helm (Vicious) lean on damage passives too.",
+      "fix": "Swap Vicious on Rootstride Boots for Bulwark or Thickhide. Consider replacing Damage Up on Hayfield Helm with Weaken Enemy or Thickhide."
+    }
+  ]
+}

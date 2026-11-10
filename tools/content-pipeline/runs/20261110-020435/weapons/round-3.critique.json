@@ -1,0 +1,98 @@
+{
+  "verdict": "revise",
+  "summary": "This is a solid draft on the hard rules. It has 24 weapons, 8 per type, split 4 and 4 between the two regions. Every damage curve rises and stays inside its band. Every ability and passive is allowed for its weapon type. The starter is right: one-handed, at the bottom of the band, and it keeps the WoodenSword id, so the starter link isn't broken. Damage per second is consistent: about 21 at Exalted for Green Valley and about 30 for Forest, with the starter lowest at 16. The tone is sincere throughout, with no banned words and no \"you\".\n\nIt needs a revision for these reasons:\n- **Ranged weapons repeat each other.** 5 of the 8 have exactly the same ability pool, and the three two-handed Forest Pierce weapons are near-copies. Winter's Mark is never used.\n- **Magic pools are copied across regions.** Briarbind Wand matches Dewglass Rod, and Hollowlight Lantern matches Goblin Shaman Rattle. Both of those also clash with their weapon's idea, and Oblivion is never used.\n- **One drop source is wrong for the item.** Golemstone Mace drops from a bone guardian.\n- **Two weapons point at placeholder loot tables that always give Exalted.** Meadow Shortbow and Hollowlight Lantern would become guaranteed Exalted drops from Grey Wolf (the opening region's 20 HP wolf) and from Bonewrought Depths (a 2-room dungeon).",
+  "soundsLikeTheGame": "\"A maul headed with a chipped millstone, slow to swing and heavy enough to stop a charging boar.\" It's plain and sincere, it's rooted in Green Valley farm life, and the stat it describes (slow, heavy) points back to an enemy already in the game (the Quillback Boar).",
+  "issues": [
+    {
+      "target": "SapboundRecurve",
+      "severity": "major",
+      "category": "duplication",
+      "problem": "This is a copy of StagwoodLongbow: both are two-handed Forest Pierce bows that scale with Agility, at speeds of 1.0 and 0.9, with the same four abilities (PiercingShot, Execute, Volley, Hamstring). GravewoodArbalest, MeadowShortbow and HarvestCrossbow have that same pool too. Of the four Forest Ranged weapons, all are Pierce and three are two-handed. The task asked for distinct ideas, not reskins.",
+      "fix": "Make Sapbound the ranged weapon built around slowing. Give it Ability_WintersMark (Ranged, never used so far) and Hamstring, drop Execute and PiercingShot, and lead its passives with Crippling and WeakenEnemy. Then vary the other bow pools as well, for example with no Volley on Gravewood and no Hamstring on Stagwood, so no two Ranged weapons share all four abilities. Consider moving one Forest Ranged weapon to Blunt or Slash, or making it one-handed."
+    },
+    {
+      "target": "BriarbindWand",
+      "severity": "major",
+      "category": "duplication",
+      "problem": "Its ability pool (Frostbind, ArcaneBolt, Hoarfrost, Execute) is the same as DewglassRod's, and its passives mostly overlap. It is also one-handed, Elemental and fast like Dewglass. Two frost abilities don't fit a wand of living briar that snares its target. ElderrootStaff also has a frost kit with no forest feel.",
+      "fix": "Keep Dewglass as the frost wand. Remove Hoarfrost from Briarbind and build its pool around snaring and thorns: Frostbind for the binding, plus Execute, ArcaneBolt and Warcry or Immolate. Lean on the Crippling and Venomous-style passives Magic can take (Crippling, WeakenEnemy, Smoldering for lingering thorns). On ElderrootStaff, replace Hoarfrost with Execute, or add Oblivion, so the two Forest Elemental weapons stop sharing a frost kit with the Green Valley rod."
+    },
+    {
+      "target": "HollowlightLantern",
+      "severity": "major",
+      "category": "duplication",
+      "problem": "Its ability pool (Cinderburst, Immolate, ArcaneBolt, Warcry) is the same as GoblinShamanRattle's. Both are one-handed Arcane weapons that carry fire abilities. A relic of the ancient race shouldn't play like a goblin rattle. Also, Ability_Oblivion is a Magic ability that no weapon in the list uses.",
+      "fix": "Make Hollowlight about pale, old arcane power, for example ArcaneBolt, Immolate, Frostbind and Execute, with Smoldering kept as a passive. Give Oblivion to MosswrittenGrimoire, the slowest and hardest-hitting ancient weapon, in place of Warcry, so the top-end tome has an ability no other weapon has. Remove Immolate from the Rattle, or replace it with Frostbind, so the goblin rattle and the lantern differ."
+    },
+    {
+      "target": "GolemstoneMace",
+      "severity": "major",
+      "category": "consistency",
+      "problem": "The flavour says the mace head was prised from a stone golem, but dropsFrom names Bonewrought Sentinel, which its own card calls 'a guardian of fused bone'. The loot doesn't match what drops it.",
+      "fix": "Remove Bonewrought Sentinel from dropsFrom. Use 'Stone golems of the Forest' only, or Rustbound Golem if an existing card is needed (it's iron, so the flavour would then need to change)."
+    },
+    {
+      "target": "MeadowShortbow",
+      "severity": "major",
+      "category": "balance",
+      "problem": "dropsFrom names Grey Wolf. Its catalog card (Enemy_Wolf) has percentByRarity [0,0,0,0,100] and 20 HP. If it is wired this way, the weakest monster in the opening region drops a guaranteed Exalted Meadow Shortbow. A wild animal dropping a crafted bow also doesn't match what drops it.",
+      "fix": "Change dropsFrom to 'Green Valley treasure; crafted at the Blacksmith from Wood and Fibers', or to Highway Cutthroat. Don't add it to Enemy_Wolf's weapons list (the old Bow rewire) until that card's rarity table is fixed."
+    },
+    {
+      "target": "HollowlightLantern",
+      "severity": "major",
+      "category": "balance",
+      "problem": "dropsFrom names Bonewrought Depths. Its catalog card is a 2-room dungeon with a 100% Exalted table and 10,000 gold. Wiring the Lantern there makes an Exalted Forest weapon trivially easy to farm.",
+      "fix": "Use Bonewrought Sentinel as its only source until the Depths reward table is retuned, or note in dropsFrom that the Depths needs rebalancing before this weapon can drop there."
+    },
+    {
+      "target": "DroversSling",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "Its pool includes Ability_VenomStrike (poison) and Ability_Volley ('a hail of arrows that leaves a bleed'). Neither fits a leather sling that throws stones.",
+      "fix": "Remove VenomStrike and Volley. Use Hamstring, Execute and PiercingShot, plus Ability_WintersMark if a fourth slowing ability is needed (it is the only unused Ranged option). Or accept a 3-entry overlap with the other Ranged pools."
+    },
+    {
+      "target": "WebreedBlowgun",
+      "severity": "minor",
+      "category": "naming",
+      "problem": "On a phone card, 'Webreed' easily reads as 'We-breed'. Volley ('a hail of arrows') also doesn't fit a single-dart blowgun.",
+      "fix": "Rename it to something like 'Silkreed Blowgun' or 'Thicket Reed Blowgun', and replace Volley with Ability_WintersMark or Execute."
+    },
+    {
+      "target": "HarvestCrossbow",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "Volley ('a hail of arrows') clashes with a crossbow described as slow to wind and sure to land.",
+      "fix": "Replace Volley with Ability_WintersMark or Ability_VenomStrike, or just keep three strong single-shot abilities plus Execute."
+    },
+    {
+      "target": "OakheartGreatblade",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "It drops from Hollow Crown Revenant, a crowned undead from the crypt and the toughest enemy in the current catalog (250 HP). A blade with a hilt of ancient oak has no link to it, and that enemy is probably above the Forest's difficulty range.",
+      "fix": "Make it craft-only, or have it drop from Forest tree people or large Forest predators. Leave the Revenant and Crypt drops to MosswrittenGrimoire."
+    },
+    {
+      "target": "HearthfireStaff",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "It is a Green Valley starter-tier staff, but dropsFrom names Emberforge Ruins, a fire-themed ancient ruin whose rewards (200 XP, Runed-centred rarity table) sit well above opening-region difficulty.",
+      "fix": "Use 'Crafted at the Blacksmith from Coal and Wood; Green Valley treasure' and drop the Emberforge Ruins source."
+    },
+    {
+      "target": "HedgewitchWand",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "The flavour describes a hedge healer's wand with 'a small, steady power', but its pool has Hoarfrost ('a killing frost') and Warcry.",
+      "fix": "Swap Hoarfrost for Execute or Immolate so the wand stays a gentle, steady Arcane caster. Its defensive passives (Bulwark, Reinforced) already fit."
+    },
+    {
+      "target": "WoodsmansHatchet",
+      "severity": "minor",
+      "category": "lore",
+      "problem": "'Woodsman's Hatchet' is generic fantasy that could appear in any game, and the drop from skeletons isn't explained in the flavour.",
+      "fix": "Tie it to the Forest, for example 'Barkbiter Hatchet', with flavour saying it was carried by a woodcutter long gone, now found on the skeletons that wander the old wood."
+    }
+  ]
+}

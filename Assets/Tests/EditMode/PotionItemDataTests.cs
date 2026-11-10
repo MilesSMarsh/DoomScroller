@@ -65,7 +65,7 @@ namespace DoomScroller.Tests.EditMode
             Assert.AreEqual("Revive Draught", revive.title);
             Assert.AreEqual(ItemCategory.Potion, revive.category);
             Assert.AreEqual(PotionEffect.Revive, revive.potionEffect);
-            Assert.AreEqual(ItemRarity.Common, revive.rarity);
+            Assert.AreEqual(ItemRarity.Plain, revive.rarity);
             Assert.IsNull(revive.icon, "Potions ship as placeholders with no icon.");
             Assert.GreaterOrEqual(revive.goldValue, 0);
         }
@@ -89,7 +89,7 @@ namespace DoomScroller.Tests.EditMode
             Assert.AreEqual("Restoration Potion", restoration.title);
             Assert.AreEqual(ItemCategory.Potion, restoration.category);
             Assert.AreEqual(PotionEffect.MaxHealthRestore, restoration.potionEffect);
-            Assert.AreEqual(ItemRarity.Common, restoration.rarity);
+            Assert.AreEqual(ItemRarity.Plain, restoration.rarity);
             Assert.IsNull(restoration.icon, "Potions ship as placeholders with no icon.");
             Assert.Greater(restoration.potionAmount, 0, "Restoration must restore some HP.");
             Assert.GreaterOrEqual(restoration.goldValue, 0);

@@ -31,7 +31,8 @@ MonoBehaviour:
     minItemCount: 1
     maxItemCount: 1
     weapons:
-    - {fileID: 11400000, guid: 9201f46e4a256038f9dea231cf0744ec, type: 2}
+    - {fileID: 11400000, guid: ff860696de964b0692a1bb622654056c, type: 2}
+    - {fileID: 11400000, guid: c89bec5e8414473290dabe04d36a7919, type: 2}
     equipment: []
     materials:
     - {fileID: 11400000, guid: e71f3383f3150b3128b14f196c22306d, type: 2}

@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9a8294fed99c4ae1880d2e20e4ba7a0b, type: 3}
   m_Name: Enemy_Frostfang
   m_EditorClassIdentifier: Assembly-CSharp::DoomScroller.Feed.EncounterData
-  title: Frostfang Stalker
+  title: Frostfang Direwolf
   type: 1
   artwork: {fileID: 0}
   cardColor: {r: 0.2, g: 0.45, b: 0.55, a: 1}
-  rewardSummary: 100 XP + Common Gear
+  rewardSummary: 100 XP + Plain Gear
   baseXpReward: 100
   baseChallenge: 48
   enemyHealth: 75

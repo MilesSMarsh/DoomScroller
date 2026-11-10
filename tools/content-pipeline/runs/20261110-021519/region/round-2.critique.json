@@ -1,0 +1,28 @@
+{
+  "verdict": "approve",
+  "summary": "This revision fixes the one major issue from the last review. The victory line no longer mentions the pinion, so it can't promise a Roc Pinion that only drops when the boss is beaten above 50% max HP. The previous minor issues are also fixed: the Elemental weakness is gone and Pierce 1.5 is the clear answer, the boss now drops raw materials, the pinion is a barn beam in both places, and the region description says what the fields reward. The Marsh Leech rename and Grey Wolf retune are noted for later. Every listed fight card is inside the range (20–100 HP, 5–11 damage, 50–140 XP). The boss sits clearly above it, keeps its damage between attempts and regains HP slowly. The name follows the rules and the text is sincere with no banned words. Three minor points remain: the boss drops gear without a nest-hoard explanation, production notes are stored in hiddenSatire, and the Widow's Thicket drops mostly Forest gear in region 1.",
+  "soundsLikeTheGame": "\"A roc so vast its wings shade whole farms, with one great pinion longer than a barn beam.\" It is plain and earnest, rooted in the valley's farmland, and it hints at the key item exactly as the brief asks, with no wink and no gloom.",
+  "issues": [
+    {
+      "target": "Boss_UlmarStormRoc.lootWeapons",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "This is still open from the last review. A roc drops a throwing axe, a threshing flail, a helm, a buckler and a charm, and nothing in the draft explains why a bird would have farm tools and armor.",
+      "fix": "Add a designer note that this is the hoard in the roc's nest, taken from farms it raided. Alternatively, cut the list to the weapons that fit best (the shortbow and the throwing axe)."
+    },
+    {
+      "target": "Region_GreenValley.hiddenSatire",
+      "severity": "minor",
+      "category": "clarity",
+      "problem": "The hiddenSatire field also holds production to-dos (renaming Marsh Leech, retuning Grey Wolf). That field is meant only for the satire note, so the to-dos may get lost or confuse whoever reads it.",
+      "fix": "Keep hiddenSatire to the skimming satire alone, and move the rename and retune notes to the review hand-off or the cardMix designer notes."
+    },
+    {
+      "target": "Region_GreenValley.existingCards",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "Dungeon_WidowsThicket sits in region 1, but its approved loot includes Mossweave Greaves (Forest gear), and giant spiders read more like the woodland. This is acceptable but slightly off the valley's theme.",
+      "fix": "No change is needed now. When region 2 is designed, consider moving the Thicket to the Forest or swapping its Greaves for valley gear."
+    }
+  ]
+}

@@ -17,7 +17,7 @@ namespace DoomScroller.Tests.EditMode
         private const BindingFlags AnyInstance = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
 
         private static WeaponDefinition LoadWoodenSword() =>
-            Resources.Load<WeaponDefinition>("WeaponDefinitions/WoodenSword");
+            Resources.Load<WeaponDefinition>("WeaponDefinitions/HallowWoodSword");
 
         private static ProfileController MakeProfile(WeaponDefinition definition)
         {
@@ -64,9 +64,9 @@ namespace DoomScroller.Tests.EditMode
 
             Assert.AreEqual(1, equippedItems.Count, "exactly one starter weapon should be equipped");
             var sword = equippedItems[0];
-            Assert.AreEqual("Wooden Sword", sword.title);
+            Assert.AreEqual("Plain Hallow Wood Sword", sword.title);
             Assert.AreEqual(ItemCategory.Weapon, sword.category);
-            Assert.AreEqual(ItemRarity.Common, sword.rarity);
+            Assert.AreEqual(ItemRarity.Plain, sword.rarity);
             Assert.AreSame(LoadWoodenSword(), sword.sourceDefinition);
         }
 

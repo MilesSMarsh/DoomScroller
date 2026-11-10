@@ -21,9 +21,9 @@ namespace DoomScroller.Progression
         private const string AbilitiesResourcesPath = "Abilities";
         private const string WeaponDefinitionsResourcesPath = "WeaponDefinitions";
 
-        // Common 0/1/2/3, Uncommon, Rare, Legendary, Mythic 4 — exactly as specified.
+        // Plain 0/1/2/3, Tempered, Runed, Relic, Exalted 4 — exactly as specified.
         // The TOTAL number of skills a weapon carries — abilities and passives combined,
-        // not each independently (an Uncommon weapon gets exactly 1 skill, which might
+        // not each independently (an Tempered weapon gets exactly 1 skill, which might
         // be an ability or might be a passive, never one of each) — see RollSkills.
         // Capped only by however many candidates (abilities + passives together) the
         // pool being drawn from actually has, never fewer by chance. Internal (not
@@ -32,7 +32,7 @@ namespace DoomScroller.Progression
         internal static readonly int[] SkillCountByRarity = { 0, 1, 2, 3, 4 };
 
         // How much a weapon's attribute-scaling coefficient(s) grow with rarity, on top
-        // of its WeaponType's Common-tier base coefficient — only used by the archetype
+        // of its WeaponType's Plain-tier base coefficient — only used by the archetype
         // path (Generate); GenerateFromDefinition uses whatever was hand-authored per
         // rarity instead. Placeholder, tuned later like every other number introduced
         // this session.
@@ -124,6 +124,10 @@ namespace DoomScroller.Progression
                 .Where(p => p.allowedWeaponTypes != null && p.allowedWeaponTypes.Contains(type));
         }
 
+        // Every weapon's display title: rarity word first, then its name (narrative brief,
+        // Naming rules: "Tempered Hallow Wood Sword"). Empower re-titles through this too.
+        public static string TitleFor(ItemRarity rarity, string baseName) => $"{rarity} {baseName}";
+
         public static ItemData Generate(ItemRarity rarity, System.Random rng = null, WeaponType? typeOverride = null)
         {
             rng ??= new System.Random();
@@ -134,7 +138,7 @@ namespace DoomScroller.Progression
             var rarityIndex = (int)rarity;
 
             var item = ScriptableObject.CreateInstance<ItemData>();
-            item.title = $"{rarity} {type}";
+            item.title = TitleFor(rarity, type.ToString());
             item.category = ItemCategory.Weapon;
             item.rarity = rarity;
             item.weaponType = type;
@@ -166,7 +170,7 @@ namespace DoomScroller.Progression
             var stats = definition.statsByRarity[rarityIndex];
 
             var item = ScriptableObject.CreateInstance<ItemData>();
-            item.title = definition.weaponName;
+            item.title = TitleFor(rarity, definition.weaponName);
             item.category = ItemCategory.Weapon;
             item.rarity = rarity;
             item.weaponType = definition.weaponType;
@@ -261,7 +265,7 @@ namespace DoomScroller.Progression
         }
 
         // A weapon's skill count (SkillCountByRarity) is a total across abilities AND
-        // passives together, not each independently — an Uncommon weapon gets exactly 1
+        // passives together, not each independently — an Tempered weapon gets exactly 1
         // skill, which could land as either. Shuffles both pools together into one list
         // so every candidate (ability or passive) has an equal chance per slot,
         // proportional to however many of each the pool actually holds, then splits the

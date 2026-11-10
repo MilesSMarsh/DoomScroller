@@ -279,7 +279,7 @@ namespace DoomScroller.Progression.Editor
             {
                 // Every WeaponDefinition must always carry exactly RarityCount rarity
                 // rows — guard here so an asset created before this field existed (or a
-                // rarity tier added since, like Mythic) never throws indexing below.
+                // rarity tier added since, like Exalted) never throws indexing below.
                 NormalizeRarityStats(definition);
                 DrawWeaponRow(definition);
             }
@@ -1304,7 +1304,7 @@ namespace DoomScroller.Progression.Editor
                 var name = EditorGUILayout.TextField("Name", material.materialName);
                 var icon = (Sprite)EditorGUILayout.ObjectField("Icon", material.icon, typeof(Sprite), false);
                 var color = EditorGUILayout.ColorField("Item Color", material.itemColor);
-                var goldValue = EditorGUILayout.IntField("Gold Value (Common)", material.goldValue);
+                var goldValue = EditorGUILayout.IntField("Gold Value (Plain)", material.goldValue);
                 if (EditorGUI.EndChangeCheck())
                 {
                     Undo.RecordObject(material, "Edit Material");

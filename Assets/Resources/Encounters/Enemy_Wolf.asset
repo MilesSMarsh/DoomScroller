@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9a8294fed99c4ae1880d2e20e4ba7a0b, type: 3}
   m_Name: Enemy_Wolf
   m_EditorClassIdentifier: DoomScroller::DoomScroller.Feed.EncounterData
-  title: Wolf
+  title: Grey Wolf
   type: 1
   artwork: {fileID: 0}
   foregroundArt: {fileID: 0}
@@ -30,8 +30,9 @@ MonoBehaviour:
     minItemCount: 1
     maxItemCount: 1
     weapons:
-    - {fileID: 11400000, guid: bdaf4e739ab560701ac7afa00b20c0cc, type: 2}
-    equipment: []
+    - {fileID: 11400000, guid: b856d4e520a448339c80ad4da62b484c, type: 2}
+    equipment:
+    - {fileID: 11400000, guid: a5c61f061d4643488b85d1d38448abbe, type: 2}
     materials: []
   enemyHealth: 20
   enemyAttackDamage: 5

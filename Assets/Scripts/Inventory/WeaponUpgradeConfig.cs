@@ -18,9 +18,9 @@ namespace DoomScroller.Inventory
     public class WeaponUpgradeConfig : ScriptableObject
     {
         [Tooltip("Index i = ingredients required to Empower a weapon currently at rarity " +
-                  "i up to i+1 (0 = Common->Uncommon, 1 = Uncommon->Rare, 2 = Rare-> " +
-                  "Legendary, 3 = Legendary->Mythic). Shared across every weapon " +
-                  "regardless of type. Index 4 (Mythic) is never read — nothing empowers " +
+                  "i up to i+1 (0 = Plain->Tempered, 1 = Tempered->Runed, 2 = Runed-> " +
+                  "Relic, 3 = Relic->Exalted). Shared across every weapon " +
+                  "regardless of type. Index 4 (Exalted) is never read — nothing empowers " +
                   "further, it's the max tier — kept only for the same \"always size 5, " +
                   "index by ItemRarity\" convention as WeaponDefinition.statsByRarity.")]
         public EmpowerTierCost[] empowerCostByRarity = new EmpowerTierCost[5];

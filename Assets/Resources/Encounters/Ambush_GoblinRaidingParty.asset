@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a8294fed99c4ae1880d2e20e4ba7a0b, type: 3}
+  m_Name: Ambush_GoblinRaidingParty
+  m_EditorClassIdentifier: DoomScroller::DoomScroller.Feed.EncounterData
+  title: 'Goblin Raiding Party'
+  type: 7
+  artwork: {fileID: 0}
+  foregroundArt: {fileID: 0}
+  cardColor: {r: 0.4, g: 0.5, b: 0.25, a: 1}
+  description: 'Spears rattle in the tall grass as goblins rush the road.'
+  baseXpReward: 135
+  goldReward: 18
+  lootTable:
+    percentByRarity:
+    - 35
+    - 35
+    - 20
+    - 8
+    - 2
+    minItemCount: 1
+    maxItemCount: 1
+    weapons:
+    - {fileID: 11400000, guid: 8ec94363e3724477b41f987be943fb8e, type: 2}
+    - {fileID: 11400000, guid: 4f72ef81b16141aa9484be2f367e59ec, type: 2}
+    equipment:
+    - {fileID: 11400000, guid: de9e9057dea04a4ab04f5172a8c1a3ae, type: 2}
+    materials:
+    - {fileID: 11400000, guid: b6dbba29b3b1dec1d91de9e7e07a1dbd, type: 2}
+    - {fileID: 11400000, guid: fd13e7c61e6f74e0cb289324075bf947, type: 2}
+  enemyHealth: 100
+  enemyAttackDamage: 10
+  enemyAttackSpeed: 1
+  damageTypeModifiers:
+  - type: 0
+    multiplier: 1.15
+  - type: 2
+    multiplier: 0.9
+  dungeonRooms: []
+  resourceTimerSeconds: 10
+  resourceWeaknesses: []
+  resourceThresholds: []

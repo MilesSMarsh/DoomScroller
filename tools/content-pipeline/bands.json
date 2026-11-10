@@ -1,0 +1,149 @@
+{
+ "_note": "Snapshot of stat ranges the pipeline enforces. weaponDamage and recipes were measured from the pre-replacement weapons and recipes (2026-11-10); equipmentPower is RewardGenerator.RarityPower \u00b140% (provisional until the economy table exists). The Economy Balance Analyst owns these numbers.",
+ "weaponDamage": {
+  "Melee": [
+   [
+    1,
+    3
+   ],
+   [
+    2,
+    6
+   ],
+   [
+    4,
+    12
+   ],
+   [
+    8,
+    24
+   ],
+   [
+    16,
+    48
+   ]
+  ],
+  "Ranged": [
+   [
+    1,
+    3
+   ],
+   [
+    2,
+    6
+   ],
+   [
+    4,
+    12
+   ],
+   [
+    8,
+    24
+   ],
+   [
+    16,
+    48
+   ]
+  ],
+  "Magic": [
+   [
+    1,
+    3
+   ],
+   [
+    2,
+    6
+   ],
+   [
+    4,
+    12
+   ],
+   [
+    8,
+    24
+   ],
+   [
+    16,
+    48
+   ]
+  ],
+  "attackSpeed": [
+   0.6,
+   1.6
+  ]
+ },
+ "equipmentPower": [
+  [
+   5,
+   11
+  ],
+  [
+   8,
+   20
+  ],
+  [
+   13,
+   31
+  ],
+  [
+   20,
+   48
+  ],
+  [
+   30,
+   70
+  ]
+ ],
+ "recipes": {
+  "Plain": {
+   "goldCost": [
+    8,
+    20
+   ],
+   "totalIngredients": [
+    3,
+    30
+   ]
+  },
+  "Tempered": {
+   "goldCost": [
+    25,
+    28
+   ],
+   "totalIngredients": [
+    5,
+    8
+   ]
+  },
+  "Runed": {
+   "goldCost": [
+    30,
+    35
+   ],
+   "totalIngredients": [
+    5,
+    6
+   ]
+  },
+  "Relic": {
+   "goldCost": [
+    50,
+    80
+   ],
+   "totalIngredients": [
+    6,
+    8
+   ]
+  },
+  "Exalted": {
+   "goldCost": [
+    150,
+    150
+   ],
+   "totalIngredients": [
+    13,
+    13
+   ]
+  }
+ }
+}

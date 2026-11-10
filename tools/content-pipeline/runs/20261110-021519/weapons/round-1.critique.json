@@ -1,0 +1,98 @@
+{
+  "verdict": "revise",
+  "summary": "I'm sending this back for revision because of two major problems. Most of the set works. The starter is right: Hallow Wood Sword is humble, one-handed, from the Green Valley and at the bottom of the band. Forest weapons sit higher than Green Valley ones. Damage per second is close to even within each category and region at both Runed and Exalted. Oblivion only appears on Forest gear. There are no banned words, no hyphens in names, no unapproved made-up words and no satire. The two major problems: Wispfire Recurve is a fire bow sourced from tree people, which pulls in a Volcano-flavoured name, and Dewglass Staff is a Green Valley recipe that needs Frost Shard, a cold-region material. The minor notes cover loot sources that don't fit the item (slimes and predators dropping wands, a golem dropping the maul made to break golems) and a few ability picks that clash with the weapon's fantasy. I haven't repeated the damage-band errors or DPS-spread warnings from the automated checks.",
+  "soundsLikeTheGame": "\"A farmhand's threshing flail, swung hard enough to scatter a goblin raiding party.\" It is sincere and plain, rooted in the Green Valley's farms and goblins, and it says what the weapon is for without a wink.",
+  "issues": [
+    {
+      "target": "WispfireRecurve",
+      "severity": "major",
+      "category": "consistency",
+      "problem": "This is a fire bow ('arrows catch fire') that drops from tree people, so creatures of the old woodland carry fire. 'Wispfire' also points to the Cinder Wisp, a living-fire sprite that belongs with Emberforge and the Volcano, not the Forest. Its pool adds frost (Winter's Mark) and poison (Passive_Venomous), so it has no single elemental identity.",
+      "fix": "Re-theme it around a Forest element and source. Option 1: an Elemental bow tied to the woods (thorn-sap or storm, for example), renamed to match, with tree people as the source. Option 2: keep the fire, but source it from something that burns, such as a crafted recipe that uses Coal or Sulfur, and rename it so it doesn't borrow the Cinder Wisp. Also cut Winter's Mark or Venomous so the pool reads as one element."
+    },
+    {
+      "target": "DewglassStaff",
+      "severity": "major",
+      "category": "consistency",
+      "problem": "This Green Valley weapon is crafted from Frost Shard. In the catalog, Frost Shard only comes from cold content (Frozen Ice Shelf, Frostfang Hollow, Frostbound Wraith), which fits the Mountain, not the farmland. Starting-region players would have to wait regions to craft it. The idea of morning dew holding enough chill for a frost-magic staff is also a stretch.",
+      "fix": "Use a recipe made of Green Valley materials (Wood, Fibers, Healing Herbs, Stone or Iron Ingot). Re-flavour the chill as dew or rain-water magic that suits farmland, or move the frost staff to a later stage."
+    },
+    {
+      "target": "FieldhandSling",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "The Rogue Slime is 'a wandering ooze that dissolves whatever it swallows', so an intact cord sling dropping from it contradicts the slime. HedgewitchWand has the same problem.",
+      "fix": "Source both from goblins, the Wandering Merchant or a Blacksmith recipe (Fibers or Rope plus Wood)."
+    },
+    {
+      "target": "EmberbarkWand",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "Large predators are animal-like and don't carry wands. The same loot-sense issue applies to ElderboughLongbow and ThornwoodBoarspear, which also list 'Large predators'.",
+      "fix": "Source crafted weapons from tree people, skeletons or Blacksmith recipes. Keep predator drops to materials, or give a reason in the flavour (gear left by fallen hunters)."
+    },
+    {
+      "target": "GolembreakerMaul",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "A maul 'made to crack golems' that drops from the Rustbound Golem itself reads backwards. GnarlrootQuarterstaff, a staff of knotted root, also lists the Rustbound Golem (a scrap-iron construct), which contradicts its material.",
+      "fix": "Make the maul a Blacksmith recipe (Stone plus Aged Timber). Source the quarterstaff from tree people or the Ancient Oak."
+    },
+    {
+      "target": "ThreshingFlail",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "Ability_Lacerate is a bleed, which doesn't fit a blunt farm flail.",
+      "fix": "Replace Lacerate with Riposte, or drop it and keep 4 entries."
+    },
+    {
+      "target": "GoblinKitchenKnife",
+      "severity": "minor",
+      "category": "tone",
+      "problem": "'Exalted Goblin Kitchen Knife' reads as a joke at top rarity. Ability_Venomfang ('a deep bite') also doesn't fit a knife.",
+      "fix": "Use a sincere name built on the approved word (for example 'Grisk Skinning Knife') and swap Venomfang for Sunder or Cleave."
+    },
+    {
+      "target": "HallowWoodSword",
+      "severity": "minor",
+      "category": "clarity",
+      "problem": "The flavour starts 'A plain blade', which clashes with the rarity word on higher rolls ('Exalted Hallow Wood Sword: A plain blade...').",
+      "fix": "Use 'A simple blade' or 'A light blade' instead."
+    },
+    {
+      "target": "BarnyardThrowingAxe",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "The weapon scales with Agility, but its passive pool is all Constitution and defence (Hefty, Reinforced, Bulwark). That fits a quick thrown axe poorly.",
+      "fix": "Swap two of them for Agile, Fleetfoot or Sureshot."
+    },
+    {
+      "target": "ElderboughLongbow",
+      "severity": "minor",
+      "category": "naming",
+      "problem": "'Elderbough Longbow' and 'Elderroot Staff' are easy to mix up on a phone card. Both are Forest weapons dropped by tree-linked sources.",
+      "fix": "Rename one (for example 'Yewheart Longbow')."
+    },
+    {
+      "target": "EmberbarkWand",
+      "severity": "minor",
+      "category": "duplication",
+      "problem": "It is close to a Forest version of HearthfireRod: a one-handed, fast, Elemental fire weapon that scales with Spirit and leads with Cinderburst, Immolate and Smoldering.",
+      "fix": "Separate them through scaling or lead abilities. For example, have Emberbark lead with Execute and Crippling, or change its scaling attribute."
+    },
+    {
+      "target": "CairnSlingstaff",
+      "severity": "minor",
+      "category": "consistency",
+      "problem": "Ability_WintersMark (frost) doesn't fit a stone slingstaff. The same applies to IronboltArbalest and ElderboughLongbow, and the Frostbind and Hoarfrost entries on GnarlrootQuarterstaff are similar.",
+      "fix": "Where the pool can still reach 5 entries without them, lead with non-frost abilities. Accept the overlap only where the small catalog forces it."
+    },
+    {
+      "target": "ElderrootStaff",
+      "severity": "minor",
+      "category": "tone",
+      "problem": "'Humming with old power' is generic and could belong to any fantasy game. GnarlrootQuarterstaff's 'thick with old magic' has the same problem.",
+      "fix": "Tie both to something specific in the Forest, such as tree people, golems with trees on their backs, or the elder trees themselves."
+    }
+  ]
+}

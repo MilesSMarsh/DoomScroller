@@ -38,9 +38,9 @@ namespace DoomScroller.Tests.EditMode
         private static StatusEffectData MakeWeakenPassive() =>
             new StatusEffectData { effectType = StatusEffectType.WeakenDamage, magnitude = 0.25f };
 
-        // Mirrors Assets/Resources/WeaponDefinitions/StoneSword.asset's Rare-tier row
+        // Mirrors Assets/Resources/WeaponDefinitions/StoneSword.asset's Runed-tier row
         // (baseDamage 4, Constitution x0.5) — the lowest rarity at which the pool of 2
-        // abilities/2 passives is fully satisfied (SkillCountByRarity[Rare] == 2).
+        // abilities/2 passives is fully satisfied (SkillCountByRarity[Runed] == 2).
         private static ItemData MakeStoneSwordAtRare(WeaponAbilityData[] abilities = null, StatusEffectData[] passives = null)
         {
             return TestFixtures.MakeWeapon(power: 4, attackSpeed: 1f, damageType: DamageType.Slash,
@@ -51,14 +51,14 @@ namespace DoomScroller.Tests.EditMode
         [Test]
         public void RealAsset_GenerateFromDefinition_AtMythicRarity_GrantsExactlyFourTotalSkills()
         {
-            // Mythic allows 4 TOTAL skills — abilities and passives combined, not each
+            // Exalted allows 4 TOTAL skills — abilities and passives combined, not each
             // independently — capped at however many candidates Stone Sword's own pools
             // hold altogether (currently 2 abilities + 3 passives = 5, so this gets 4 of
             // those 5, split unpredictably between the two kinds).
-            var definition = Resources.Load<WeaponDefinition>("WeaponDefinitions/StoneSword");
-            Assert.IsNotNull(definition, "expected Assets/Resources/WeaponDefinitions/StoneSword.asset to exist");
+            var definition = Resources.Load<WeaponDefinition>("WeaponDefinitions/HallowWoodSword");
+            Assert.IsNotNull(definition, "expected Assets/Resources/WeaponDefinitions/HallowWoodSword.asset to exist");
 
-            var item = WeaponGenerator.GenerateFromDefinition(definition, ItemRarity.Mythic, new System.Random(1));
+            var item = WeaponGenerator.GenerateFromDefinition(definition, ItemRarity.Exalted, new System.Random(1));
 
             var combinedPoolSize = definition.possibleAbilities.Length + definition.possiblePassives.Length;
             var expectedTotal = System.Math.Min(4, combinedPoolSize);
@@ -76,13 +76,13 @@ namespace DoomScroller.Tests.EditMode
         [Test]
         public void RealAsset_GenerateFromDefinition_AtUncommonRarity_NeverGrantsBothAnAbilityAndAPassive()
         {
-            // The user's own bug report against their real content: Uncommon
+            // The user's own bug report against their real content: Tempered
             // (SkillCountByRarity == 1) used to give 1 ability AND 1 passive.
-            var definition = Resources.Load<WeaponDefinition>("WeaponDefinitions/StoneSword");
+            var definition = Resources.Load<WeaponDefinition>("WeaponDefinitions/HallowWoodSword");
 
             for (var seed = 0; seed < 30; seed++)
             {
-                var item = WeaponGenerator.GenerateFromDefinition(definition, ItemRarity.Uncommon, new System.Random(seed));
+                var item = WeaponGenerator.GenerateFromDefinition(definition, ItemRarity.Tempered, new System.Random(seed));
 
                 Assert.AreEqual(1, item.abilities.Length + item.passiveEffects.Length);
                 Assert.IsFalse(item.abilities.Length == 1 && item.passiveEffects.Length == 1);
@@ -92,8 +92,8 @@ namespace DoomScroller.Tests.EditMode
         [Test]
         public void ItemSnapshot_RoundTrips_SourceDefinition_AcrossSaveAndLoad()
         {
-            var definition = Resources.Load<WeaponDefinition>("WeaponDefinitions/StoneSword");
-            var item = WeaponGenerator.GenerateFromDefinition(definition, ItemRarity.Rare, new System.Random(1));
+            var definition = Resources.Load<WeaponDefinition>("WeaponDefinitions/HallowWoodSword");
+            var item = WeaponGenerator.GenerateFromDefinition(definition, ItemRarity.Runed, new System.Random(1));
             Assert.IsNotNull(item.sourceDefinition);
 
             var snapshot = ItemSnapshot.Capture(item);

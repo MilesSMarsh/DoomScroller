@@ -50,7 +50,7 @@ namespace DoomScroller.Tests.EditMode
 
             var weapon = TestFixtures.MakeWeapon(power: 5, attackSpeed: 1f);
             weapon.weaponType = WeaponType.Melee;
-            weapon.rarity = ItemRarity.Mythic; // desiredCount 4, but this weapon's own pool only has 1 of each
+            weapon.rarity = ItemRarity.Exalted; // desiredCount 4, but this weapon's own pool only has 1 of each
             weapon.sourceDefinition = definition;
 
             for (var trial = 0; trial < 20; trial++)
@@ -72,7 +72,7 @@ namespace DoomScroller.Tests.EditMode
 
             var weapon = TestFixtures.MakeWeapon(power: 5, attackSpeed: 1f);
             weapon.weaponType = WeaponType.Melee;
-            weapon.rarity = ItemRarity.Common;
+            weapon.rarity = ItemRarity.Plain;
             weapon.sourceDefinition = definition;
             weapon.abilities = System.Array.Empty<WeaponAbilityData>();
             weapon.passiveEffects = System.Array.Empty<StatusEffectData>();
@@ -83,11 +83,32 @@ namespace DoomScroller.Tests.EditMode
                 WeaponUpgrader.Empower(weapon, rng);
             }
 
-            Assert.AreEqual(ItemRarity.Mythic, weapon.rarity);
+            Assert.AreEqual(ItemRarity.Exalted, weapon.rarity);
             Assert.AreEqual(1, weapon.abilities.Length, "the pool only ever had one ability to give");
             Assert.AreEqual("OwnAbilityOnly", weapon.abilities[0].abilityName);
             Assert.AreEqual(1, weapon.passiveEffects.Length, "the pool only ever had one passive to give");
             Assert.AreEqual("OwnPassiveOnly", weapon.passiveEffects[0].passiveName);
+        }
+
+        [Test]
+        public void Empower_RetitlesWithNewRarityWord()
+        {
+            var definition = MakeNamedDefinition("Test Blade",
+                new[] { MakeAbility("A") }, new[] { MakePassive("P") });
+            var named = TestFixtures.MakeWeapon(power: 5, attackSpeed: 1f);
+            named.weaponType = WeaponType.Melee;
+            named.rarity = ItemRarity.Plain;
+            named.sourceDefinition = definition;
+            named.abilities = System.Array.Empty<WeaponAbilityData>();
+            named.passiveEffects = System.Array.Empty<StatusEffectData>();
+
+            WeaponUpgrader.Empower(named, new System.Random(1));
+
+            Assert.AreEqual("Tempered Test Blade", named.title);
+
+            var archetype = WeaponGenerator.Generate(ItemRarity.Plain, new System.Random(1), WeaponType.Ranged);
+            WeaponUpgrader.Empower(archetype, new System.Random(1));
+            Assert.AreEqual("Tempered Ranged", archetype.title);
         }
 
         [Test]
@@ -98,7 +119,7 @@ namespace DoomScroller.Tests.EditMode
             // type-wide catalog its very first roll would have used.
             var weapon = TestFixtures.MakeWeapon(power: 5, attackSpeed: 1f);
             weapon.weaponType = WeaponType.Melee;
-            weapon.rarity = ItemRarity.Mythic;
+            weapon.rarity = ItemRarity.Exalted;
             weapon.sourceDefinition = null;
 
             WeaponUpgrader.Reroll(weapon, new System.Random(1));

@@ -14,7 +14,7 @@ namespace DoomScroller.Inventory
         [SerializeField] private List<ItemData> startingInventory = new();
         [SerializeField] private Sprite playerSprite;
 
-        [Tooltip("Authored weapon a new game starts equipped with, rolled at Common via " +
+        [Tooltip("Authored weapon a new game starts equipped with, rolled at Plain via " +
                   "WeaponGenerator.GenerateFromDefinition. Explicit rather than \"whichever " +
                   "weapon happens to be first in startingInventory\" — that was fragile. " +
                   "Existing saves keep their own loadout; this only applies to a fresh game.")]
