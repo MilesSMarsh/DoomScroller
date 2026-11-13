@@ -17,7 +17,8 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
   decides by HP fraction. Abilities always auto-cast; no player input mid-fight.
 - Revive: fires automatically once per fight on death, restoring `revivePercent` of the
   fight's start HP (rounded up, min 1). Armed = a Revive is carried and
-  `GameSettings.AutoConsumeRevivePotions` is on (default off; toggle in the Potions tab).
+  `GameSettings.AutoConsumeRevivePotions` is on (default on, saved in `SaveData`;
+  toggle in the Potions tab).
 - `Combat/FightInputBuilder` builds `FightInput` from `PlayerLoadout` +
   `PlayerAttributes` + `EncounterData`/`DungeonStep`/resource node + start HP; used by
   `CombatResolver`, `WinOddsEstimator`, dungeon and resource-node views.
@@ -77,19 +78,23 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
   odds badge, typed action button. A tap commits — no hold.
 - Odds badge: `WinOddsEstimator` tier word only (Likely / Risky / Long shot), placeholder
   per-tier colours from static `FeedBadge` (in `FeedCardView.cs`). Hidden on non-fight
-  cards, Dungeon included. Start HP = `Health.CurrentMaxHealth`. Odds refresh on loadout
-  change only, not on HP changes (defeat penalty or regen).
+  cards, Dungeon included. Start HP = `Health.CurrentMaxHealth`. Visible cards
+  re-estimate on loadout change and when current max HP changes (defeat, regen, heal,
+  Constitution); `Feed/MaxHealthChangeTracker` skips `Health.Changed` events that leave
+  it unchanged.
 - Draw rules: `FeedDrawRules.IsDrawable(type, playerAtFloor)` blocks new Ambush draws
   while `Health.IsAtFloor`. `DrawNext` skips undrawable entries but leaves them in the
   shuffle bag (each drawable entry still once per pass); refills when only undrawable
   entries remain; if none are drawable it logs a warning and draws one anyway. Ambushes
   already in the live window are not removed when the player hits the floor.
 - Key files: `Feed/FeedController.cs`, `Feed/FeedDrawRules.cs`, `Feed/FeedCardView.cs`,
+  `Feed/MaxHealthChangeTracker.cs`,
   `Feed/FeedPager.cs`, `Input/TouchGestureService.cs`.
 - Gap: no regions, difficulty ranges, swipe pressure, streak penalty, swipe-back
   history, hold-to-commit, Revive toggle, or first-session scripted cards. Badge colours
   still need ui-stylist. Device performance of the
-  badge sims (64 per fight card) is unchecked.
+  badge sims (64 per fight card) is unchecked. Odds-drop-after-defeat not yet seen on
+  device: current encounter balance makes a tier change hard to trigger.
 
 ## Encounters and dungeons
 - Types (`Feed/EncounterType.cs`): Treasure, Enemy, Dungeon, Tavern (Village), Resource,
@@ -167,8 +172,8 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
   (`JsonUtility`). Items re-link to their definitions by id via `Resources.LoadAll`.
 - Key files: `Progression/SaveSystem.cs`, `Progression/SaveData.cs`.
 - Gap: GDD is online-only — server owns profile, seeds, fight results, regen clock,
-  dungeon state, daily reset. The client signs in but syncs nothing yet (server move:
-  tasks 008–018).
+  dungeon state, daily reset. The server can store the profile (see Server move) but
+  the game still saves locally only (task 013).
 - Gap: client-authoritative economy (cheatable). After the server move the client still
   rolls rewards and runs shops and crafting, and uploads the whole save; only fights,
   seeds, HP loss, Revive use and current max HP (incl. regen) are server-owned.
@@ -201,7 +206,24 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
   falls back to http://localhost:8088, 10 s). Key files: `Network/ServerClient.cs`,
   `Network/IServerClient.cs`, `Network/UnityWebRequestTransport.cs`,
   `Server/src/DoomScroller.Server/Auth.cs`.
-- Gap: no game endpoints yet; sign-in failure only logs a warning (no offline screen
+- Built (server profile): `GET /profile` returns the player's `SaveData` JSON (one
+  JSONB row per player in `profiles`), revision and server UTC time, or a new-profile
+  marker; `PUT /profile` stores the whole save, 409 on a stale revision, 400 on
+  malformed JSON or over `MaxDocumentBytes` (1 MB). Server owns the regen clock
+  (`healthLastRegenUtcTicks` set from server time) and current max HP: uploads can't
+  change `healthCurrentMax` (regen from server time applied, capped at
+  `healthTrueMax`, 20% floor); only a new profile takes the client value, clamped.
+  Regen 10 HP / 30 s from `ProfileOptions` config. `fight_records` table exists, unused
+  until 016. Client: `IServerClient.LoadProfileAsync`/`SaveProfileAsync` (JSON +
+  revision + server time), not yet called by the game. Key files:
+  `Server/src/DoomScroller.Server/Profile.cs`, `Migrations/003_profiles_and_fights.sql`,
+  `Server/tests/fixtures/` (sample save).
+- Built (encounter data): `EncounterData.Id` = asset name. `Editor/EncounterDataExporter`
+  (menu DoomScroller > Export Encounter Data, or batch `ExportBatch`) writes
+  `Server/data/encounters.json` (id, type, enemy HP/damage/speed, damage-type
+  multipliers) for every fight-type encounter; an EditMode test fails if the committed
+  file is stale. Not yet read by the server (016).
+- Gap: no fight endpoints yet; sign-in failure only logs a warning (no offline screen
   until task 014).
 
 ## Build and test

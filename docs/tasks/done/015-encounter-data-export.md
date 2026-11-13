@@ -2,7 +2,7 @@
 
 **Owner:** gameplay-engineer
 **Size:** S
-**Status:** approved
+**Status:** done
 **GDD:** docs/gdd/GDD.md#scaling-and-cost-control (cache static data)
 **Depends on:** 006, 008
 

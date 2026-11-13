@@ -2,7 +2,7 @@
 
 **Owner:** backend-engineer
 **Size:** M
-**Status:** approved
+**Status:** done
 **GDD:** docs/gdd/GDD.md#technical-strategy, #persistence-and-save-rules,
 #scaling-and-cost-control (Managed database first)
 **Depends on:** 011

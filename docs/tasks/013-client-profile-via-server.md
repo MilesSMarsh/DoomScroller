@@ -2,7 +2,7 @@
 
 **Owner:** gameplay-engineer
 **Size:** M
-**Status:** todo (blocked on 012)
+**Status:** todo
 **GDD:** docs/gdd/GDD.md#technical-strategy (online-only), #persistence-and-save-rules
 **Depends on:** 012
 

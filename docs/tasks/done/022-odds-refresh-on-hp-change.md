@@ -2,7 +2,7 @@
 
 **Owner:** gameplay-engineer
 **Size:** S
-**Status:** approved
+**Status:** done
 **GDD:** docs/gdd/GDD.md#combat (every fight starts at full current max HP); Semester scope item 4
 **Depends on:** none
 
@@ -49,7 +49,7 @@ point, the tiers update without needing an equip change.
   `FullyHeal`, `RestoreMaxHealth`, `SetTrueMaxHealth`); regen ticks every 30 s, so a
   refresh runs at most that often while regenerating.
 - Reuse `RefreshAllChances()`; don't duplicate the estimate path.
-- Files touched by approved-but-unmerged tasks 009/017 (`CombatPlaybackView`,
+- Files touched by merged task 009 and planned task 017 (`CombatPlaybackView`,
   `CombatResolver`) are not in scope — don't edit them.
 
 Questions for Miles: none (answered below)

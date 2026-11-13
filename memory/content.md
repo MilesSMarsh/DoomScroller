@@ -30,7 +30,10 @@ multipliers), `dungeonRooms` (`DungeonRoomData[]`: Fight/Rest/Treasure, Dungeon 
 `resourceTimerSeconds`, `resourceWeaknesses`, `resourceThresholds` (damage required →
 material, rarity, amount; Resource only). Enemies are not separate assets — an enemy is
 an Enemy/Ambush encounter, or a Fight room inside a dungeon. Landing is shown once at
-first open and never drawn by the shuffle bag. Enemy cards carry a one-sentence
+first open and never drawn by the shuffle bag. Id = asset name (`EncounterData.Id`). Fight-type
+encounters' combat stats are exported to `Server/data/encounters.json` (menu
+DoomScroller > Export Encounter Data); re-export after editing enemy stats or adding a
+fight encounter, or the stale-data EditMode test fails. Enemy cards carry a one-sentence
 `description` (e.g. `Enemy_Wolf` "A lean grey wolf, hungry and hunting alone.");
 `Enemy_BonewroughtSentinel` is the tougher fight (110 HP, 200 XP, 1–2 drops from an
 authored weapon/equipment/material list, rarity 10/25/40/20/5, centred on Runed;
