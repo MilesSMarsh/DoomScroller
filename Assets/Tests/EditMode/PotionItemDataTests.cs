@@ -76,7 +76,7 @@ namespace DoomScroller.Tests.EditMode
             var revive = LoadRevive();
 
             Assert.AreEqual(ExpectedReviveAmount, revive.potionAmount);
-            Assert.AreEqual(ExpectedReviveAmount, new PlayerLoadout(new[] { revive }).GetRevivePotionAmount(revive),
+            Assert.AreEqual(ExpectedReviveAmount, new PlayerLoadout(new[] { revive }).GetRevivePercent(revive),
                 "No quality upgrades owned, so the effective amount is the authored 30%.");
         }
 

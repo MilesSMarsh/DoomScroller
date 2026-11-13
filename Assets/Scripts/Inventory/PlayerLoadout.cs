@@ -33,14 +33,15 @@ namespace DoomScroller.Inventory
         private readonly HashSet<(MaterialDefinition Material, ItemRarity Rarity)> _discoveredMaterials;
         private readonly HashSet<string> _craftedRecipeIds = new();
 
-        // The Alchemist's two upgrade tracks for a Revive potion, keyed by which potion
+        // The Alchemist's one upgrade track for a Revive potion, keyed by which potion
         // type (there's only ever one in practice today — see GetKnownRevivePotionType).
-        // Never mutates the shared ItemData asset itself; both are read as a bonus layered
-        // on top of it (GetRefillCapacity, GetRevivePotionAmount).
-        public const int MaxUpgradeLevel = 5;
-        private const int ReviveQualityBonusPerLevel = 10;
-        private readonly Dictionary<ItemData, int> _reviveCapacityLevel = new();
-        private readonly Dictionary<ItemData, int> _reviveQualityLevel = new();
+        // A Revive restores a percentage of the HP the fight started with: the asset's
+        // potionAmount is the base percent, each level adds RevivePercentPerLevel, capped
+        // at MaxRevivePercent. Never mutates the shared ItemData asset itself.
+        public const int MaxUpgradeLevel = 7;
+        public const int RevivePercentPerLevel = 10;
+        public const int MaxRevivePercent = 100;
+        private readonly Dictionary<ItemData, int> _revivePercentLevel = new();
 
         public event Action Changed;
 
@@ -273,13 +274,10 @@ namespace DoomScroller.Inventory
             return _inventory.Where(i => i.category == ItemCategory.Potion);
         }
 
-        // The default for every potion type, except a Revive potion whose capacity has
-        // been raised at the Alchemist.
+        // Carry cap for every potion type (3, per the GDD) — no upgrade changes it.
         public int GetRefillCapacity(ItemData potionType)
         {
-            return potionType.potionEffect == PotionEffect.Revive
-                ? BaseRefillCapacity + GetReviveCapacityLevel(potionType)
-                : BaseRefillCapacity;
+            return BaseRefillCapacity;
         }
 
         // potionFilter restricts which known potion types this considers — the Tavern
@@ -305,12 +303,11 @@ namespace DoomScroller.Inventory
             return total;
         }
 
-        // Tops every matching known potion type back up to its refill capacity (raised
-        // per-type by an Alchemist capacity upgrade) — one potion at a time, stopping the
+        // Tops every matching known potion type back up to its refill capacity — one potion at a time, stopping the
         // moment the wallet can't afford the next one (a partial refill, not
         // all-or-nothing). Returns how many were actually bought, for a confirmation
         // message; 0 if fully stocked already or the wallet couldn't afford even one.
-        // pricePerPotion is per-type since a quality-upgraded Revive potion costs more.
+        // pricePerPotion is per-type since an upgraded Revive potion costs more.
         public int RefillPotions(PlayerWallet wallet, Func<ItemData, int> pricePerPotion, Func<ItemData, bool> potionFilter)
         {
             var added = 0;
@@ -344,12 +341,12 @@ namespace DoomScroller.Inventory
         }
 
         // The strongest owned Revive potion (highest *effective* amount, including any
-        // Alchemist quality upgrade) — null if none owned. Every Revive potion is always
+        // Alchemist upgrade) — null if none owned. Every Revive potion is always
         // available; there's nothing to pre-select any more (see CombatPlaybackView.Play).
         public ItemData GetBestRevivePotion()
         {
             return _inventory.Where(i => i.potionEffect == PotionEffect.Revive)
-                .OrderByDescending(GetRevivePotionAmount)
+                .OrderByDescending(GetRevivePercent)
                 .FirstOrDefault();
         }
 
@@ -364,22 +361,23 @@ namespace DoomScroller.Inventory
             Changed?.Invoke();
         }
 
-        public int GetReviveCapacityLevel(ItemData potion)
+        public int GetReviveUpgradeLevel(ItemData potion)
         {
-            return _reviveCapacityLevel.TryGetValue(potion, out var level) ? level : 0;
+            return _revivePercentLevel.TryGetValue(potion, out var level) ? level : 0;
         }
 
-        public int GetReviveQualityLevel(ItemData potion)
+        // Effective Revive percent: authored base + upgrades, capped at 100.
+        public int GetRevivePercent(ItemData potion)
         {
-            return _reviveQualityLevel.TryGetValue(potion, out var level) ? level : 0;
+            return Mathf.Min(MaxRevivePercent, potion.potionAmount + GetReviveUpgradeLevel(potion) * RevivePercentPerLevel);
         }
 
-        // The actual HP a revive potion restores — base amount plus quality upgrades.
-        // Never mutates the shared ItemData asset itself, just layers a player-specific
-        // bonus on top of it.
-        public int GetRevivePotionAmount(ItemData potion)
+        // HP a Revive restores given the HP the fight started with (CombatSimulator.
+        // PlayerStartHp): the percent of it, rounded up, never below 1.
+        public int GetReviveHealAmount(ItemData potion, int fightStartHp)
         {
-            return potion.potionAmount + GetReviveQualityLevel(potion) * ReviveQualityBonusPerLevel;
+            var percent = GetRevivePercent(potion);
+            return Mathf.Max(1, (Mathf.Max(0, fightStartHp) * percent + 99) / 100);
         }
 
         // The one Revive-type potion this player has ever owned — there's only ever one
@@ -397,7 +395,7 @@ namespace DoomScroller.Inventory
             return _inventory.Where(i => !_equipped.Values.Contains(i));
         }
 
-        // The Market's Sell tab action — mirrors TryCraftRecipe/TryUpgradeRevive*'s shape
+        // The Market's Sell tab action — mirrors TryCraftRecipe/TryUpgradeRevivePercent's shape
         // (a combined inventory+wallet transaction living here, wallet passed in). Refuses
         // an equipped item the same way RemoveFromInventory already does.
         public bool SellItem(ItemData item, PlayerWallet wallet)
@@ -434,9 +432,9 @@ namespace DoomScroller.Inventory
         // RewardGenerator/MarketGenerator owning prices while PlayerLoadout just executes
         // the spend) — this only enforces affordability and MaxUpgradeLevel, atomically
         // (nothing is spent when it returns false).
-        public bool TryUpgradeReviveCapacity(ItemData potion, PlayerWallet wallet, int goldCost, int materialsCost)
+        public bool TryUpgradeRevivePercent(ItemData potion, PlayerWallet wallet, int goldCost, int materialsCost)
         {
-            if (potion == null || GetReviveCapacityLevel(potion) >= MaxUpgradeLevel || CountMaterials() < materialsCost)
+            if (potion == null || GetReviveUpgradeLevel(potion) >= MaxUpgradeLevel || CountMaterials() < materialsCost)
             {
                 return false;
             }
@@ -447,25 +445,7 @@ namespace DoomScroller.Inventory
             }
 
             ConsumeMaterials(materialsCost);
-            _reviveCapacityLevel[potion] = GetReviveCapacityLevel(potion) + 1;
-            Changed?.Invoke();
-            return true;
-        }
-
-        public bool TryUpgradeReviveQuality(ItemData potion, PlayerWallet wallet, int goldCost, int materialsCost)
-        {
-            if (potion == null || GetReviveQualityLevel(potion) >= MaxUpgradeLevel || CountMaterials() < materialsCost)
-            {
-                return false;
-            }
-
-            if (!wallet.TrySpendGold(goldCost))
-            {
-                return false;
-            }
-
-            ConsumeMaterials(materialsCost);
-            _reviveQualityLevel[potion] = GetReviveQualityLevel(potion) + 1;
+            _revivePercentLevel[potion] = GetReviveUpgradeLevel(potion) + 1;
             Changed?.Invoke();
             return true;
         }
@@ -533,7 +513,7 @@ namespace DoomScroller.Inventory
 
         // The Blacksmith's recipe-tree craft action — named ingredients + discovery/
         // prerequisite gating (see IsRecipeUnlocked), goldCost pre-discounted by the
-        // caller (same convention as TryUpgradeReviveCapacity/SellItem — pricing stays a
+        // caller (same convention as TryUpgradeRevivePercent/SellItem — pricing stays a
         // view concern, not an inventory one).
         public bool TryCraftRecipe(RecipeDefinition recipe, PlayerWallet wallet, int goldCost)
         {
@@ -677,13 +657,12 @@ namespace DoomScroller.Inventory
             data.craftedRecipeIds.AddRange(_craftedRecipeIds);
 
             data.reviveUpgrades.Clear();
-            foreach (var potion in _reviveCapacityLevel.Keys.Union(_reviveQualityLevel.Keys))
+            foreach (var potion in _revivePercentLevel.Keys)
             {
                 data.reviveUpgrades.Add(new PotionUpgradeEntry
                 {
                     itemIndex = Intern(potion),
-                    capacityLevel = GetReviveCapacityLevel(potion),
-                    qualityLevel = GetReviveQualityLevel(potion)
+                    qualityLevel = GetReviveUpgradeLevel(potion)
                 });
             }
         }
@@ -732,19 +711,13 @@ namespace DoomScroller.Inventory
                 _craftedRecipeIds.Add(recipeId);
             }
 
-            _reviveCapacityLevel.Clear();
-            _reviveQualityLevel.Clear();
+            _revivePercentLevel.Clear();
             foreach (var upgrade in data.reviveUpgrades)
             {
                 var potion = pool[upgrade.itemIndex];
-                if (upgrade.capacityLevel > 0)
-                {
-                    _reviveCapacityLevel[potion] = upgrade.capacityLevel;
-                }
-
                 if (upgrade.qualityLevel > 0)
                 {
-                    _reviveQualityLevel[potion] = upgrade.qualityLevel;
+                    _revivePercentLevel[potion] = upgrade.qualityLevel;
                 }
             }
         }

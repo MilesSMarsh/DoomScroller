@@ -190,14 +190,14 @@ namespace DoomScroller.Progression
         public ItemRarity rarity;
     }
 
-    // One entry per potion type with a nonzero Alchemist upgrade — merges
-    // PlayerLoadout's two parallel dictionaries (_reviveCapacityLevel/_reviveQualityLevel)
-    // into a single list keyed by itemPool index.
+    // One entry per potion type with a nonzero Alchemist upgrade, keyed by itemPool
+    // index. qualityLevel is the Revive percent-upgrade level (field name kept so the
+    // JSON key is unchanged; old flat-HP levels are NOT converted — save break, see
+    // task 007).
     [Serializable]
     public class PotionUpgradeEntry
     {
         public int itemIndex;
-        public int capacityLevel;
         public int qualityLevel;
     }
 

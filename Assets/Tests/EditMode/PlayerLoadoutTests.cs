@@ -195,5 +195,252 @@ namespace DoomScroller.Tests.EditMode
             Assert.IsTrue(loadout.GetAllInventory().Contains(commonFibers));
             Assert.IsTrue(loadout.GetAllInventory().Any(i => i.materialSource == rope && i.rarity == ItemRarity.Runed));
         }
+
+        // ---- Revive percent upgrade (task 007) ----
+
+        private static ItemData MakeRevive(int basePercent = 30)
+        {
+            var potion = MakeItem(ItemCategory.Potion, EquipmentSlotType.Head);
+            potion.potionEffect = PotionEffect.Revive;
+            potion.potionAmount = basePercent;
+            return potion;
+        }
+
+        private static PlayerLoadout LoadoutWithMaterials(ItemData revive, int materials)
+        {
+            var items = new List<ItemData> { revive };
+            for (var i = 0; i < materials; i++)
+            {
+                items.Add(MakeItem(ItemCategory.Material, EquipmentSlotType.Head));
+            }
+
+            return TestFixtures.MakeLoadout(items.ToArray());
+        }
+
+        [Test]
+        public void RevivePercent_StartsAt30_AndEachLevelAdds10()
+        {
+            var revive = MakeRevive();
+            var loadout = LoadoutWithMaterials(revive, 100);
+            var wallet = new PlayerWallet(10000);
+
+            Assert.AreEqual(30, loadout.GetRevivePercent(revive));
+            for (var level = 1; level <= 4; level++)
+            {
+                Assert.IsTrue(loadout.TryUpgradeRevivePercent(revive, wallet, 1, 1));
+                Assert.AreEqual(30 + level * 10, loadout.GetRevivePercent(revive));
+            }
+        }
+
+        [Test]
+        public void RevivePercent_CapsAt100AfterSevenLevels_AndRefusesFurtherUpgrades()
+        {
+            var revive = MakeRevive();
+            var loadout = LoadoutWithMaterials(revive, 100);
+            var wallet = new PlayerWallet(10000);
+
+            for (var i = 0; i < PlayerLoadout.MaxUpgradeLevel; i++)
+            {
+                Assert.IsTrue(loadout.TryUpgradeRevivePercent(revive, wallet, 1, 1));
+            }
+
+            Assert.AreEqual(7, PlayerLoadout.MaxUpgradeLevel);
+            Assert.AreEqual(100, loadout.GetRevivePercent(revive));
+
+            var goldBefore = wallet.Gold;
+            var materialsBefore = loadout.CountMaterials();
+            Assert.IsFalse(loadout.TryUpgradeRevivePercent(revive, wallet, 1, 1));
+            Assert.AreEqual(100, loadout.GetRevivePercent(revive));
+            Assert.AreEqual(goldBefore, wallet.Gold);
+            Assert.AreEqual(materialsBefore, loadout.CountMaterials());
+        }
+
+        [Test]
+        public void ReviveHealAmount_UsesFightStartHp_RoundsUp_NeverZero()
+        {
+            var revive = MakeRevive();
+            var loadout = TestFixtures.MakeLoadout(revive);
+
+            Assert.AreEqual(1, loadout.GetReviveHealAmount(revive, 1));
+            Assert.AreEqual(17, loadout.GetReviveHealAmount(revive, 55));
+            Assert.AreEqual(30, loadout.GetReviveHealAmount(revive, 100));
+            Assert.AreEqual(1, loadout.GetReviveHealAmount(revive, 0));
+        }
+
+        [Test]
+        public void RefillCapacity_IsThreeAtEveryUpgradeLevel()
+        {
+            var revive = MakeRevive();
+            var loadout = LoadoutWithMaterials(revive, 100);
+            var wallet = new PlayerWallet(10000);
+
+            for (var level = 0; level <= PlayerLoadout.MaxUpgradeLevel; level++)
+            {
+                Assert.AreEqual(3, loadout.GetRefillCapacity(revive));
+                loadout.TryUpgradeRevivePercent(revive, wallet, 1, 1);
+            }
+        }
+
+        [Test]
+        public void RevivePercentLevel_SurvivesSaveAndLoad()
+        {
+            var revive = MakeRevive();
+            var loadout = LoadoutWithMaterials(revive, 10);
+            var wallet = new PlayerWallet(1000);
+            loadout.TryUpgradeRevivePercent(revive, wallet, 1, 1);
+            loadout.TryUpgradeRevivePercent(revive, wallet, 1, 1);
+
+            var data = new SaveData();
+            loadout.CaptureInto(data);
+            var restored = new PlayerLoadout(new ItemData[0]);
+            restored.RestoreFrom(data);
+
+            var restoredRevive = restored.GetKnownRevivePotionType();
+            Assert.IsNotNull(restoredRevive);
+            Assert.AreEqual(2, restored.GetReviveUpgradeLevel(restoredRevive));
+            Assert.AreEqual(50, restored.GetRevivePercent(restoredRevive));
+        }
+
+        [Test]
+        public void RevivePercent_BaseNearCap_IsClampedAt100_NotOvershot()
+        {
+            var revive = MakeRevive(basePercent: 95);
+            var loadout = new PlayerLoadout(new List<ItemData> { revive, MakeItem(ItemCategory.Material, EquipmentSlotType.Head) });
+            var wallet = new PlayerWallet(1000);
+
+            Assert.IsTrue(loadout.TryUpgradeRevivePercent(revive, wallet, 1, 1));
+
+            Assert.AreEqual(100, loadout.GetRevivePercent(revive));
+        }
+
+        [Test]
+        public void ReviveHealAmount_AtMaxLevel_RestoresFullFightStartHp()
+        {
+            var revive = MakeRevive();
+            var loadout = LoadoutWithMaterials(revive, 100);
+            var wallet = new PlayerWallet(10000);
+            for (var i = 0; i < PlayerLoadout.MaxUpgradeLevel; i++)
+            {
+                loadout.TryUpgradeRevivePercent(revive, wallet, 1, 1);
+            }
+
+            Assert.AreEqual(55, loadout.GetReviveHealAmount(revive, 55));
+            Assert.AreEqual(1, loadout.GetReviveHealAmount(revive, 1));
+        }
+
+        [Test]
+        public void RevivePercentUpgrade_DoesNotMutateSharedPotionAsset()
+        {
+            var revive = MakeRevive();
+            var loadout = LoadoutWithMaterials(revive, 10);
+            var wallet = new PlayerWallet(1000);
+
+            loadout.TryUpgradeRevivePercent(revive, wallet, 1, 1);
+            loadout.TryUpgradeRevivePercent(revive, wallet, 1, 1);
+
+            Assert.AreEqual(30, revive.potionAmount);
+            Assert.AreEqual(50, loadout.GetRevivePercent(revive));
+        }
+
+        [Test]
+        public void TryUpgradeRevivePercent_InsufficientGoldOrMaterials_SpendsNothing()
+        {
+            var revive = MakeRevive();
+            var poorLoadout = LoadoutWithMaterials(revive, 5);
+            var poorWallet = new PlayerWallet(0);
+
+            Assert.IsFalse(poorLoadout.TryUpgradeRevivePercent(revive, poorWallet, 15, 2));
+            Assert.AreEqual(0, poorLoadout.GetReviveUpgradeLevel(revive));
+            Assert.AreEqual(5, poorLoadout.CountMaterials());
+
+            var noMaterialsLoadout = LoadoutWithMaterials(revive, 1);
+            var richWallet = new PlayerWallet(1000);
+
+            Assert.IsFalse(noMaterialsLoadout.TryUpgradeRevivePercent(revive, richWallet, 15, 2));
+            Assert.AreEqual(0, noMaterialsLoadout.GetReviveUpgradeLevel(revive));
+            Assert.AreEqual(1000, richWallet.Gold);
+            Assert.AreEqual(1, noMaterialsLoadout.CountMaterials());
+        }
+
+        [Test]
+        public void GetBestRevivePotion_PicksHighestEffectivePercent_IncludingUpgrades()
+        {
+            var weak = MakeRevive(basePercent: 30);
+            var strong = MakeRevive(basePercent: 40);
+            var loadout = new PlayerLoadout(new List<ItemData> { weak, strong, MakeItem(ItemCategory.Material, EquipmentSlotType.Head) });
+            var wallet = new PlayerWallet(1000);
+
+            Assert.AreSame(strong, loadout.GetBestRevivePotion());
+
+            // Two upgrades on the weak one: 30 + 20 = 50 beats the strong one's flat 40.
+            loadout.TryUpgradeRevivePercent(weak, wallet, 1, 1);
+            loadout.TryUpgradeRevivePercent(weak, wallet, 1, 1);
+
+            Assert.AreSame(weak, loadout.GetBestRevivePotion());
+        }
+
+        [Test]
+        public void GetBestRevivePotion_NullWhenNoReviveOwned()
+        {
+            var loadout = new PlayerLoadout(new List<ItemData> { MakeItem(ItemCategory.Armor, EquipmentSlotType.Head) });
+
+            Assert.IsNull(loadout.GetBestRevivePotion());
+        }
+
+        [Test]
+        public void TavernRefill_AtMaxUpgrade_TopsRevivesUpToThreeAndNoFurther()
+        {
+            var revive = MakeRevive();
+            var loadout = new PlayerLoadout(new List<ItemData>
+            {
+                revive,
+                MakeItem(ItemCategory.Material, EquipmentSlotType.Head),
+                MakeItem(ItemCategory.Material, EquipmentSlotType.Head),
+                MakeItem(ItemCategory.Material, EquipmentSlotType.Head),
+                MakeItem(ItemCategory.Material, EquipmentSlotType.Head),
+                MakeItem(ItemCategory.Material, EquipmentSlotType.Head),
+                MakeItem(ItemCategory.Material, EquipmentSlotType.Head),
+                MakeItem(ItemCategory.Material, EquipmentSlotType.Head),
+                MakeItem(ItemCategory.Material, EquipmentSlotType.Head)
+            });
+            var wallet = new PlayerWallet(100000);
+            for (var i = 0; i < PlayerLoadout.MaxUpgradeLevel; i++)
+            {
+                loadout.TryUpgradeRevivePercent(revive, wallet, 1, 1);
+            }
+
+            // One Revive is already owned (the one in the starting inventory), so a refill to
+            // the cap of 3 buys exactly 2.
+            var bought = loadout.RefillPotions(wallet, _ => 5, t => t.potionEffect == PotionEffect.Revive);
+
+            Assert.AreEqual(2, bought);
+            Assert.AreEqual(3, loadout.GetAllInventory().Count(i => i == revive));
+            Assert.IsTrue(loadout.ArePotionsFullyStocked(t => t.potionEffect == PotionEffect.Revive));
+            Assert.AreEqual(0, loadout.ComputeRefillCost(_ => 5, t => t.potionEffect == PotionEffect.Revive));
+            Assert.AreEqual(0, loadout.RefillPotions(wallet, _ => 5, t => t.potionEffect == PotionEffect.Revive));
+        }
+
+        [Test]
+        public void RevivePercentLevel_AtMax_SurvivesSaveAndLoad_StillCapsAt100()
+        {
+            var revive = MakeRevive();
+            var loadout = LoadoutWithMaterials(revive, 10);
+            var wallet = new PlayerWallet(1000);
+            for (var i = 0; i < PlayerLoadout.MaxUpgradeLevel; i++)
+            {
+                loadout.TryUpgradeRevivePercent(revive, wallet, 1, 1);
+            }
+
+            var data = new SaveData();
+            loadout.CaptureInto(data);
+            var restored = new PlayerLoadout(new ItemData[0]);
+            restored.RestoreFrom(data);
+
+            var restoredRevive = restored.GetKnownRevivePotionType();
+            Assert.IsNotNull(restoredRevive);
+            Assert.AreEqual(PlayerLoadout.MaxUpgradeLevel, restored.GetReviveUpgradeLevel(restoredRevive));
+            Assert.AreEqual(100, restored.GetRevivePercent(restoredRevive));
+            Assert.IsFalse(restored.TryUpgradeRevivePercent(restoredRevive, new PlayerWallet(1000), 1, 1));
+        }
     }
 }

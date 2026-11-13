@@ -94,7 +94,7 @@ namespace DoomScroller.Encounters
         // A Revive potion the Alchemist has upgraded costs more per unit to refill.
         private int PricePerPotion(ItemData potionType)
         {
-            var basePrice = BaseRefillPrice + _loadout.GetReviveQualityLevel(potionType) * PricePerQualityLevel;
+            var basePrice = BaseRefillPrice + _loadout.GetReviveUpgradeLevel(potionType) * PricePerQualityLevel;
             return Mathf.RoundToInt(basePrice * _attributes.GoldCostMultiplier);
         }
 

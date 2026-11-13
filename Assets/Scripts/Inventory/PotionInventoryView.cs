@@ -152,7 +152,7 @@ namespace DoomScroller.Inventory
             row.TitleText.text = count > 1 ? $"{potion.title} (x{count} owned)" : potion.title;
             row.StatText.text = potion.potionEffect == PotionEffect.MaxHealthRestore
                 ? $"Restores {potion.potionAmount} max HP"
-                : $"Revives at {potion.potionAmount} HP if you'd die";
+                : $"Revives at {_loadout.GetRevivePercent(potion)}% HP if you'd die";
 
             if (potion.potionEffect == PotionEffect.MaxHealthRestore)
             {

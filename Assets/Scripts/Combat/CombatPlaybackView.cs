@@ -319,7 +319,7 @@ namespace DoomScroller.Combat
                     {
                         loadout.ConsumeRevivePotion(potion);
                         revivedThisFight = true;
-                        sim.Revive(loadout.GetRevivePotionAmount(potion));
+                        sim.Revive(loadout.GetReviveHealAmount(potion, sim.PlayerStartHp));
                         UpdateHealthBar(_playerHealthFill, _playerHealthLabel, sim.PlayerHp, sim.PlayerStartHp);
                         SpawnPopup(_playerAnchor, "REVIVED!", new Color(0.4f, 0.9f, 1f), 44);
                         yield return new WaitForSeconds(BeatPause);
