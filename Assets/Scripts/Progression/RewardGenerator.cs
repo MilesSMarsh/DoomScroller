@@ -145,6 +145,8 @@ namespace DoomScroller.Progression
             var total = weapons.Count + equipment.Count + materials.Count;
             if (total == 0)
             {
+                // Nothing authored on this table: draw from the authored catalogs, never
+                // a "Plain Head"-style generic item.
                 return GenerateItem(rarity, rng);
             }
 
@@ -183,6 +185,19 @@ namespace DoomScroller.Progression
                 .Where(c => c != ItemCategory.Potion && c != ItemCategory.Material)
                 .ToArray();
             var category = categories[rng.Next(categories.Length)];
+
+            // Prefer authored catalog items; the generic path below only runs when no
+            // definition exists for the category.
+            if (category == ItemCategory.Weapon)
+            {
+                return WeaponGenerator.GenerateFromRandomDefinition(rarity, rng);
+            }
+
+            var authored = EquipmentGenerator.GenerateFromRandomDefinition(rarity, rng, new[] { category });
+            if (authored != null)
+            {
+                return authored;
+            }
 
             // Weapons get their own richer generation (type, ability/passive rolls,
             // attribute scaling that grows with rarity) — see WeaponGenerator.

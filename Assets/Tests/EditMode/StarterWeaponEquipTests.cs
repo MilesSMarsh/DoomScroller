@@ -68,6 +68,8 @@ namespace DoomScroller.Tests.EditMode
             Assert.AreEqual(ItemCategory.Weapon, sword.category);
             Assert.AreEqual(ItemRarity.Plain, sword.rarity);
             Assert.AreSame(LoadWoodenSword(), sword.sourceDefinition);
+            Assert.AreSame(sword, loadout.GetEquipped(EquipmentSlotType.RightHand));
+            Assert.IsNull(loadout.GetEquipped(EquipmentSlotType.Head));
         }
 
         [Test]

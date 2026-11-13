@@ -140,6 +140,7 @@ namespace DoomScroller.Progression
             var item = ScriptableObject.CreateInstance<ItemData>();
             item.title = TitleFor(rarity, type.ToString());
             item.category = ItemCategory.Weapon;
+            item.slotType = EquipmentSlotType.RightHand;
             item.rarity = rarity;
             item.weaponType = type;
             item.isTwoHanded = info.IsTwoHanded;
@@ -172,6 +173,7 @@ namespace DoomScroller.Progression
             var item = ScriptableObject.CreateInstance<ItemData>();
             item.title = TitleFor(rarity, definition.weaponName);
             item.category = ItemCategory.Weapon;
+            item.slotType = EquipmentSlotType.RightHand;
             item.rarity = rarity;
             item.weaponType = definition.weaponType;
             item.damageType = definition.damageType;

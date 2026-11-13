@@ -147,7 +147,16 @@ namespace DoomScroller.Inventory
                 return;
             }
 
-            Equip(item, item.slotType);
+            var allowed = ItemCategoryInfo.SlotsFor(item.category);
+            if (allowed.Length == 0)
+            {
+                return;
+            }
+
+            // Items only ever go in a slot their category allows — old saves/looted
+            // weapons can carry a stale slotType (the enum default, Head).
+            var slot = System.Array.IndexOf(allowed, item.slotType) >= 0 ? item.slotType : allowed[0];
+            Equip(item, slot);
         }
 
         public void Equip(ItemData item, EquipmentSlotType targetSlot)
@@ -683,9 +692,31 @@ namespace DoomScroller.Inventory
             }
 
             _equipped.Clear();
+            var misplaced = new List<ItemData>();
             foreach (var entry in data.equipped)
             {
-                _equipped[entry.slot] = pool[entry.itemIndex];
+                var equippedItem = pool[entry.itemIndex];
+                if (System.Array.IndexOf(ItemCategoryInfo.SlotsFor(equippedItem.category), entry.slot) >= 0)
+                {
+                    _equipped[entry.slot] = equippedItem;
+                }
+                else
+                {
+                    misplaced.Add(equippedItem);
+                }
+            }
+
+            // Old saves could hold an item in a slot outside its category (a weapon in
+            // Head): move it to its first free allowed slot, else leave it unequipped.
+            foreach (var equippedItem in misplaced)
+            {
+                var free = ItemCategoryInfo.SlotsFor(equippedItem.category)
+                    .Cast<EquipmentSlotType?>().FirstOrDefault(s => !_equipped.ContainsKey(s.Value));
+                if (free.HasValue)
+                {
+                    _equipped[free.Value] = equippedItem;
+                    equippedItem.slotType = free.Value;
+                }
             }
 
             _knownPotionTypes.Clear();

@@ -11,6 +11,8 @@ namespace DoomScroller.Progression
     // so both can't drift apart.
     public static class EquipmentGenerator
     {
+        public const string EquipmentDefinitionsResourcesPath = "EquipmentDefinitions";
+
         public static ItemData GenerateFromDefinition(EquipmentDefinition definition, ItemRarity rarity, System.Random rng = null)
         {
             rng ??= new System.Random();
@@ -32,6 +34,22 @@ namespace DoomScroller.Progression
                 WeaponGenerator.SkillCountByRarity[rarityIndex], rng);
 
             return item;
+        }
+
+        // Random authored definition whose category is in `categories` (null = any);
+        // null when none exists, so callers can fall back.
+        public static ItemData GenerateFromRandomDefinition(ItemRarity rarity, System.Random rng = null,
+            ItemCategory[] categories = null)
+        {
+            rng ??= new System.Random();
+            var candidates = Resources.LoadAll<EquipmentDefinition>(EquipmentDefinitionsResourcesPath)
+                .Where(d => d != null && (categories == null || categories.Contains(d.category))).ToArray();
+            if (candidates.Length == 0)
+            {
+                return null;
+            }
+
+            return GenerateFromDefinition(candidates[rng.Next(candidates.Length)], rarity, rng);
         }
     }
 }
