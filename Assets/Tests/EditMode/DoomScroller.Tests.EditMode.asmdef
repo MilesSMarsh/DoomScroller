@@ -3,6 +3,7 @@
     "rootNamespace": "",
     "references": [
         "DoomScroller",
+        "DoomScroller.Editor",
         "DoomScroller.CombatCore",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"

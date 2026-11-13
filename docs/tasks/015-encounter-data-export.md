@@ -2,7 +2,7 @@
 
 **Owner:** gameplay-engineer
 **Size:** S
-**Status:** todo (blocked on 008 and 006)
+**Status:** approved
 **GDD:** docs/gdd/GDD.md#scaling-and-cost-control (cache static data)
 **Depends on:** 006, 008
 
@@ -11,13 +11,13 @@ The server knows each encounter's enemy stats from the same authored assets the 
 uses, so a fight request only has to name the encounter.
 
 ## Acceptance criteria
-- [ ] Every `EncounterData` has a stable id: its asset name under
+- [x] Every `EncounterData` has a stable id: its asset name under
       `Resources/Encounters` (stable after 006's naming clean-up), exposed as
       `EncounterData.Id`; no new serialized field.
-- [ ] An Editor menu item and a batch-mode method write
+- [x] An Editor menu item and a batch-mode method write
       `Server/data/encounters.json`: id, type, enemy HP, attack damage, attack speed,
       damage-type multipliers, for every fight-type encounter.
-- [ ] EditMode test: the export of the current assets has one entry per fight-type
+- [x] EditMode test: the export of the current assets has one entry per fight-type
       encounter, unique ids, and values equal to the assets; a second test fails if the
       committed `encounters.json` differs from a fresh export (stale-data guard).
 
@@ -31,3 +31,6 @@ uses, so a fight request only has to name the encounter.
 
 ## Out of scope
 - Dungeon rooms and resource nodes (stay device-resolved in this slice), loot tables.
+
+## Notes
+- Approved for merge (Miles, 2026-11-13).

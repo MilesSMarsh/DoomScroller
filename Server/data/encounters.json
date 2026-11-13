@@ -1,0 +1,233 @@
+{
+    "encounters": [
+        {
+            "id": "Ambush_Bandit",
+            "type": "Ambush",
+            "enemyHealth": 70,
+            "enemyAttackDamage": 9,
+            "enemyAttackSpeed": 0.8999999761581421,
+            "damageTypeModifiers": []
+        },
+        {
+            "id": "Ambush_GoblinRaidingParty",
+            "type": "Ambush",
+            "enemyHealth": 100,
+            "enemyAttackDamage": 10,
+            "enemyAttackSpeed": 1.0,
+            "damageTypeModifiers": [
+                {
+                    "damageType": "Slash",
+                    "multiplier": 1.149999976158142
+                },
+                {
+                    "damageType": "Pierce",
+                    "multiplier": 0.8999999761581421
+                }
+            ]
+        },
+        {
+            "id": "Ambush_HighwayCutthroat",
+            "type": "Ambush",
+            "enemyHealth": 95,
+            "enemyAttackDamage": 11,
+            "enemyAttackSpeed": 0.8999999761581421,
+            "damageTypeModifiers": []
+        },
+        {
+            "id": "Ambush_IroncladRaider",
+            "type": "Ambush",
+            "enemyHealth": 165,
+            "enemyAttackDamage": 17,
+            "enemyAttackSpeed": 0.8999999761581421,
+            "damageTypeModifiers": [
+                {
+                    "damageType": "Pierce",
+                    "multiplier": 0.6000000238418579
+                }
+            ]
+        },
+        {
+            "id": "Enemy_BonewroughtSentinel",
+            "type": "Enemy",
+            "enemyHealth": 110,
+            "enemyAttackDamage": 12,
+            "enemyAttackSpeed": 0.8999999761581421,
+            "damageTypeModifiers": []
+        },
+        {
+            "id": "Enemy_BurrowBadger",
+            "type": "Enemy",
+            "enemyHealth": 65,
+            "enemyAttackDamage": 8,
+            "enemyAttackSpeed": 0.800000011920929,
+            "damageTypeModifiers": [
+                {
+                    "damageType": "Pierce",
+                    "multiplier": 1.25
+                }
+            ]
+        },
+        {
+            "id": "Enemy_CinderWisp",
+            "type": "Enemy",
+            "enemyHealth": 100,
+            "enemyAttackDamage": 12,
+            "enemyAttackSpeed": 0.8999999761581421,
+            "damageTypeModifiers": [
+                {
+                    "damageType": "Arcane",
+                    "multiplier": 1.5
+                }
+            ]
+        },
+        {
+            "id": "Enemy_DewdropSlime",
+            "type": "Enemy",
+            "enemyHealth": 55,
+            "enemyAttackDamage": 6,
+            "enemyAttackSpeed": 0.699999988079071,
+            "damageTypeModifiers": [
+                {
+                    "damageType": "Elemental",
+                    "multiplier": 1.5
+                },
+                {
+                    "damageType": "Pierce",
+                    "multiplier": 0.699999988079071
+                }
+            ]
+        },
+        {
+            "id": "Enemy_EmberforgeWarden",
+            "type": "Enemy",
+            "enemyHealth": 170,
+            "enemyAttackDamage": 18,
+            "enemyAttackSpeed": 0.949999988079071,
+            "damageTypeModifiers": [
+                {
+                    "damageType": "Arcane",
+                    "multiplier": 1.5
+                }
+            ]
+        },
+        {
+            "id": "Enemy_FrostTouchedWraith",
+            "type": "Enemy",
+            "enemyHealth": 135,
+            "enemyAttackDamage": 14,
+            "enemyAttackSpeed": 0.8999999761581421,
+            "damageTypeModifiers": [
+                {
+                    "damageType": "Elemental",
+                    "multiplier": 1.5
+                }
+            ]
+        },
+        {
+            "id": "Enemy_Frostfang",
+            "type": "Enemy",
+            "enemyHealth": 75,
+            "enemyAttackDamage": 9,
+            "enemyAttackSpeed": 0.800000011920929,
+            "damageTypeModifiers": []
+        },
+        {
+            "id": "Enemy_GriskGoblin",
+            "type": "Enemy",
+            "enemyHealth": 45,
+            "enemyAttackDamage": 6,
+            "enemyAttackSpeed": 1.0,
+            "damageTypeModifiers": [
+                {
+                    "damageType": "Blunt",
+                    "multiplier": 1.149999976158142
+                }
+            ]
+        },
+        {
+            "id": "Enemy_HollowCrownRevenant",
+            "type": "Enemy",
+            "enemyHealth": 250,
+            "enemyAttackDamage": 22,
+            "enemyAttackSpeed": 1.0,
+            "damageTypeModifiers": [
+                {
+                    "damageType": "Blunt",
+                    "multiplier": 1.5
+                }
+            ]
+        },
+        {
+            "id": "Enemy_MarshLeech",
+            "type": "Enemy",
+            "enemyHealth": 60,
+            "enemyAttackDamage": 7,
+            "enemyAttackSpeed": 0.699999988079071,
+            "damageTypeModifiers": [
+                {
+                    "damageType": "Blunt",
+                    "multiplier": 1.5
+                }
+            ]
+        },
+        {
+            "id": "Enemy_QuillbackBoar",
+            "type": "Enemy",
+            "enemyHealth": 55,
+            "enemyAttackDamage": 7,
+            "enemyAttackSpeed": 0.75,
+            "damageTypeModifiers": []
+        },
+        {
+            "id": "Enemy_RogueSlime",
+            "type": "Enemy",
+            "enemyHealth": 50,
+            "enemyAttackDamage": 6,
+            "enemyAttackSpeed": 0.699999988079071,
+            "damageTypeModifiers": []
+        },
+        {
+            "id": "Enemy_RustboundGolem",
+            "type": "Enemy",
+            "enemyHealth": 120,
+            "enemyAttackDamage": 11,
+            "enemyAttackSpeed": 0.75,
+            "damageTypeModifiers": [
+                {
+                    "damageType": "Slash",
+                    "multiplier": 0.6000000238418579
+                },
+                {
+                    "damageType": "Blunt",
+                    "multiplier": 1.5
+                }
+            ]
+        },
+        {
+            "id": "Enemy_WidowSpider",
+            "type": "Enemy",
+            "enemyHealth": 70,
+            "enemyAttackDamage": 9,
+            "enemyAttackSpeed": 0.8500000238418579,
+            "damageTypeModifiers": [
+                {
+                    "damageType": "Elemental",
+                    "multiplier": 1.5
+                }
+            ]
+        },
+        {
+            "id": "Enemy_Wolf",
+            "type": "Enemy",
+            "enemyHealth": 20,
+            "enemyAttackDamage": 5,
+            "enemyAttackSpeed": 0.10000000149011612,
+            "damageTypeModifiers": [
+                {
+                    "damageType": "Slash",
+                    "multiplier": 1.0
+                }
+            ]
+        }
+    ]
+}

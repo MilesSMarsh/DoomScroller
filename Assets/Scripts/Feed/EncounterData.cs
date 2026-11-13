@@ -11,6 +11,9 @@ namespace DoomScroller.Feed
     [CreateAssetMenu(menuName = "DoomScroller/Encounter Data", fileName = "NewEncounter")]
     public class EncounterData : ScriptableObject
     {
+        // Stable id: the asset's name under Resources/Encounters. Not serialized.
+        public string Id => name;
+
         public string title;
         public EncounterType type;
 
