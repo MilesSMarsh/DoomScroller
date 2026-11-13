@@ -19,6 +19,7 @@ services:
     environment:
       PORT: "8080"
       RUN_MIGRATIONS: "true"
+      JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:?set JWT_SIGNING_KEY in Server/.env}
       DB_CONNECTION: Host=postgres;Database=${POSTGRES_DB:-doomscroller};Username=${POSTGRES_USER:-doomscroller};Password=${POSTGRES_PASSWORD}
     ports:
       - "${SERVER_PORT:-8088}:8080"

@@ -66,7 +66,28 @@ public partial class Program
         var db = string.IsNullOrEmpty(conn) ? null : NpgsqlDataSource.Create(conn);
         builder.Services.AddSingleton<IDatabaseProbe>(new NpgsqlProbe(db));
 
+        // Signing key from env (JWT_SIGNING_KEY). Without it no token can be issued or accepted.
+        var signingKey = builder.Configuration["JWT_SIGNING_KEY"];
+        var tokens = string.IsNullOrEmpty(signingKey) ? null : new TokenService(signingKey, TimeSpan.FromDays(30));
+        if (db is not null) builder.Services.AddSingleton<IPlayerStore>(new NpgsqlPlayerStore(db));
+
         var app = builder.Build();
+        app.UseTokenAuth(tokens);
+
+        app.MapPost("/auth/anonymous", async (AnonymousAuthRequest req, IServiceProvider sp, CancellationToken ct) =>
+        {
+            if (tokens is null) return Results.Problem("Signing key not configured.", statusCode: 503);
+            var store = sp.GetService<IPlayerStore>();
+            if (store is null) return Results.Problem("Database not configured.", statusCode: 503);
+            if (!Guid.TryParse(req.InstallId, out var installId) || installId == Guid.Empty)
+                return Results.BadRequest(new { error = "installId must be a GUID" });
+            var playerId = await store.GetOrCreateByInstallAsync(installId, ct);
+            app.Logger.LogInformation("Sign-in for player {PlayerId}", playerId);
+            return Results.Ok(new { playerId, token = tokens.Issue(playerId, DateTimeOffset.UtcNow) });
+        });
+
+        // Smallest authenticated endpoint; lets clients verify a token.
+        app.MapGet("/auth/me", (HttpContext c) => Results.Ok(new { playerId = c.Items[AuthExtensions.PlayerIdItem] }));
 
         app.MapGet("/health", async (IDatabaseProbe probe, CancellationToken ct) => Results.Ok(new
         {
