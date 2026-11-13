@@ -2,7 +2,7 @@
 
 **Owner:** gameplay-engineer
 **Size:** S
-**Status:** approved
+**Status:** done
 **GDD:** docs/gdd/GDD.md#progression
 **Depends on:** none
 

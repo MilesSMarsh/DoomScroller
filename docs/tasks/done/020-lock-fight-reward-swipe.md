@@ -2,7 +2,7 @@
 
 **Owner:** ui-engineer
 **Size:** S
-**Status:** approved
+**Status:** done
 **GDD:** docs/gdd/GDD.md#combat
 **Depends on:** none
 

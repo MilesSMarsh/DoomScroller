@@ -2,7 +2,7 @@
 
 **Owner:** backend-engineer
 **Size:** M
-**Status:** approved
+**Status:** done
 **GDD:** docs/gdd/GDD.md#technical-strategy (Game Center / Google Play Games sign-in)
 **Depends on:** 010
 

@@ -42,8 +42,9 @@ so it keeps context). After two failed rounds, escalate to Miles.
 ## Status and dashboard
 
 - A building agent sets its spec's `**Status:**` to `in-progress` when it starts and
-  `review` when it reports; the producer sets `done` post-merge. Questions for Miles go
-  under a "Questions for Miles" line in the spec; manual checks are `- [ ] (manual, Miles)`.
+  `review` when it reports; the dashboard sets `approved` when Miles approves; the producer sets `done` post-merge. Questions for Miles go
+  in the spec's Notes, one per line: `- Question for Miles: <the question>` (omit the line
+  entirely if there are none; never write "none" or a bare heading); manual checks are `- [ ] (manual, Miles)`.
 - `tools/crew/dashboard.py` (http://localhost:8090) reads those fields plus
   `run_crew.py`'s live state to show Miles what needs him and what is running.
 

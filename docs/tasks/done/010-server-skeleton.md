@@ -2,7 +2,7 @@
 
 **Owner:** backend-engineer
 **Size:** M
-**Status:** review (ready)
+**Status:** done
 **GDD:** docs/gdd/GDD.md#technical-strategy (Stack), #where-combat-runs,
 #scaling-and-cost-control
 **Depends on:** none
@@ -29,7 +29,7 @@ profile and fight endpoints.
       `Assets/Scripts/CombatCore/` without copying it (e.g. linked source files), even if
       008 hasn't landed yet (an empty or stub reference is fine; 016 wires it).
 - [ ] `CLAUDE.md` Build & Test Commands lists the two new scripts (one line each).
-- [ ] (manual, Miles) Run `tools/run-server-dev.sh` and open the health URL.
+- [x] (manual, Miles) Run `tools/run-server-dev.sh` and open the health URL.
 
 ## Context
 - Memory: memory/systems.md (Save and persistence), `.claude/agents/backend-engineer.md`

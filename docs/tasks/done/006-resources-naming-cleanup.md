@@ -40,7 +40,7 @@ no spaces in its file name, and no enemy card shows placeholder description text
       "50 XP + Common Gear") and `Enemy_BonewroughtSentinel` (now empty): write the text
       Miles approved (see Notes) into each asset's `description`, nothing else. Do not
       start this step until the drafts in Notes are marked approved.
-- [ ] (manual, Miles) open SampleScene, Play: feed loads, Wolf card and starter weapon
+- [x] (manual, Miles) open SampleScene, Play: feed loads, Wolf card and starter weapon
       appear, no missing-reference warnings in the console.
 
 ## Context

@@ -36,7 +36,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 RUNS_DIR = ROOT / "docs" / "crew-runs"
-BUILDERS = {"gameplay-engineer", "ui-engineer", "content-designer"}
+BUILDERS = {"gameplay-engineer", "ui-engineer", "content-designer", "backend-engineer",
+            "ui-stylist", "release-engineer"}
 MAX_QA_ROUNDS = 2  # .claude/rules/agent-workflow.md: escalate after two failed rounds
 
 FIVE_LINE = "Report in the five-line format from CLAUDE.md."
@@ -139,7 +140,7 @@ def plan(crew: Crew, request: str) -> tuple[str, str]:
         "Write ONE small task spec in docs/tasks/ (follow docs/tasks/README.md), Must scope "
         f"only. {FIVE_LINE} Then end with exactly two lines:\n"
         "SPEC: <repo-relative path of the spec>\n"
-        "AGENT: <gameplay-engineer | ui-engineer | content-designer>"
+        "AGENT: <" + " | ".join(sorted(BUILDERS)) + ">"
     ))
     spec, agent = tag(report, "SPEC"), tag(report, "AGENT")
     if crew.dry_run:
@@ -153,6 +154,9 @@ def plan(crew: Crew, request: str) -> tuple[str, str]:
 
 def builder_for(spec: str) -> str:
     text = (ROOT / spec).read_text() if (ROOT / spec).is_file() else ""
+    owner = re.search(r"\*\*Owner:\*\*\s*`?([a-z-]+)", text)
+    if owner and owner.group(1) in BUILDERS:
+        return owner.group(1)
     for name in BUILDERS:
         if re.search(rf"\b{name}\b", text):
             return name

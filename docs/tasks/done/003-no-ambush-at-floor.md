@@ -26,7 +26,7 @@ debuffed player can't be forced into fights they can't escape.
       true/false around the floor; Ambush blocked at floor, allowed above; Enemy,
       Treasure, Resource, Dungeon, WanderingMerchant, Tavern allowed at floor.
 - [x] Full EditMode suite passes.
-- [ ] (manual, Miles) In the Editor, lose fights down to the floor, scroll ~40 cards:
+- [x] (manual, Miles) In the Editor, lose fights down to the floor, scroll ~40 cards:
       no new Ambush appears; regen above the floor and Ambushes return.
 
 ## Context
@@ -49,3 +49,4 @@ debuffed player can't be forced into fights they can't escape.
   for drawable entries.
 - Decided by Miles: Ambushes already on screen ahead of the player are NOT swapped out
   when they drop to the floor; the rule only affects new draws.
+- Manual check passed (Miles, 2026-11-10): thiss works correctly however it is anoying to immedietly get ambushed upon healing perhaps ambushes only show above 60% hp

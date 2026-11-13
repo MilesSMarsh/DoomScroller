@@ -129,3 +129,7 @@ Server/**/obj/
 tools/crew/.crew-state.json
 tools/crew/inbox.jsonl
 __pycache__/
+tools/crew/crew.log
+tools/crew/.chat*.json
+tools/crew/.chat-stderr.log
+tools/crew/dashboard.log

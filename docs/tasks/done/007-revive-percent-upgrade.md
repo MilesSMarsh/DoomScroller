@@ -2,7 +2,7 @@
 
 **Owner:** gameplay-engineer
 **Size:** M
-**Status:** approved
+**Status:** done
 **GDD:** docs/gdd/GDD.md#combat (Revive potions), #progression (Alchemist)
 **Depends on:** 005
 

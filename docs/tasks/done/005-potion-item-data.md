@@ -36,7 +36,7 @@ drink a Restoration potion.
       MaxHealthRestore with distinct non-empty `itemId`s, builds a `PlayerLoadout` from
       them, and checks `GetKnownRevivePotionType()` is non-null and `RefillPotions` tops
       Revive up to `GetRefillCapacity`; and asserts the Revive asset's `potionAmount` is 30. Full suite passes via `tools/run-editmode-tests.sh`.
-- [ ] (manual, Miles) delete `savegame.json`, start fresh: Potions tab lists 3 Revive
+- [x] (manual, Miles) delete `savegame.json`, start fresh: Potions tab lists 3 Revive
       Draughts and 3 Restoration Potions; Tavern
       shows a refill price or "Fully Stocked"; Alchemist no longer says "No revive potions
       discovered yet"; losing a fight with a Revive carried continues the fight once.

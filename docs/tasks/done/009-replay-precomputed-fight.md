@@ -2,7 +2,7 @@
 
 **Owner:** gameplay-engineer
 **Size:** M
-**Status:** approved
+**Status:** done
 **GDD:** docs/gdd/GDD.md#combat, #where-combat-runs (Fight replay)
 **Depends on:** 008
 

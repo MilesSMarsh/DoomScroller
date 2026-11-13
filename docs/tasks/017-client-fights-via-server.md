@@ -2,7 +2,7 @@
 
 **Owner:** gameplay-engineer
 **Size:** M
-**Status:** todo (blocked on 009, 014, 016)
+**Status:** todo (blocked on 014, 016)
 **GDD:** docs/gdd/GDD.md#combat, #where-combat-runs, #persistence-and-save-rules
 **Depends on:** 009, 014, 016
 

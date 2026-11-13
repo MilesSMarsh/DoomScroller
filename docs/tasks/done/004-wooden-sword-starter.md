@@ -40,9 +40,9 @@ definition like any other weapon. Existing saves keep the loadout they already h
       (guid `1cc64e9a05244643ea6a4dc8b088eeb7`). Set it with Unity MCP after the code
       compiles, save the scene, and make sure SampleScene is still the open scene
       afterwards.
-- [ ] (manual, Miles) Delete `savegame.json` from `Application.persistentDataPath` and
+- [x] (manual, Miles) Delete `savegame.json` from `Application.persistentDataPath` and
       press Play. The Profile shows a Common Wooden Sword equipped and fights deal damage.
-- [ ] (manual, Miles) With an existing save, press Play. The loadout is unchanged and
+- [x] (manual, Miles) With an existing save, press Play. The loadout is unchanged and
       no extra Wooden Sword is added.
 
 ## Context

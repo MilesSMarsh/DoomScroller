@@ -2,7 +2,7 @@
 
 **Owner:** gameplay-engineer
 **Size:** L
-**Status:** approved
+**Status:** done
 **GDD:** docs/gdd/GDD.md#where-combat-runs (One shared combat library), #combat
 **Depends on:** 007
 

@@ -26,7 +26,7 @@ Long shot) instead of the heuristic win% and close-call%.
 - [x] Non-fight cards (Treasure, Tavern, Resource, Landing, WanderingMerchant, Dungeon)
       hide the badge entirely (Miles' answer).
 - [x] EditMode suite passes.
-- [ ] (manual, Miles) In the Editor, cards show tier words; equipping/unequipping in
+- [x] (manual, Miles) In the Editor, cards show tier words; equipping/unequipping in
       Profile updates them on return; no visible hitch when the feed loads or refreshes.
 
 ## Context

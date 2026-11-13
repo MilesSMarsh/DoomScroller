@@ -7,22 +7,45 @@ rewrites an entry in place when a feature merges.
 All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes/SampleScene.unity`.
 
 ## Combat
+- Shared library `CombatCore/` (asmdef `DoomScroller.CombatCore`, no Unity references,
+  C# 9, .NET Standard 2.1-safe so the server can compile it). `CombatSimulator.Resolve(
+  FightInput)` resolves a whole fight from plain data (player side, enemy side, `int`
+  seed, armed Revive) into a `FightResult` (outcome, ordered `CombatBeat[]`, Revive
+  fired + beat index, final HP); both round-trip through `JsonUtility`.
 - Event-loop sim: each weapon basic attack and each ability is its own timer; soonest
-  resolves next. 8% miss, ±15% variance. `MaxBeats = 200` guard decides by HP fraction.
-  Takes an injected `System.Random`. Fight is computed in full, then replayed as beats
-  (lunges, UGUI projectiles, damage numbers). Revive potion can continue a fight once.
+  resolves next. 8% miss, ±15% variance, banker's rounding. `MaxBeats = 200` guard
+  decides by HP fraction. Abilities always auto-cast; no player input mid-fight.
+- Revive: fires automatically once per fight on death, restoring `revivePercent` of the
+  fight's start HP (rounded up, min 1). Armed = a Revive is carried and
+  `GameSettings.AutoConsumeRevivePotions` is on (default off; toggle in the Potions tab).
+- `Combat/FightInputBuilder` builds `FightInput` from `PlayerLoadout` +
+  `PlayerAttributes` + `EncounterData`/`DungeonStep`/resource node + start HP; used by
+  `CombatResolver`, `WinOddsEstimator`, dungeon and resource-node views.
+- Playback: `CombatResolver.ResolveEncounter`/`ResolveStep` resolve the fight up front
+  on the device (seed from a device `System.Random`); `CombatPlaybackView.Play` replays
+  the finished `FightResult` beat by beat (lunges, UGUI projectiles, damage numbers,
+  cooldown bars from beat timing). `FightReplay` (pure) maps a result to the HP
+  timeline, Revive HP and close-call flag; "REVIVED!" plays at the fired beat and the
+  carried Revive is consumed only if the result says it fired. Resource nodes still run
+  `PlayTimedWindow` off a `CombatSimulator.RunForDuration`.
 - Enemies: one flat basic attack plus per-damage-type multipliers
   (`damageTypeModifiers`); no armour or abilities.
 - Win odds: `WinOddsEstimator.Estimate` runs 64 seeded practice fights
-  (`DefaultRunCount`) via `CombatResolver.CreateSimulator`, auto-cast, no revive, and
-  returns the win fraction plus a `WinOddsTier`: Likely >= 0.70, Risky >= 0.40, else
-  Long shot. Non-fight types (Treasure, Tavern, Resource, Landing, WanderingMerchant,
-  and Dungeon for now) skip the sim and return 1 / Likely.
-- Key files: `Combat/CombatSimulator.cs`, `Combat/CombatResolver.cs`,
-  `Combat/WinOddsEstimator.cs`, `Combat/WinOddsTier.cs`, `Combat/CombatBeat.cs`,
-  `Combat/CombatPlaybackView.cs`, `Encounters/CombatResolutionView.cs`.
-- Gap: Simulator `using UnityEngine` — GDD needs a Unity-free shared library. Seed isn't drawn/saved
-  at tap-in. No 2x speed or skip. Revive is carried, not armed via a card toggle.
+  (`DefaultRunCount`), no revive, and returns the win fraction plus a `WinOddsTier`:
+  Likely >= 0.70, Risky >= 0.40, else Long shot. Non-fight types (Treasure, Tavern,
+  Resource, Landing, WanderingMerchant, and Dungeon for now) skip the sim and return
+  1 / Likely.
+- Fight screen pages sideways to the reward page only after a win; during a fight, after
+  a loss, and on Treasure (pinned to the reward page) the live drag is clamped to
+  reachable pages (`CombatResolutionView.ClampDragX`).
+- Key files: `CombatCore/CombatSimulator.cs`, `CombatCore/FightInput.cs`,
+  `CombatCore/FightResult.cs`, `CombatCore/CombatBeat.cs`, `CombatCore/CombatStats.cs`,
+  `Combat/FightInputBuilder.cs`, `Combat/CombatResolver.cs`,
+  `Combat/WinOddsEstimator.cs`, `Combat/CombatPlaybackView.cs`, `Combat/FightReplay.cs`,
+  `Encounters/CombatResolutionView.cs`, `Encounters/DungeonStepPageView.cs`.
+- Gap: fights resolve on the device, not the server (tasks 016/017); seed isn't
+  drawn/saved at tap-in, so quitting mid-replay doesn't replay the same fight. No 2x speed or skip. Revive is armed by a global setting, not a
+  per-card toggle.
 
 ## Health, loss and regen
 - Persistent max HP with a 20% floor (`FloorFraction = 0.2`); `IsAtFloor` is true when
@@ -41,9 +64,12 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
   economy-balance-analyst sign-off. No shop sells potions yet.
 - Gap: GDD wants 10% loss, 1% of true max per 36 s, Inn 2×/3× offline multiplier,
   every fight starting at full current max HP, rewards scaling with max HP, server time.
-- Gap: Revive restores a flat `potionAmount` HP (30, +10 per Alchemist quality level),
-  equal to 30% only while max HP is 100; GDD wants 30% HP raised by Alchemist upgrades. Alchemist capacity upgrades raise the Revive
-  carry cap to 8; GDD caps it at 3 (task 007).
+- Revive: restores a percent of the fight's start HP (see Combat):
+  the asset's `potionAmount` (30) is the base percent, +10 per Alchemist level
+  (`RevivePercentPerLevel`), 7 levels, capped at 100. Carry cap is 3 for every potion
+  type (`GetRefillCapacity`); Tavern refills to 3. Potions tab shows "Revives at N% HP".
+  Save stores the level in `PotionUpgradeEntry.qualityLevel` (old flat-HP saves not
+  migrated).
 
 ## Feed
 - Infinite vertical feed from a shuffled pool of `EncounterData` loaded from
@@ -80,8 +106,15 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
 ## Loot and items
 - Every drop has a rarity and rolled stats/abilities. Weapons roll from authored
   `WeaponDefinition` pools; shops must use `GenerateFromDefinition`/
-  `GenerateFromRandomDefinition`, never archetype `Generate` (used for drops,
-  and as the fallback when no definitions load). Potions never drop.
+  `GenerateFromRandomDefinition`, never archetype `Generate` (only the fallback when
+  no definitions load). Potions never drop.
+- Loot tables with empty pools (all `Dungeon_*`, `Enemy_RogueSlime`) and
+  `RewardGenerator.GenerateItem` (Market, Wandering Merchant) draw named items from the
+  authored catalogs: `WeaponGenerator.GenerateFromRandomDefinition` and
+  `EquipmentGenerator.GenerateFromRandomDefinition` (by category, from
+  `Resources/EquipmentDefinitions`). Generic "{rarity} {slot}" items only appear when a
+  category has no definition.
+- Weapons are generated with `slotType = RightHand`.
 - Key files: `Progression/RewardGenerator.cs`, `Progression/WeaponGenerator.cs`,
   `Progression/EquipmentGenerator.cs`, `Progression/MaterialGenerator.cs`,
   `Encounters/RewardChestView.cs`.
@@ -97,8 +130,12 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
 - New game (`StartFresh` only) adds and equips a Plain Hallow Wood Sword rolled by
   `Progression/StarterWeapon.Create` → `WeaponGenerator.GenerateFromDefinition`, from
   `ProfileController.starterWeaponDefinition` (scene: `WeaponDefinitions/WoodenSword`).
-  Unassigned → warning, starts unarmed. Loaded saves keep their loadout (no migration
-  for saves without a weapon).
+  It lands in `RightHand`. Unassigned → warning, starts unarmed. Loaded saves keep their
+  loadout (no migration for saves without a weapon).
+- Items only equip into slots their category allows (`ItemCategoryInfo.SlotsFor`):
+  `Equip(item)` falls back to the first allowed slot when `item.slotType` isn't allowed.
+  On load, an item saved in a disallowed slot (e.g. a weapon in Head) moves to its first
+  free allowed slot, else is left unequipped.
 
 ## Crafting
 - Blacksmith: craft from `RecipeDefinition`s with material prerequisites (recipe tree);
@@ -112,6 +149,9 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
 - Key files: `Encounters/VillageView.cs` and `Village*View.cs`,
   `Encounters/WanderingMerchantView.cs`, `Progression/MarketGenerator.cs`,
   `Progression/WanderingMerchantGenerator.cs`, `Progression/PlayerWallet.cs`.
+- Alchemist: one Revive upgrade track (+10 percentage points per level, "Maxed" at 100%).
+  Costs (15 gold + 10/level, 2 materials + 1/level) and the Tavern per-level refill
+  surcharge are placeholders.
 - Gap: Quest Board is an empty shell. Buildings don't unlock progressively. Inn doesn't
   apply an offline regen multiplier. Prices aren't driven by an economy table.
 
@@ -127,7 +167,8 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
   (`JsonUtility`). Items re-link to their definitions by id via `Resources.LoadAll`.
 - Key files: `Progression/SaveSystem.cs`, `Progression/SaveData.cs`.
 - Gap: GDD is online-only — server owns profile, seeds, fight results, regen clock,
-  dungeon state, daily reset. No network code exists (server move: tasks 008–018).
+  dungeon state, daily reset. The client signs in but syncs nothing yet (server move:
+  tasks 008–018).
 - Gap: client-authoritative economy (cheatable). After the server move the client still
   rolls rewards and runs shops and crafting, and uploads the whole save; only fights,
   seeds, HP loss, Revive use and current max HP (incl. regen) are server-owned.
@@ -147,9 +188,25 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
   armed toggle exists.
 - Authority: server owns fights, seeds, HP loss, Revive use and the regen clock; client
   owns rewards, shops and crafting (see Gap above).
+- Built (server): `GET /health` (version, UTC time, DB reachable); `POST /auth/anonymous`
+  (install id -> player id in Postgres `players`, nullable platform columns reserved for
+  later linking) issuing a JWT signed with `JWT_SIGNING_KEY`; every other endpoint needs
+  the token (401), e.g. `GET /auth/me`. Env-var config, SQL migrations in
+  `Server/src/DoomScroller.Server/Migrations/`, xUnit tests; `tools/run-server-dev.sh`
+  (port 8088; rebuild the image after server changes), `tools/run-server-tests.sh`.
+- Built (client): `Network/ServerSession` signs in at startup (no scene object) and
+  exposes `ServerSession.Client` (`IServerClient`). `ServerClient` keeps install id,
+  token and player id in PlayerPrefs, re-signs in once on a 401, then fails. Base URL
+  and timeout from `ServerSettings` (`Resources/ServerSettings`; none authored, so it
+  falls back to http://localhost:8088, 10 s). Key files: `Network/ServerClient.cs`,
+  `Network/IServerClient.cs`, `Network/UnityWebRequestTransport.cs`,
+  `Server/src/DoomScroller.Server/Auth.cs`.
+- Gap: no game endpoints yet; sign-in failure only logs a warning (no offline screen
+  until task 014).
 
 ## Build and test
-- EditMode tests in `Assets/Tests/EditMode/` (asmdef `DoomScroller.Tests.EditMode`),
+- EditMode tests in `Assets/Tests/EditMode/` (asmdef `DoomScroller.Tests.EditMode`) and
+  Unity-free sim tests in `Assets/Tests/CombatCore/` (`DoomScroller.CombatCore.Tests`),
   run headless with `tools/run-editmode-tests.sh`. No PlayMode tests, no build scripts,
   no batch-mode simulation runner for the Balance Analysts yet.
 - `ResourcesNamingTests` guards asset names, GUIDs, identity fields and dangling GUID
