@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using DoomScroller.CombatCore;
 using DoomScroller.Inventory;
 using DoomScroller.Progression;
 using NUnit.Framework;

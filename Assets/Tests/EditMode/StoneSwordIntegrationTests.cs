@@ -1,5 +1,6 @@
 using System.Linq;
 using DoomScroller.Combat;
+using DoomScroller.CombatCore;
 using DoomScroller.Inventory;
 using DoomScroller.Progression;
 using NUnit.Framework;
@@ -109,18 +110,15 @@ namespace DoomScroller.Tests.EditMode
         {
             var weapon = MakeStoneSwordAtRare(abilities: new[] { MakeSlash() });
             var loadout = TestFixtures.MakeLoadout(weapon);
-            var settings = new GameSettings();
-            settings.SetManualAbilityCasting(true);
 
-            var sim = new CombatSimulator(loadout, new PlayerAttributes(), settings, 1000, 100000, 0, 0.0001f, null,
+            var sim = TestFixtures.MakeSim(loadout, new PlayerAttributes(), 1000, 100000, 0, 0.0001f, null,
                 new FixedRandom());
-            sim.AdvanceManualCooldowns(9999f);
+            var beats = sim.RunUntilDeathOrVictory();
 
-            var beat = sim.CastManualAbility("Slash");
-            Assert.IsNotNull(beat);
+            var beat = beats.First(b => b.AbilityName == "Slash");
             // baseDamage(4) + round(Constitution(5) * 0.5 = 2) + powerBonus(5) = 11.
-            Assert.AreEqual(11, beat.Value.DisplayDamage);
-            Assert.IsNull(sim.CastManualAbility("Slash"), "should be back on cooldown immediately");
+            Assert.AreEqual(11, beat.DisplayDamage);
+            Assert.IsNull(beats[0].AbilityName, "Slash starts on its own cooldown");
         }
 
         [Test]
@@ -128,20 +126,19 @@ namespace DoomScroller.Tests.EditMode
         {
             var weapon = MakeStoneSwordAtRare(abilities: new[] { MakeLacerate() });
             var loadout = TestFixtures.MakeLoadout(weapon);
-            var settings = new GameSettings();
-            settings.SetManualAbilityCasting(true);
 
-            var sim = new CombatSimulator(loadout, new PlayerAttributes(), settings, 1000000, 1000000, 0,
+            var sim = TestFixtures.MakeSim(loadout, new PlayerAttributes(), 1000000, 1000000, 0,
                 0.0000001f, null, new FixedRandom());
-            sim.AdvanceManualCooldowns(9999f);
+            // 5s authored cooldown -> first cast ~4.35s, next ~8.7s; the bleed ticks at
+            // +1,+2,+3s after the first cast, all inside an 8s window.
+            var beats = sim.RunForDuration(8f);
 
-            var beat = sim.CastManualAbility("Lacerate");
-            Assert.IsNotNull(beat);
-            Assert.AreEqual(11, beat.Value.DisplayDamage);
+            var beat = beats.First(b => b.AbilityName == "Lacerate");
+            Assert.AreEqual(11, beat.DisplayDamage);
 
             // The bleed it applies on cast ticks on its own schedule, independent of the
             // hit that triggered it (magnitude 1, every 1s, for 3s -> 3 ticks).
-            var ticks = sim.RunUntilDeathOrVictory().Where(b => b.IsDotTick).ToList();
+            var ticks = beats.Where(b => b.IsDotTick).ToList();
             Assert.AreEqual(3, ticks.Count);
             Assert.IsTrue(ticks.All(t => t.DisplayDamage == 1));
         }
@@ -152,7 +149,7 @@ namespace DoomScroller.Tests.EditMode
             var weapon = MakeStoneSwordAtRare(passives: new[] { MakeEmpowerPassive() });
             var loadout = TestFixtures.MakeLoadout(weapon);
 
-            var sim = new CombatSimulator(loadout, new PlayerAttributes(), new GameSettings(), 1000, 100000, 0, 1f,
+            var sim = TestFixtures.MakeSim(loadout, new PlayerAttributes(), 1000, 100000, 0, 1f,
                 null, new FixedRandom());
             var beat = sim.RunUntilDeathOrVictory().First(b => b.Actor == CombatActor.Player);
 
@@ -166,7 +163,7 @@ namespace DoomScroller.Tests.EditMode
             var weapon = MakeStoneSwordAtRare(passives: new[] { MakeWeakenPassive() });
             var loadout = TestFixtures.MakeLoadout(weapon);
 
-            var sim = new CombatSimulator(loadout, new PlayerAttributes(), new GameSettings(), 1000, 100000,
+            var sim = TestFixtures.MakeSim(loadout, new PlayerAttributes(), 1000, 100000,
                 enemyAttackDamage: 20, enemyAttackSpeed: 1f, enemyWeaknesses: null, rng: new FixedRandom());
             var beat = sim.RunUntilDeathOrVictory().First(b => b.Actor == CombatActor.Enemy);
 
@@ -181,31 +178,18 @@ namespace DoomScroller.Tests.EditMode
                 abilities: new[] { MakeSlash(), MakeLacerate() },
                 passives: new[] { MakeEmpowerPassive(), MakeWeakenPassive() });
             var loadout = TestFixtures.MakeLoadout(weapon);
-            var settings = new GameSettings();
-            settings.SetManualAbilityCasting(true);
 
-            var sim = new CombatSimulator(loadout, new PlayerAttributes(), settings, 1000000, 1000000,
+            var sim = TestFixtures.MakeSim(loadout, new PlayerAttributes(), 1000000, 1000000,
                 enemyAttackDamage: 20, enemyAttackSpeed: 1f, enemyWeaknesses: null, rng: new FixedRandom());
-            sim.AdvanceManualCooldowns(9999f);
-
-            // Both abilities are independently tracked/castable — casting one doesn't
-            // consume or interfere with the other's cooldown or damage. Done before the
-            // RunUntilDeathOrVictory call below: with both HP pools this large the fight
-            // never resolves naturally within its 200-beat budget, and once that budget
-            // is spent the MaxBeats safety-cap forces one side to 0 HP — which would
-            // make every CastManualAbility call afterward refuse outright.
-            var slashBeat = sim.CastManualAbility("Slash");
-            Assert.IsNotNull(slashBeat);
-            Assert.AreEqual(12, slashBeat.Value.DisplayDamage, "(4+2+5)*1.1 = 12.1 -> 12, Empower layered on top");
-
-            var lacerateBeat = sim.CastManualAbility("Lacerate");
-            Assert.IsNotNull(lacerateBeat, "Lacerate's own cooldown is untouched by Slash having just been cast");
-            Assert.AreEqual(12, lacerateBeat.Value.DisplayDamage);
-
-            Assert.IsNull(sim.CastManualAbility("Slash"), "Slash is on its own cooldown again");
-            Assert.IsNull(sim.CastManualAbility("Lacerate"), "Lacerate is on its own cooldown again");
-
             var beats = sim.RunUntilDeathOrVictory();
+
+            // Both abilities fire independently on their own cooldowns — casting one
+            // doesn't consume or interfere with the other's cooldown or damage.
+            var slashBeat = beats.First(b => b.AbilityName == "Slash");
+            Assert.AreEqual(12, slashBeat.DisplayDamage, "(4+2+5)*1.1 = 12.1 -> 12, Empower layered on top");
+
+            var lacerateBeat = beats.First(b => b.AbilityName == "Lacerate");
+            Assert.AreEqual(12, lacerateBeat.DisplayDamage);
 
             // Empower is a passive (always active, no cast needed) — the basic attack
             // already reflects it even with everything else equipped.

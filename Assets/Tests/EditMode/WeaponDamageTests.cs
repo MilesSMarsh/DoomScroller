@@ -1,5 +1,6 @@
 using System.Linq;
 using DoomScroller.Combat;
+using DoomScroller.CombatCore;
 using DoomScroller.Feed;
 using DoomScroller.Inventory;
 using DoomScroller.Progression;
@@ -20,7 +21,7 @@ namespace DoomScroller.Tests.EditMode
         private static CombatBeat FirstPlayerBeat(PlayerLoadout loadout, int enemyHealth = 100000,
             int enemyDamage = 0, DamageTypeModifier[] enemyWeaknesses = null)
         {
-            var sim = new CombatSimulator(loadout, new PlayerAttributes(), new GameSettings(), 1000, enemyHealth,
+            var sim = TestFixtures.MakeSim(loadout, new PlayerAttributes(), 1000, enemyHealth,
                 enemyDamage, 1f, enemyWeaknesses, new FixedRandom());
             return sim.RunUntilDeathOrVictory().First(b => b.Actor == CombatActor.Player);
         }
@@ -99,7 +100,7 @@ namespace DoomScroller.Tests.EditMode
             var armor = TestFixtures.MakeGear(ItemCategory.Armor, EquipmentSlotType.Head, power: 7);
             var loadout = TestFixtures.MakeLoadout(weapon, armor);
 
-            var sim = new CombatSimulator(loadout, new PlayerAttributes(), new GameSettings(), 1000, 100000,
+            var sim = TestFixtures.MakeSim(loadout, new PlayerAttributes(), 1000, 100000,
                 enemyAttackDamage: 20, enemyAttackSpeed: 1f, enemyWeaknesses: null, rng: new FixedRandom());
             var enemyBeat = sim.RunUntilDeathOrVictory().First(b => b.Actor == CombatActor.Enemy);
 
@@ -113,7 +114,7 @@ namespace DoomScroller.Tests.EditMode
             var armor = TestFixtures.MakeGear(ItemCategory.Armor, EquipmentSlotType.Head, power: 500);
             var loadout = TestFixtures.MakeLoadout(weapon, armor);
 
-            var sim = new CombatSimulator(loadout, new PlayerAttributes(), new GameSettings(), 1000, 100000,
+            var sim = TestFixtures.MakeSim(loadout, new PlayerAttributes(), 1000, 100000,
                 enemyAttackDamage: 20, enemyAttackSpeed: 1f, enemyWeaknesses: null, rng: new FixedRandom());
             var enemyBeat = sim.RunUntilDeathOrVictory().First(b => b.Actor == CombatActor.Enemy);
 

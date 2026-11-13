@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using DoomScroller.Combat;
+using DoomScroller.CombatCore;
 using DoomScroller.Feed;
 using DoomScroller.Inventory;
 using DoomScroller.Progression;
@@ -260,7 +261,7 @@ namespace DoomScroller.Encounters
         private IEnumerator RevealSequence(CombatSimulator sim, int xpReward, PlayerLoadout loadout,
             PlayerProgression progression, GameSettings settings, PlayerWallet wallet)
         {
-            yield return StartCoroutine(_playback.Play(sim, loadout, settings, _data.foregroundArt, _data.cardColor));
+            yield return StartCoroutine(_playback.Play(sim, loadout, _data.foregroundArt, _data.cardColor));
 
             var isVictory = _playback.LastOutcomeWasVictory;
             _outcomeText.text = isVictory ? "VICTORY" : "DEFEAT";

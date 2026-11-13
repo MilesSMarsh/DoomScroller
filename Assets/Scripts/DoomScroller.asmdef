@@ -2,7 +2,8 @@
     "name": "DoomScroller",
     "rootNamespace": "",
     "references": [
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "DoomScroller.CombatCore"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

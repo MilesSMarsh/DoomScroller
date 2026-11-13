@@ -124,7 +124,7 @@ namespace DoomScroller.Inventory
             _attributes.LoadState(save.attributeValues, save.attributeUnspentPoints);
 
             _settings = new GameSettings();
-            _settings.LoadState(save.autoConsumeRevivePotions, save.manualAbilityCasting);
+            _settings.LoadState(save.autoConsumeRevivePotions);
 
             _wallet = new PlayerWallet(startingGold);
             _wallet.LoadState(save.gold);
@@ -143,7 +143,6 @@ namespace DoomScroller.Inventory
             data.attributeUnspentPoints = _attributes.UnspentPoints;
             data.gold = _wallet.Gold;
             data.autoConsumeRevivePotions = _settings.AutoConsumeRevivePotions;
-            data.manualAbilityCasting = _settings.ManualAbilityCasting;
             SaveSystem.WriteToDisk(data);
         }
 

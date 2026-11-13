@@ -1,4 +1,5 @@
 using System;
+using DoomScroller.CombatCore;
 using DoomScroller.Encounters;
 using DoomScroller.Feed;
 using DoomScroller.Inventory;
@@ -15,6 +16,7 @@ namespace DoomScroller.Combat
         // Plain single-resolution encounters (Enemy/Treasure feed cards) — enemy combat
         // stats come straight from the authored asset. Null for Treasure — there's no
         // fight to simulate; the caller treats a null simulator as an instant win.
+        // A supplied rng overrides the seed-derived one (tests, the badge's seed stream).
         public static CombatSimulator CreateSimulator(PlayerLoadout loadout, PlayerAttributes attributes, GameSettings settings,
             EncounterData data, int playerStartHp, Random rng = null)
         {
@@ -23,8 +25,8 @@ namespace DoomScroller.Combat
                 return null;
             }
 
-            return new CombatSimulator(loadout, attributes, settings, playerStartHp, data.enemyHealth,
-                data.enemyAttackDamage, data.enemyAttackSpeed, data.damageTypeModifiers, rng ?? new Random());
+            var input = FightInputBuilder.ForEncounter(loadout, attributes, settings, data, playerStartHp, NextSeed(rng));
+            return new CombatSimulator(input, rng);
         }
 
         // One page of a dungeon run — enemy stats come straight from the room the player
@@ -40,27 +42,29 @@ namespace DoomScroller.Combat
                 return null;
             }
 
-            return new CombatSimulator(loadout, attributes, settings, playerStartHp, step.EnemyHealth,
-                step.EnemyAttackDamage, step.EnemyAttackSpeed, step.EnemyWeaknesses, rng ?? new Random());
+            var input = FightInputBuilder.ForStep(loadout, attributes, settings, step, playerStartHp, NextSeed(rng));
+            return new CombatSimulator(input, rng);
         }
 
-        // A resource node's timed damage window — the "enemy" never attacks and can't
-        // meaningfully die (an arbitrarily large health pool the timer will never drain),
-        // so CombatSimulator.DamageDealt after RunForDuration is the whole point, not a
-        // side effect. enemyAttackDamage/Speed are irrelevant with enemyCanAttack: false
-        // (no enemy timer is ever created) but still need valid, non-degenerate values.
-        private const int ResourceNodeEffectiveHealth = 999_999_999;
-
+        // A resource node's timed damage window — CombatSimulator.DamageDealt after
+        // RunForDuration is the whole point, not a side effect.
         public static CombatSimulator CreateSimulatorForResource(PlayerLoadout loadout, PlayerAttributes attributes,
-            GameSettings settings, EncounterData data, int playerStartHp, Random rng = null)
+            EncounterData data, int playerStartHp, Random rng = null)
         {
-            return new CombatSimulator(loadout, attributes, settings, playerStartHp, ResourceNodeEffectiveHealth,
-                0, 1f, data.resourceWeaknesses, rng ?? new Random(), enemyCanAttack: false);
+            var input = FightInputBuilder.ForResource(loadout, attributes, data, playerStartHp, NextSeed(rng));
+            return new CombatSimulator(input, rng);
+        }
+
+        // The seed recorded in the FightInput. When the caller injects an rng, the sim
+        // draws from it instead, so no seed is consumed from it here.
+        private static int NextSeed(Random rng)
+        {
+            return rng != null ? 0 : new Random().Next();
         }
 
         // Time-to-kill race: how long the player would take to kill the enemy versus how
         // long the enemy would take to kill the player, both as steady-state DPS with
-        // variance/misses ignored ("perfect rng" — CombatSimulator.EstimatePlayerDps is
+        // variance/misses ignored ("perfect rng" — FightInputBuilder.EstimatePlayerDps is
         // the exact same math a real fight seeds its timers from, so this can never
         // silently drift out of sync with how a fight actually plays out). A large
         // discrepancy either direction reads as clearly easy or hard; a close one reads
@@ -100,13 +104,13 @@ namespace DoomScroller.Combat
         private static float ComputeWinChance(PlayerLoadout loadout, PlayerAttributes attributes, int playerHealth,
             int enemyHealth, int enemyAttackDamage, float enemyAttackSpeed, DamageTypeModifier[] enemyWeaknesses)
         {
-            var playerDps = MathF.Max(MinDps, CombatSimulator.EstimatePlayerDps(loadout, attributes, enemyWeaknesses));
-            var playerDefense = CombatSimulator.EstimatePlayerDefense(loadout, attributes);
+            var playerDps = MathF.Max(MinDps, FightInputBuilder.EstimatePlayerDps(loadout, attributes, enemyWeaknesses));
+            var playerDefense = FightInputBuilder.EstimatePlayerDefense(loadout, attributes);
             // Passive WeakenDamage/SlowAttackSpeed weapons lower the enemy's own stats
             // here too — same multipliers the real fight applies in CombatSimulator's
             // constructor, so the badge can't drift from what the fight actually does.
-            var effectiveEnemyDamage = enemyAttackDamage * CombatSimulator.EstimateEnemyDamageMultiplier(loadout, attributes);
-            var effectiveEnemySpeed = enemyAttackSpeed * CombatSimulator.EstimateEnemySpeedMultiplier(loadout, attributes);
+            var effectiveEnemyDamage = enemyAttackDamage * FightInputBuilder.EstimateEnemyDamageMultiplier(loadout, attributes);
+            var effectiveEnemySpeed = enemyAttackSpeed * FightInputBuilder.EstimateEnemySpeedMultiplier(loadout, attributes);
             var enemyDps = MathF.Max(1, effectiveEnemyDamage - playerDefense) * MathF.Max(MinDps, effectiveEnemySpeed);
 
             var playerTimeToKill = enemyHealth / playerDps;

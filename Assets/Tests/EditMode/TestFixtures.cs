@@ -1,6 +1,10 @@
 using System;
 using System.Collections.Generic;
+using DoomScroller.Combat;
+using DoomScroller.CombatCore;
+using DoomScroller.Feed;
 using DoomScroller.Inventory;
+using DoomScroller.Progression;
 using UnityEngine;
 
 namespace DoomScroller.Tests.EditMode
@@ -54,6 +58,20 @@ namespace DoomScroller.Tests.EditMode
             }
 
             return loadout;
+        }
+
+        // Builds a simulator the same way production does (loadout -> FightInput via the
+        // adapter), so tests exercise the real adapter + CombatCore path. reviveArmedPercent
+        // > 0 arms a Revive for that percent of the start HP.
+        public static CombatSimulator MakeSim(PlayerLoadout loadout, PlayerAttributes attributes, int playerStartHp,
+            int enemyMaxHealth, int enemyAttackDamage, float enemyAttackSpeed, DamageTypeModifier[] enemyWeaknesses,
+            System.Random rng, bool enemyCanAttack = true, int reviveArmedPercent = 0)
+        {
+            var input = FightInputBuilder.Build(loadout, attributes, null, playerStartHp, 0, enemyMaxHealth,
+                enemyAttackDamage, enemyAttackSpeed, enemyWeaknesses, enemyCanAttack);
+            input.reviveArmed = reviveArmedPercent > 0;
+            input.revivePercent = reviveArmedPercent;
+            return new CombatSimulator(input, rng);
         }
 
         // Mirrors the earliest-NextFireTime-wins, first-declared-wins-ties selection

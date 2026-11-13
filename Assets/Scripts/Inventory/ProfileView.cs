@@ -27,7 +27,6 @@ namespace DoomScroller.Inventory
         private Text _progressionText;
         private Text _healthText;
         private string _lastHealthText;
-        private Text _manualCastingToggleText;
         private EquipSlotClusterView _equipCluster;
 
         private GameObject _inventoryPanelGo;
@@ -185,35 +184,6 @@ namespace DoomScroller.Inventory
             abilitiesPanelLayout.childControlWidth = true;
             abilitiesPanelLayout.childControlHeight = true;
 
-            // Global on/off for every active ability at once — mirrors PotionInventoryView's
-            // auto-consume-revive-potions settings row exactly (tap-to-flip button + a
-            // label describing the current state).
-            var manualCastingRowGo = new GameObject("ManualCastingRow", typeof(RectTransform));
-            manualCastingRowGo.transform.SetParent(abilitiesPanelGo.transform, false);
-            manualCastingRowGo.AddComponent<LayoutElement>().preferredHeight = 96;
-            manualCastingRowGo.AddComponent<Image>().color = new Color(1f, 1f, 1f, 0.08f);
-            var manualCastingButton = manualCastingRowGo.AddComponent<Button>();
-            manualCastingButton.onClick.AddListener(() =>
-            {
-                view._settings.SetManualAbilityCasting(!view._settings.ManualAbilityCasting);
-                view.RefreshManualCastingToggle();
-            });
-
-            var manualCastingTextGo = new GameObject("Label", typeof(RectTransform));
-            manualCastingTextGo.transform.SetParent(manualCastingRowGo.transform, false);
-            var manualCastingTextRect = (RectTransform)manualCastingTextGo.transform;
-            manualCastingTextRect.anchorMin = Vector2.zero;
-            manualCastingTextRect.anchorMax = Vector2.one;
-            manualCastingTextRect.offsetMin = new Vector2(24, 0);
-            manualCastingTextRect.offsetMax = new Vector2(-24, 0);
-            view._manualCastingToggleText = manualCastingTextGo.AddComponent<Text>();
-            view._manualCastingToggleText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            view._manualCastingToggleText.fontSize = 28;
-            view._manualCastingToggleText.fontStyle = FontStyle.Bold;
-            view._manualCastingToggleText.alignment = TextAnchor.MiddleLeft;
-            view._manualCastingToggleText.color = Color.white;
-            view._manualCastingToggleText.horizontalOverflow = HorizontalWrapMode.Wrap;
-
             CreateLabel(abilitiesPanelGo.transform, "AbilitiesHeader",
                 "Weapon Abilities (every ability on your equipped weapons fights alongside you)",
                 32, FontStyle.Italic);
@@ -237,7 +207,6 @@ namespace DoomScroller.Inventory
             loadout.Changed += view.Refresh;
             progression.Changed += view.Refresh;
             health.Changed += view.RefreshHealthText;
-            settings.Changed += view.RefreshManualCastingToggle;
 
             view.SelectTab(0);
             view.SelectInventoryTab(0);
@@ -358,16 +327,8 @@ namespace DoomScroller.Inventory
             _progressionText.text = $"Level {_progression.Level} — {_progression.CurrentXp}/{_progression.XpToNextLevel} XP";
             RefreshHealthText();
             _equipCluster.Refresh();
-            RefreshManualCastingToggle();
             RefreshAbilities();
             RefreshMaterials();
-        }
-
-        private void RefreshManualCastingToggle()
-        {
-            _manualCastingToggleText.text = _settings.ManualAbilityCasting
-                ? "Manual ability casting: ON (tap to auto-cast instead)"
-                : "Manual ability casting: OFF (tap to cast by hand instead)";
         }
 
         private static readonly Color PassiveIconColor = new(0.5f, 0.55f, 0.6f, 1f);

@@ -235,6 +235,5 @@ namespace DoomScroller.Progression
         public int gold;
 
         public bool autoConsumeRevivePotions;
-        public bool manualAbilityCasting;
     }
 }

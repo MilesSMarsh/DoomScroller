@@ -1,5 +1,6 @@
 using System.Linq;
 using DoomScroller.Combat;
+using DoomScroller.CombatCore;
 using DoomScroller.Inventory;
 using DoomScroller.Progression;
 using NUnit.Framework;
@@ -27,7 +28,7 @@ namespace DoomScroller.Tests.EditMode
             var loadout = TestFixtures.MakeLoadout(weapon);
             const float enemySpeed = 1f;
 
-            var sim = new CombatSimulator(loadout, new PlayerAttributes(), new GameSettings(), 100000, 100000,
+            var sim = TestFixtures.MakeSim(loadout, new PlayerAttributes(), 100000, 100000,
                 enemyAttackDamage: 1, enemyAttackSpeed: enemySpeed, enemyWeaknesses: null, rng: new FixedRandom());
             var beats = sim.RunUntilDeathOrVictory();
 
@@ -54,45 +55,27 @@ namespace DoomScroller.Tests.EditMode
                 boostedAttributes.Allocate(PlayerAttribute.Agility);
             }
 
-            var baseSpeed = CombatSimulator.EstimatePlayerDps(loadout, baseAttributes) / 10f;
-            var boostedSpeed = CombatSimulator.EstimatePlayerDps(loadout, boostedAttributes) / 10f;
+            var baseSpeed = FightInputBuilder.EstimatePlayerDps(loadout, baseAttributes) / 10f;
+            var boostedSpeed = FightInputBuilder.EstimatePlayerDps(loadout, boostedAttributes) / 10f;
 
             Assert.AreEqual(10 * AgilityAttackSpeedPerPoint, boostedSpeed - baseSpeed, 0.0001f);
         }
 
         [Test]
-        public void ManualAbility_RefusesToCast_UntilItsCooldownFullyElapses()
+        public void Ability_StartsOnCooldown_AndFirstCastDealsPowerPlusBonus()
         {
             var ability = new WeaponAbilityData { abilityName = "Test", powerBonus = 6, cooldownSeconds = 3f };
             var weapon = TestFixtures.MakeWeapon(power: 10, attackSpeed: 1f, abilities: new[] { ability });
             var loadout = TestFixtures.MakeLoadout(weapon);
-            var settings = new GameSettings();
-            settings.SetManualAbilityCasting(true);
 
-            var sim = new CombatSimulator(loadout, new PlayerAttributes(), settings, 1000, 100000, 0, 0.0001f, null,
+            var sim = TestFixtures.MakeSim(loadout, new PlayerAttributes(), 1000, 100000, 0, 0.0001f, null,
                 new FixedRandom());
+            var beats = sim.RunUntilDeathOrVictory();
 
-            Assert.IsNull(sim.CastManualAbility("Test"), "every ability starts on cooldown when a fight begins");
-
-            // The Spirit divisor (baseline Spirit=5) already shrinks the manual-mode
-            // cooldown too, same as the auto-timer path — 3s authored becomes ~2.6s
-            // effective, so advance relative to that instead of the raw 3s.
-            var effectiveCooldown = 3f / (1f + PlayerAttributes.BaseValue * SpiritCooldownDivisorPerPoint);
-
-            sim.AdvanceManualCooldowns(effectiveCooldown * 0.5f);
-            Assert.IsNull(sim.CastManualAbility("Test"));
-            Assert.IsFalse(sim.GetManualAbilityStates().Single().IsReady);
-
-            sim.AdvanceManualCooldowns(effectiveCooldown);
-            Assert.IsTrue(sim.GetManualAbilityStates().Single().IsReady);
-
-            var beat = sim.CastManualAbility("Test");
-            Assert.IsNotNull(beat);
-            Assert.AreEqual("Test", beat.Value.AbilityName);
+            Assert.IsNull(beats[0].AbilityName, "every ability starts on cooldown when a fight begins");
+            var firstCast = beats.First(b => b.AbilityName == "Test");
             // (10 + 0 scaling + 6 powerBonus) * 1x type multiplier * 1x self multiplier.
-            Assert.AreEqual(16, beat.Value.DisplayDamage);
-
-            Assert.IsNull(sim.CastManualAbility("Test"), "casting should re-arm the cooldown immediately");
+            Assert.AreEqual(16, firstCast.DisplayDamage);
         }
 
         [Test]
@@ -119,7 +102,7 @@ namespace DoomScroller.Tests.EditMode
                     }
                 }
 
-                var sim = new CombatSimulator(loadout, attributes, new GameSettings(), 1000000, 1000000,
+                var sim = TestFixtures.MakeSim(loadout, attributes, 1000000, 1000000,
                     enemyAttackDamage: 0, enemyAttackSpeed: enemySpeed, enemyWeaknesses: null, rng: new FixedRandom());
                 var beats = sim.RunUntilDeathOrVictory();
 
@@ -155,67 +138,40 @@ namespace DoomScroller.Tests.EditMode
                 "more Spirit should shorten the cooldown and land strictly more casts in the same beat budget");
         }
 
-        [Test]
-        public void HasteAttackSpeed_HalvesPlayerInterval_WhenActiveFromTheStartOfTheFight()
+        // An ability with the given effect vs. the identical ability with no effect: the
+        // difference in each side's beat counts isolates what the effect did.
+        private static (int PlayerBasic, int Enemy) CountBeats(StatusEffectData effect)
         {
-            var haste = new WeaponAbilityData
+            var ability = new WeaponAbilityData
             {
-                abilityName = "Haste", cooldownSeconds = 1f,
-                onCastEffects = new[] { new StatusEffectData { effectType = StatusEffectType.HasteAttackSpeed, magnitude = 1f, durationSeconds = 1000f } }
+                abilityName = "Buff", cooldownSeconds = 1f,
+                onCastEffects = effect == null ? new StatusEffectData[0] : new[] { effect }
             };
-            var weapon = TestFixtures.MakeWeapon(power: 0, attackSpeed: 2f, abilities: new[] { haste });
+            var weapon = TestFixtures.MakeWeapon(power: 0, attackSpeed: 2f, abilities: new[] { ability });
             var loadout = TestFixtures.MakeLoadout(weapon);
-            var settings = new GameSettings();
-            settings.SetManualAbilityCasting(true);
-            const float enemySpeed = 1f;
-
-            var sim = new CombatSimulator(loadout, new PlayerAttributes(), settings, 1000000, 1000000, 0, enemySpeed,
-                null, new FixedRandom());
-            // Every manual ability starts on cooldown — clear it before the real cast.
-            sim.AdvanceManualCooldowns(9999f);
-            sim.CastManualAbility("Haste");
+            var sim = TestFixtures.MakeSim(loadout, new PlayerAttributes(), 1000000, 1000000, 0, 1f, null,
+                new FixedRandom());
             var beats = sim.RunUntilDeathOrVictory();
-
-            var basePlayerInterval = 1f / (2f + PlayerAttributes.BaseValue * AgilityAttackSpeedPerPoint);
-            var hastedInterval = basePlayerInterval / 2f;
-            var (expectedPlayer, expectedEnemy) = TestFixtures.MergeCounts(hastedInterval, 0f, 1f / enemySpeed, 0f, 200);
-
-            Assert.AreEqual(expectedPlayer, beats.Count(b => b.Actor == CombatActor.Player && b.AbilityName == null));
-            Assert.AreEqual(expectedEnemy, beats.Count(b => b.Actor == CombatActor.Enemy));
-
-            var (unhastedPlayer, _) = TestFixtures.MergeCounts(basePlayerInterval, 0f, 1f / enemySpeed, 0f, 200);
-            Assert.Greater(expectedPlayer, unhastedPlayer, "halving the interval should land strictly more swings");
+            return (beats.Count(b => b.Actor == CombatActor.Player && b.AbilityName == null),
+                beats.Count(b => b.Actor == CombatActor.Enemy));
         }
 
         [Test]
-        public void SlowAttackSpeed_DoublesEnemyInterval_WhenActiveFromTheStartOfTheFight()
+        public void HasteAttackSpeed_OnCastEffect_LandsStrictlyMoreBasicSwings()
         {
-            var slow = new WeaponAbilityData
-            {
-                abilityName = "Slow", cooldownSeconds = 1f,
-                onCastEffects = new[] { new StatusEffectData { effectType = StatusEffectType.SlowAttackSpeed, magnitude = 1f, durationSeconds = 1000f } }
-            };
-            var weapon = TestFixtures.MakeWeapon(power: 0, attackSpeed: 2f, abilities: new[] { slow });
-            var loadout = TestFixtures.MakeLoadout(weapon);
-            var settings = new GameSettings();
-            settings.SetManualAbilityCasting(true);
-            const float enemySpeed = 1f;
+            var plain = CountBeats(null);
+            var hasted = CountBeats(new StatusEffectData
+                { effectType = StatusEffectType.HasteAttackSpeed, magnitude = 1f, durationSeconds = 1000f });
+            Assert.Greater(hasted.PlayerBasic, plain.PlayerBasic, "halving the interval should land more swings");
+        }
 
-            var sim = new CombatSimulator(loadout, new PlayerAttributes(), settings, 1000000, 1000000, 0, enemySpeed,
-                null, new FixedRandom());
-            sim.AdvanceManualCooldowns(9999f);
-            sim.CastManualAbility("Slow");
-            var beats = sim.RunUntilDeathOrVictory();
-
-            var playerInterval = 1f / (2f + PlayerAttributes.BaseValue * AgilityAttackSpeedPerPoint);
-            var slowedEnemyInterval = (1f / enemySpeed) * 2f;
-            var (expectedPlayer, expectedEnemy) = TestFixtures.MergeCounts(playerInterval, 0f, slowedEnemyInterval, 0f, 200);
-
-            Assert.AreEqual(expectedPlayer, beats.Count(b => b.Actor == CombatActor.Player && b.AbilityName == null));
-            Assert.AreEqual(expectedEnemy, beats.Count(b => b.Actor == CombatActor.Enemy));
-
-            var (_, unslowedEnemy) = TestFixtures.MergeCounts(playerInterval, 0f, 1f / enemySpeed, 0f, 200);
-            Assert.Greater(unslowedEnemy, expectedEnemy, "doubling the enemy's interval should land strictly fewer hits");
+        [Test]
+        public void SlowAttackSpeed_OnCastEffect_LandsStrictlyFewerEnemyHits()
+        {
+            var plain = CountBeats(null);
+            var slowed = CountBeats(new StatusEffectData
+                { effectType = StatusEffectType.SlowAttackSpeed, magnitude = 1f, durationSeconds = 1000f });
+            Assert.Less(slowed.Enemy, plain.Enemy, "doubling the enemy's interval should land fewer hits");
         }
     }
 }

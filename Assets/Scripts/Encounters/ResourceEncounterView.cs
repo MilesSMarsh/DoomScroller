@@ -263,8 +263,8 @@ namespace DoomScroller.Encounters
         {
             // playerStartHp is irrelevant here — the player is never at risk
             // (enemyCanAttack: false), so nothing downstream ever reads it back.
-            var sim = CombatResolver.CreateSimulatorForResource(_loadout, _attributes, _settings, _data, 1);
-            yield return StartCoroutine(_playback.PlayTimedWindow(sim, _loadout, _settings, _data.foregroundArt,
+            var sim = CombatResolver.CreateSimulatorForResource(_loadout, _attributes, _data, 1);
+            yield return StartCoroutine(_playback.PlayTimedWindow(sim, _loadout, _data.foregroundArt,
                 _data.cardColor, _data.resourceTimerSeconds));
 
             var damage = _playback.TotalDamageDealt;

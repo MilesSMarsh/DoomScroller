@@ -10,15 +10,9 @@ namespace DoomScroller.Progression
     {
         public event Action Changed;
 
-        // Defaults to false: a revive potion pauses the fight and asks, unless the
-        // player opts into auto-consuming instead (see CombatPlaybackView.Play).
+        // Defaults to false. When on, a carried Revive potion is armed for each fight
+        // and fires automatically inside the simulation (see FightInputBuilder).
         public bool AutoConsumeRevivePotions { get; private set; }
-
-        // Defaults to false: active abilities auto-cast off cooldown, matching today's
-        // behavior. Flipping this on makes them sit ready until tapped instead (see
-        // CombatSimulator's manual-ability tracking and CombatPlaybackView's cooldown
-        // widgets).
-        public bool ManualAbilityCasting { get; private set; }
 
         public void SetAutoConsumeRevivePotions(bool value)
         {
@@ -31,23 +25,11 @@ namespace DoomScroller.Progression
             Changed?.Invoke();
         }
 
-        public void SetManualAbilityCasting(bool value)
-        {
-            if (ManualAbilityCasting == value)
-            {
-                return;
-            }
-
-            ManualAbilityCasting = value;
-            Changed?.Invoke();
-        }
-
         // The save/load path. Doesn't fire Changed — called once, before anything
         // subscribes.
-        public void LoadState(bool autoConsumeRevivePotions, bool manualAbilityCasting)
+        public void LoadState(bool autoConsumeRevivePotions)
         {
             AutoConsumeRevivePotions = autoConsumeRevivePotions;
-            ManualAbilityCasting = manualAbilityCasting;
         }
     }
 }

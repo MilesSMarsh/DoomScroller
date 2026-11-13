@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using DoomScroller.Combat;
+using DoomScroller.CombatCore;
 using DoomScroller.Inventory;
 using DoomScroller.Progression;
 using UnityEngine;
@@ -153,7 +154,7 @@ namespace DoomScroller.Encounters
             PlayerProgression progression, PlayerHealth health, GameSettings settings, PlayerWallet wallet,
             int accumulatedGold)
         {
-            yield return StartCoroutine(_playback.Play(sim, loadout, settings, _step.EnemySprite, _step.StepColor));
+            yield return StartCoroutine(_playback.Play(sim, loadout, _step.EnemySprite, _step.StepColor));
 
             var isVictory = _playback.LastOutcomeWasVictory;
             _outcomeText.text = isVictory ? "VICTORY" : "DEFEAT";

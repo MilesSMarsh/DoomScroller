@@ -1,5 +1,6 @@
 using System.Linq;
 using DoomScroller.Combat;
+using DoomScroller.CombatCore;
 using DoomScroller.Inventory;
 using DoomScroller.Progression;
 using NUnit.Framework;
@@ -36,7 +37,7 @@ namespace DoomScroller.Tests.EditMode
             var weapon = TestFixtures.MakeWeapon(power: 10, attackSpeed: 0.0000001f, abilities: new[] { hit });
             var loadout = TestFixtures.MakeLoadout(weapon);
 
-            var sim = new CombatSimulator(loadout, new PlayerAttributes(), new GameSettings(), 1000000, 1000000,
+            var sim = TestFixtures.MakeSim(loadout, new PlayerAttributes(), 1000000, 1000000,
                 enemyAttackDamage: 0, enemyAttackSpeed: 0.0000001f, enemyWeaknesses: null, rng: new FixedRandom());
             var beats = sim.RunUntilDeathOrVictory();
 
@@ -66,15 +67,12 @@ namespace DoomScroller.Tests.EditMode
             };
             var weapon = TestFixtures.MakeWeapon(power: 0, attackSpeed: 1f, abilities: new[] { shield });
             var loadout = TestFixtures.MakeLoadout(weapon);
-            var settings = new GameSettings();
-            settings.SetManualAbilityCasting(true);
 
-            var sim = new CombatSimulator(loadout, new PlayerAttributes(), settings, 1000, 100000,
+            var sim = TestFixtures.MakeSim(loadout, new PlayerAttributes(), 1000, 100000,
                 enemyAttackDamage: 20, enemyAttackSpeed: 1f, enemyWeaknesses: null, rng: new FixedRandom());
-            // Every manual ability starts on cooldown — clear it before the real cast.
-            sim.AdvanceManualCooldowns(9999f);
-            sim.CastManualAbility("Shield");
-            var enemyBeat = sim.RunUntilDeathOrVictory().First(b => b.Actor == CombatActor.Enemy);
+            // Shield auto-casts at ~0.87s; the enemy's t=0 hit lands before it, the t=1 hit after.
+            var beats = sim.RunUntilDeathOrVictory();
+            var enemyBeat = beats.SkipWhile(b => b.AbilityName != "Shield").First(b => b.Actor == CombatActor.Enemy);
 
             Assert.AreEqual(12, enemyBeat.DisplayDamage, "20 raw - 8 ArmorUp");
         }
@@ -92,14 +90,12 @@ namespace DoomScroller.Tests.EditMode
             };
             var weapon = TestFixtures.MakeWeapon(power: 0, attackSpeed: 1f, abilities: new[] { weaken });
             var loadout = TestFixtures.MakeLoadout(weapon);
-            var settings = new GameSettings();
-            settings.SetManualAbilityCasting(true);
 
-            var sim = new CombatSimulator(loadout, new PlayerAttributes(), settings, 1000, 100000,
+            var sim = TestFixtures.MakeSim(loadout, new PlayerAttributes(), 1000, 100000,
                 enemyAttackDamage: 20, enemyAttackSpeed: 1f, enemyWeaknesses: null, rng: new FixedRandom());
-            sim.AdvanceManualCooldowns(9999f);
-            sim.CastManualAbility("Weaken");
-            var enemyBeat = sim.RunUntilDeathOrVictory().First(b => b.Actor == CombatActor.Enemy);
+            // Weaken auto-casts at ~0.87s; only enemy hits after that are weakened.
+            var beats = sim.RunUntilDeathOrVictory();
+            var enemyBeat = beats.SkipWhile(b => b.AbilityName != "Weaken").First(b => b.Actor == CombatActor.Enemy);
 
             Assert.AreEqual(15, enemyBeat.DisplayDamage, "20 raw * (1 - 0.25), no armor to further reduce it");
         }
@@ -109,7 +105,7 @@ namespace DoomScroller.Tests.EditMode
         {
             var poison = new WeaponAbilityData
             {
-                abilityName = "Poison", cooldownSeconds = 1f,
+                abilityName = "Poison", cooldownSeconds = 10f,
                 onCastEffects = new[]
                 {
                     new StatusEffectData { effectType = StatusEffectType.DamageOverTime, magnitude = 4f, tickIntervalSeconds = 1f, durationSeconds = 3.5f }
@@ -117,18 +113,15 @@ namespace DoomScroller.Tests.EditMode
             };
             var weapon = TestFixtures.MakeWeapon(power: 0, attackSpeed: 0.0000001f, abilities: new[] { poison });
             var loadout = TestFixtures.MakeLoadout(weapon);
-            var settings = new GameSettings();
-            settings.SetManualAbilityCasting(true);
 
-            var sim = new CombatSimulator(loadout, new PlayerAttributes(), settings, 1000000, 1000000,
+            var sim = TestFixtures.MakeSim(loadout, new PlayerAttributes(), 1000000, 1000000,
                 enemyAttackDamage: 0, enemyAttackSpeed: 0.0000001f, enemyWeaknesses: null, rng: new FixedRandom());
-            sim.AdvanceManualCooldowns(9999f);
-            sim.CastManualAbility("Poison");
-            var beats = sim.RunUntilDeathOrVictory();
+            // 10s authored cooldown -> first cast at ~8.7s (Spirit divisor 1.15); its DoT
+            // ticks at +1,+2,+3s and a 4th at +4s would exceed the 3.5s duration, so it's
+            // pruned. The next cast is at ~17.4s, past the 16s window.
+            var beats = sim.RunForDuration(16f);
 
             var ticks = beats.Where(b => b.IsDotTick).ToList();
-            // Ticks land at t=1,2,3 (a 4th at t=4 would exceed the 3.5s duration and is
-            // pruned before it can fire).
             Assert.AreEqual(3, ticks.Count);
             Assert.IsTrue(ticks.All(t => t.DisplayDamage == 4 && t.AbilityName == null));
         }
@@ -140,7 +133,7 @@ namespace DoomScroller.Tests.EditMode
                 passives: new[] { new StatusEffectData { effectType = StatusEffectType.DamageOverTime, magnitude = 3f, tickIntervalSeconds = 1f } });
             var loadout = TestFixtures.MakeLoadout(weapon);
 
-            var sim = new CombatSimulator(loadout, new PlayerAttributes(), new GameSettings(), 1000, 10,
+            var sim = TestFixtures.MakeSim(loadout, new PlayerAttributes(), 1000, 10,
                 enemyAttackDamage: 0, enemyAttackSpeed: 0.0000001f, enemyWeaknesses: null, rng: new FixedRandom());
             var beats = sim.RunUntilDeathOrVictory();
 

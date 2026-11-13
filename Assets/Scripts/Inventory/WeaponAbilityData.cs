@@ -32,8 +32,7 @@ namespace DoomScroller.Inventory
         [Tooltip("Seconds between casts once this ability is active/equipped. Every " +
                   "ability starts ON cooldown when a fight begins — it can't fire until " +
                   "one full cooldown has elapsed (Intelligence shortens it, same as an " +
-                  "auto-cast). In manual mode (GameSettings.ManualAbilityCasting) this is " +
-                  "instead how long the button takes to become tappable.")]
+                  "auto-cast).")]
         public float cooldownSeconds = 4f;
 
         [Tooltip("Buffs/debuffs applied on top of this ability's direct hit every time it " +

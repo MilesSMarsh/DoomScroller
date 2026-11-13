@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using DoomScroller.Combat;
+using DoomScroller.CombatCore;
 using DoomScroller.Feed;
 using DoomScroller.Inventory;
 using DoomScroller.Progression;

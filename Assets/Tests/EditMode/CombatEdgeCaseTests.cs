@@ -1,5 +1,6 @@
 using System.Linq;
 using DoomScroller.Combat;
+using DoomScroller.CombatCore;
 using DoomScroller.Inventory;
 using DoomScroller.Progression;
 using NUnit.Framework;
@@ -17,7 +18,7 @@ namespace DoomScroller.Tests.EditMode
             var weapon = TestFixtures.MakeWeapon(power: 1, attackSpeed: 1f);
             var loadout = TestFixtures.MakeLoadout(weapon);
 
-            var sim = new CombatSimulator(loadout, new PlayerAttributes(), new GameSettings(), 100000, 100000,
+            var sim = TestFixtures.MakeSim(loadout, new PlayerAttributes(), 100000, 100000,
                 enemyAttackDamage: 1, enemyAttackSpeed: 1f, enemyWeaknesses: null, rng: new FixedRandom());
             var beats = sim.RunUntilDeathOrVictory();
 
@@ -35,7 +36,7 @@ namespace DoomScroller.Tests.EditMode
             var weapon = TestFixtures.MakeWeapon(power: 1, attackSpeed: 1f);
             var loadout = TestFixtures.MakeLoadout(weapon);
 
-            var sim = new CombatSimulator(loadout, new PlayerAttributes(), new GameSettings(), 100000, 500,
+            var sim = TestFixtures.MakeSim(loadout, new PlayerAttributes(), 100000, 500,
                 enemyAttackDamage: 0, enemyAttackSpeed: 1f, enemyWeaknesses: null, rng: new FixedRandom());
             sim.RunUntilDeathOrVictory();
 
@@ -45,29 +46,30 @@ namespace DoomScroller.Tests.EditMode
         }
 
         [Test]
-        public void Revive_ContinuesTheSameFight_EnemyHpAndTimersArePreserved()
+        public void ArmedRevive_FiresOnce_AndTheSameFightCarriesOn()
         {
             // Enemy hits hard enough to guarantee the player dies first; the enemy's
             // huge pool guarantees it doesn't also die in that same first stretch.
             var weapon = TestFixtures.MakeWeapon(power: 1, attackSpeed: 1f);
             var loadout = TestFixtures.MakeLoadout(weapon);
 
-            var sim = new CombatSimulator(loadout, new PlayerAttributes(), new GameSettings(), playerStartHp: 20,
+            var armed = TestFixtures.MakeSim(loadout, new PlayerAttributes(), playerStartHp: 20,
+                enemyMaxHealth: 100000, enemyAttackDamage: 50, enemyAttackSpeed: 1f, enemyWeaknesses: null,
+                rng: new FixedRandom(), reviveArmedPercent: 100);
+            var beats = armed.RunUntilDeathOrVictory();
+
+            Assert.IsTrue(armed.ReviveFired);
+            Assert.AreEqual(20, armed.ReviveHp, "100% of a 20 HP start");
+            Assert.That(armed.ReviveBeatIndex, Is.InRange(0, beats.Count - 2), "the fight continued past the revive");
+            Assert.AreEqual(CombatActor.Enemy, beats[armed.ReviveBeatIndex].Actor, "the enemy's hit killed the player");
+
+            var unarmed = TestFixtures.MakeSim(loadout, new PlayerAttributes(), playerStartHp: 20,
                 enemyMaxHealth: 100000, enemyAttackDamage: 50, enemyAttackSpeed: 1f, enemyWeaknesses: null,
                 rng: new FixedRandom());
-            sim.RunUntilDeathOrVictory();
-
-            Assert.IsTrue(sim.IsPlayerDead);
-            Assert.IsFalse(sim.IsEnemyDead);
-            var enemyHpAfterFirstRun = sim.EnemyHp;
-
-            sim.Revive(500);
-            Assert.IsFalse(sim.IsPlayerDead);
-            Assert.AreEqual(500, sim.PlayerHp);
-
-            var secondBeats = sim.RunUntilDeathOrVictory();
-            Assert.IsNotEmpty(secondBeats, "the fight should continue, not have already been over");
-            Assert.LessOrEqual(sim.EnemyHp, enemyHpAfterFirstRun, "damage already dealt to the enemy must carry over");
+            var unarmedBeats = unarmed.RunUntilDeathOrVictory();
+            Assert.IsFalse(unarmed.ReviveFired);
+            Assert.Greater(beats.Count, unarmedBeats.Count, "the revived fight runs longer");
+            Assert.LessOrEqual(armed.EnemyHp, unarmed.EnemyHp, "damage already dealt to the enemy must carry over");
         }
 
         [Test]
@@ -78,7 +80,7 @@ namespace DoomScroller.Tests.EditMode
             var weapon = TestFixtures.MakeWeapon(power: 10, attackSpeed: 2f);
             var loadout = TestFixtures.MakeLoadout(weapon);
 
-            var sim = new CombatSimulator(loadout, new PlayerAttributes(), new GameSettings(), playerStartHp: 100,
+            var sim = TestFixtures.MakeSim(loadout, new PlayerAttributes(), playerStartHp: 100,
                 enemyMaxHealth: 999_999_999, enemyAttackDamage: 500, enemyAttackSpeed: 20f, enemyWeaknesses: null,
                 rng: new FixedRandom(), enemyCanAttack: false);
 
@@ -97,7 +99,7 @@ namespace DoomScroller.Tests.EditMode
             var weapon = TestFixtures.MakeWeapon(power: 1, attackSpeed: 1f);
             var loadout = TestFixtures.MakeLoadout(weapon);
 
-            var sim = new CombatSimulator(loadout, new PlayerAttributes(), new GameSettings(), playerStartHp: 100,
+            var sim = TestFixtures.MakeSim(loadout, new PlayerAttributes(), playerStartHp: 100,
                 enemyMaxHealth: 999_999_999, enemyAttackDamage: 0, enemyAttackSpeed: 1f, enemyWeaknesses: null,
                 rng: new FixedRandom(), enemyCanAttack: false);
 

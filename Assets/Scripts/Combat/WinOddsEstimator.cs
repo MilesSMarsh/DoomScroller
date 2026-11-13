@@ -1,4 +1,5 @@
 using System;
+using DoomScroller.CombatCore;
 using DoomScroller.Feed;
 using DoomScroller.Inventory;
 using DoomScroller.Progression;

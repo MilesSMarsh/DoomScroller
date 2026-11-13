@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using DoomScroller.CombatCore;
 using DoomScroller.Inventory;
 using DoomScroller.Progression;
 using UnityEngine;
@@ -8,16 +9,14 @@ using UnityEngine.UI;
 namespace DoomScroller.Combat
 {
     // Shared visual fight player, hosted by both CombatResolutionView and
-    // DungeonStepPageView. Drives a CombatSimulator batch-by-batch (RunUntilDeathOrVictory
-    // at a time) and animates each beat: the attacker wiggles/lunges, a projectile flies
-    // for ranged beats (every ability cast, or a ranged weapon's basic attack), the
-    // defender flashes and a damage number (or "MISS") pops up. If the player dies and
-    // has a revive potion carried, the sequence pauses for a Yes/No prompt (or consumes
-    // it automatically, per GameSettings) and the same fight continues. Active abilities
-    // get their own icon-and-cooldown-bar widget near the player: in auto mode the bar
-    // just visualizes the sim's own timer, in manual mode (GameSettings.
-    // ManualAbilityCasting) it's a real button that fires the ability on tap. No text-log
-    // narration, and PlayerHealth is never touched here — see CombatSimulator.
+    // DungeonStepPageView. Runs a CombatSimulator (one RunUntilDeathOrVictory call
+    // resolves the whole fight, including an armed Revive firing automatically) and
+    // animates each beat: the attacker wiggles/lunges, a projectile flies for ranged
+    // beats (every ability cast, or a ranged weapon's basic attack), the defender
+    // flashes and a damage number (or "MISS") pops up. Active abilities get their own
+    // icon-and-cooldown-bar widget near the player that visualizes the sim's own timer.
+    // No player input mid-fight, no text-log narration, and PlayerHealth is never
+    // touched here — see CombatSimulator.
     public class CombatPlaybackView : MonoBehaviour
     {
         private const float PortraitSize = 280f;
@@ -67,13 +66,6 @@ namespace DoomScroller.Combat
 
         private readonly Dictionary<string, AbilityWidget> _abilityWidgets = new();
         private CombatSimulator _sim;
-        private bool _activeManualMode;
-        private string _pendingManualCastName;
-
-        private GameObject _reviveDialogGo;
-        private Text _reviveDialogMessage;
-        private bool _reviveDialogAnswerYes;
-        private bool _reviveDialogAnswered;
 
         public bool LastOutcomeWasVictory { get; private set; }
         public bool WasCloseCall { get; private set; }
@@ -85,9 +77,8 @@ namespace DoomScroller.Combat
         // Set once PlayTimedWindow's coroutine finishes — the resource minigame's score.
         public int TotalDamageDealt { get; private set; }
 
-        // screenRoot is a full-screen ancestor (the host view's own root) the revive
-        // dialog anchors to — this view's own rect is only the bounded combat-sim area,
-        // too small for a proper full-screen modal.
+        // screenRoot is unused now that the revive dialog is gone; kept so the host
+        // views' call sites stay unchanged.
         public static CombatPlaybackView Create(Transform parent, Transform screenRoot)
         {
             var go = new GameObject("CombatPlayback", typeof(RectTransform));
@@ -204,12 +195,10 @@ namespace DoomScroller.Combat
             effectsGo.AddComponent<LayoutElement>().ignoreLayout = true;
             view._effectsLayer = effectsRect;
 
-            view._reviveDialogGo = CreateReviveDialog(screenRoot, view);
-
             return view;
         }
 
-        public IEnumerator Play(CombatSimulator sim, PlayerLoadout loadout, GameSettings settings, Sprite enemySprite, Color enemyColor)
+        public IEnumerator Play(CombatSimulator sim, PlayerLoadout loadout, Sprite enemySprite, Color enemyColor)
         {
             _playerPortrait.sprite = loadout.PlayerSprite;
             _playerBaseColor = loadout.PlayerSprite != null ? Color.white : new Color(1f, 1f, 1f, 0.15f);
@@ -222,9 +211,7 @@ namespace DoomScroller.Combat
             BuildGearRow(loadout);
 
             _sim = sim;
-            _activeManualMode = settings != null && settings.ManualAbilityCasting;
-            _pendingManualCastName = null;
-            BuildAbilityRow(loadout, _activeManualMode);
+            BuildAbilityRow(loadout);
 
             if (sim == null)
             {
@@ -240,97 +227,34 @@ namespace DoomScroller.Combat
             UpdateHealthBar(_playerHealthFill, _playerHealthLabel, sim.PlayerHp, sim.PlayerStartHp);
             UpdateHealthBar(_enemyHealthFill, _enemyHealthLabel, sim.EnemyHp, sim.EnemyMaxHp);
 
-            // Every Revive potion is always "available" (see PlayerLoadout.GetBestRevivePotion)
-            // but a fight still only gets to use one — this used to fall out for free from
-            // only one potion ever being "carried" at a time; now it's tracked explicitly.
-            var revivedThisFight = false;
+            var playerHpBefore = sim.PlayerHp;
+            var enemyHpBefore = sim.EnemyHp;
+            var beats = sim.RunUntilDeathOrVictory();
 
-            while (true)
+            // Seed each ability's cooldown bar toward its first cast (every active
+            // ability starts on cooldown with nothing having cast yet).
+            foreach (var name in _abilityWidgets.Keys)
             {
-                var playerHpBefore = sim.PlayerHp;
-                var enemyHpBefore = sim.EnemyHp;
-                var beats = sim.RunUntilDeathOrVictory();
-
-                // Seed each auto ability's cooldown bar toward its first cast in this
-                // fresh batch (also covers the very start of the fight, where every
-                // active ability starts on cooldown with nothing having cast yet).
-                if (!_activeManualMode)
+                var firstCast = FindNextCastIndex(beats, 0, name);
+                if (firstCast >= 0)
                 {
-                    foreach (var name in _abilityWidgets.Keys)
-                    {
-                        var firstCast = FindNextCastIndex(beats, 0, name);
-                        if (firstCast >= 0)
-                        {
-                            StartAbilityCooldownLerp(name, ComputeGapSeconds(beats, 0, firstCast));
-                        }
-                    }
-                }
-
-                yield return StartCoroutine(PlayBeats(beats, playerHpBefore, sim.PlayerStartHp, enemyHpBefore, sim.EnemyMaxHp));
-
-                if (_pendingManualCastName != null)
-                {
-                    var castName = _pendingManualCastName;
-                    _pendingManualCastName = null;
-
-                    var playerBeforeCast = sim.PlayerHp;
-                    var enemyBeforeCast = sim.EnemyHp;
-                    var castBeat = sim.CastManualAbility(castName);
-                    if (castBeat.HasValue)
-                    {
-                        yield return StartCoroutine(PlayBeats(new[] { castBeat.Value }, playerBeforeCast,
-                            sim.PlayerStartHp, enemyBeforeCast, sim.EnemyMaxHp));
-                    }
-
-                    // A manual cast may have just ended the fight, or simply changed the
-                    // HP the next batch needs to be computed from — either way, loop back
-                    // around rather than trusting the (now possibly stale) beats above.
-                    if (!sim.IsEnemyDead && !sim.IsPlayerDead)
-                    {
-                        continue;
-                    }
-                }
-
-                if (sim.IsEnemyDead)
-                {
-                    LastOutcomeWasVictory = true;
-                    break;
-                }
-
-                if (sim.IsPlayerDead)
-                {
-                    var potion = revivedThisFight ? null : loadout.GetBestRevivePotion();
-                    var revive = false;
-
-                    if (potion != null)
-                    {
-                        if (settings.AutoConsumeRevivePotions)
-                        {
-                            revive = true;
-                        }
-                        else
-                        {
-                            yield return StartCoroutine(ShowReviveDialog(potion));
-                            revive = _reviveDialogAnswerYes;
-                        }
-                    }
-
-                    if (revive)
-                    {
-                        loadout.ConsumeRevivePotion(potion);
-                        revivedThisFight = true;
-                        sim.Revive(loadout.GetReviveHealAmount(potion, sim.PlayerStartHp));
-                        UpdateHealthBar(_playerHealthFill, _playerHealthLabel, sim.PlayerHp, sim.PlayerStartHp);
-                        SpawnPopup(_playerAnchor, "REVIVED!", new Color(0.4f, 0.9f, 1f), 44);
-                        yield return new WaitForSeconds(BeatPause);
-                        continue;
-                    }
-
-                    LastOutcomeWasVictory = false;
-                    break;
+                    StartAbilityCooldownLerp(name, ComputeGapSeconds(beats, 0, firstCast));
                 }
             }
 
+            // The sim already decided whether the armed Revive fired; spend the potion
+            // here (once the fight is being shown) and show the revive at its beat.
+            var reviveBeat = -1;
+            if (sim.ReviveFired)
+            {
+                reviveBeat = sim.ReviveBeatIndex;
+                loadout.ConsumeRevivePotion(loadout.GetBestRevivePotion());
+            }
+
+            yield return StartCoroutine(PlayBeats(beats, playerHpBefore, sim.PlayerStartHp, enemyHpBefore, sim.EnemyMaxHp,
+                reviveBeat, sim.ReviveHp));
+
+            LastOutcomeWasVictory = sim.IsEnemyDead;
             WasCloseCall = LastOutcomeWasVictory && sim.PlayerStartHp > 0 &&
                 (float)sim.PlayerHp / sim.PlayerStartHp < CloseCallHealthFraction;
             FinalPlayerHp = sim.PlayerHp;
@@ -341,13 +265,12 @@ namespace DoomScroller.Combat
         // simpler: the whole run resolves synchronously up front (sim.RunForDuration),
         // every beat is guaranteed CombatActor.Player (the node never attacks — see
         // CombatSimulator's enemyCanAttack), and there's no win/loss/revive branching to
-        // handle. Manual ability casting is deliberately not supported here even if
-        // GameSettings.ManualAbilityCasting is on — every ability just auto-fires as
-        // part of the timed window, same as this mode's own timer. Reuses the enemy-side
+        // handle. Every ability just auto-fires as part of the timed window, same as
+        // this mode's own timer. Reuses the enemy-side
         // health bar as a real-time countdown (fill drains 1→0 over durationSeconds) and
         // its label as a running damage total — an actual depleting enemy HP bar would
         // misrepresent a target that structurally can't die within the window.
-        public IEnumerator PlayTimedWindow(CombatSimulator sim, PlayerLoadout loadout, GameSettings settings,
+        public IEnumerator PlayTimedWindow(CombatSimulator sim, PlayerLoadout loadout,
             Sprite nodeSprite, Color nodeColor, float durationSeconds)
         {
             _playerPortrait.sprite = loadout.PlayerSprite;
@@ -360,9 +283,7 @@ namespace DoomScroller.Combat
 
             BuildGearRow(loadout);
             _sim = sim;
-            _activeManualMode = false;
-            _pendingManualCastName = null;
-            BuildAbilityRow(loadout, false);
+            BuildAbilityRow(loadout);
 
             UpdateHealthBar(_playerHealthFill, _playerHealthLabel, 1, 1);
             _enemyHealthFill.fillAmount = 1f;
@@ -428,44 +349,17 @@ namespace DoomScroller.Combat
             _enemyHealthFill.fillAmount = 0f;
         }
 
-        private void Update()
-        {
-            // Manual-ability readiness is the one thing in this view driven by real
-            // (unpaused-fight) time rather than the beat sequence — see
-            // CombatSimulator.AdvanceManualCooldowns.
-            if (_sim == null || !_activeManualMode || _sim.IsPlayerDead || _sim.IsEnemyDead)
-            {
-                return;
-            }
-
-            _sim.AdvanceManualCooldowns(Time.deltaTime);
-
-            foreach (var state in _sim.GetManualAbilityStates())
-            {
-                if (_abilityWidgets.TryGetValue(state.Name, out var widget))
-                {
-                    widget.CooldownFill.fillAmount = state.RemainingFraction;
-                    widget.Button.interactable = state.IsReady;
-                }
-            }
-        }
-
-        // Animates one already-resolved batch of beats, tracking its own running HP
-        // totals (seeded from the values before the batch ran) so the bars visibly
-        // deplete beat-by-beat — CombatSimulator itself only exposes the batch's final
-        // state, not each intermediate step. In auto mode, also drives each ability's
-        // cooldown-bar lerp forward whenever its own cast beat plays. Bails out early if
-        // a manual-ability tap came in mid-batch — the remaining beats were computed
-        // against HP the tap has since changed, so they're stale (see Play()).
-        private IEnumerator PlayBeats(IReadOnlyList<CombatBeat> beats, int playerHp, int playerMaxHp, int enemyHp, int enemyMaxHp)
+        // Animates the resolved beats, tracking its own running HP totals (seeded from
+        // the values before the fight) so the bars visibly deplete beat-by-beat —
+        // CombatSimulator itself only exposes the final state, not each intermediate
+        // step. Also drives each ability's cooldown-bar lerp forward whenever its own
+        // cast beat plays. After beat reviveBeat (-1 = none) the armed Revive fires:
+        // the player's HP jumps to reviveHp and the fight carries on.
+        private IEnumerator PlayBeats(IReadOnlyList<CombatBeat> beats, int playerHp, int playerMaxHp, int enemyHp, int enemyMaxHp,
+            int reviveBeat, int reviveHp)
         {
             for (var i = 0; i < beats.Count; i++)
             {
-                if (_pendingManualCastName != null)
-                {
-                    yield break;
-                }
-
                 var beat = beats[i];
                 var isPlayer = beat.Actor == CombatActor.Player;
                 var attackerAnchor = isPlayer ? _playerAnchor : _enemyAnchor;
@@ -509,7 +403,7 @@ namespace DoomScroller.Combat
 
                 ResolveImpact(defenderAnchor, defenderImage, beat, isPlayer);
 
-                if (!_activeManualMode && isAbility)
+                if (isAbility)
                 {
                     var nextCast = FindNextCastIndex(beats, i + 1, beat.AbilityName);
                     if (nextCast >= 0)
@@ -519,16 +413,15 @@ namespace DoomScroller.Combat
                 }
 
                 yield return new WaitForSeconds(BeatPause);
-            }
-        }
 
-        private IEnumerator ShowReviveDialog(ItemData potion)
-        {
-            _reviveDialogAnswered = false;
-            _reviveDialogMessage.text = $"You've fallen! Use your {potion.title} to keep fighting?";
-            _reviveDialogGo.SetActive(true);
-            yield return new WaitUntil(() => _reviveDialogAnswered);
-            _reviveDialogGo.SetActive(false);
+                if (i == reviveBeat)
+                {
+                    playerHp = reviveHp;
+                    UpdateHealthBar(_playerHealthFill, _playerHealthLabel, playerHp, playerMaxHp);
+                    SpawnPopup(_playerAnchor, "REVIVED!", new Color(0.4f, 0.9f, 1f), 44);
+                    yield return new WaitForSeconds(BeatPause);
+                }
+            }
         }
 
         private IEnumerator Lunge(RectTransform portrait, float direction)
@@ -705,10 +598,9 @@ namespace DoomScroller.Combat
         }
 
         // Rebuilt on every Play, same convention as BuildGearRow — one widget per
-        // currently-active weapon ability (icon + shrinking cooldown overlay). Whether
-        // each widget is driven by the auto beat sequence or by a live real-time tap is
-        // decided globally by manualMode, not per-ability (matches CombatSimulator).
-        private void BuildAbilityRow(PlayerLoadout loadout, bool manualMode)
+        // currently-active weapon ability (icon + shrinking cooldown bar), driven by the
+        // beat sequence.
+        private void BuildAbilityRow(PlayerLoadout loadout)
         {
             foreach (var widget in _abilityWidgets.Values)
             {
@@ -732,14 +624,14 @@ namespace DoomScroller.Combat
                     continue;
                 }
 
-                _abilityWidgets[ability.abilityName] = CreateAbilityWidget(_abilityRow, ability, manualMode);
+                _abilityWidgets[ability.abilityName] = CreateAbilityWidget(_abilityRow, ability);
             }
         }
 
         // Icon on top, a separate shrinking bar directly underneath it — not an overlay
         // painted on the icon itself. The bar reads as "cooldown remaining": full while
-        // just cast, empty (and the icon tappable, in manual mode) once ready.
-        private AbilityWidget CreateAbilityWidget(Transform parent, WeaponAbilityData ability, bool manualMode)
+        // just cast, empty once ready.
+        private AbilityWidget CreateAbilityWidget(Transform parent, WeaponAbilityData ability)
         {
             var go = new GameObject($"Ability_{ability.abilityName}", typeof(RectTransform));
             go.transform.SetParent(parent, false);
@@ -767,21 +659,6 @@ namespace DoomScroller.Combat
             var icon = iconGo.AddComponent<Image>();
             GearRowFactory.SetIcon(icon, ability.icon, ability.iconColor);
 
-            // Always present, but only ever interactable (and only ever tapped
-            // meaningfully) in manual mode — CombatSimulator.CastManualAbility is a
-            // no-op for an auto-tracked ability anyway, so this is a defensive no-op
-            // rather than something that needs its own manualMode branch here.
-            var button = iconGo.AddComponent<Button>();
-            button.interactable = false;
-            var capturedName = ability.abilityName;
-            button.onClick.AddListener(() =>
-            {
-                if (_pendingManualCastName == null)
-                {
-                    _pendingManualCastName = capturedName;
-                }
-            });
-
             var barGo = new GameObject("CooldownBar", typeof(RectTransform));
             barGo.transform.SetParent(go.transform, false);
             var barLayout = barGo.AddComponent<LayoutElement>();
@@ -806,7 +683,7 @@ namespace DoomScroller.Combat
             fill.fillAmount = 1f;
             fill.raycastTarget = false;
 
-            return new AbilityWidget(icon, fill, button);
+            return new AbilityWidget(icon, fill);
         }
 
         private void StartAbilityCooldownLerp(string abilityName, float seconds)
@@ -998,142 +875,16 @@ namespace DoomScroller.Combat
             return image;
         }
 
-        // Full-screen Yes/No modal for the "you died, use a revive potion?" pause —
-        // anchored to screenRoot (not this view's own small rect) and built the same
-        // way as DungeonView's leave-confirm dialog, including the ignoreLayout fix.
-        private static GameObject CreateReviveDialog(Transform screenRoot, CombatPlaybackView view)
-        {
-            var overlayGo = new GameObject("ReviveDialog", typeof(RectTransform));
-            var overlayRect = (RectTransform)overlayGo.transform;
-            overlayRect.SetParent(screenRoot, false);
-            overlayRect.anchorMin = Vector2.zero;
-            overlayRect.anchorMax = Vector2.one;
-            overlayRect.offsetMin = Vector2.zero;
-            overlayRect.offsetMax = Vector2.zero;
-            overlayGo.AddComponent<LayoutElement>().ignoreLayout = true;
-            overlayGo.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.8f);
-
-            var boxGo = new GameObject("Box", typeof(RectTransform));
-            var boxRect = (RectTransform)boxGo.transform;
-            boxRect.SetParent(overlayRect, false);
-            boxRect.anchorMin = new Vector2(0.5f, 0.5f);
-            boxRect.anchorMax = new Vector2(0.5f, 0.5f);
-            boxRect.pivot = new Vector2(0.5f, 0.5f);
-            boxRect.sizeDelta = new Vector2(800, 380);
-            boxGo.AddComponent<Image>().color = new Color(0.14f, 0.14f, 0.16f, 1f);
-
-            var boxLayout = boxGo.AddComponent<VerticalLayoutGroup>();
-            boxLayout.padding = new RectOffset(32, 32, 28, 28);
-            boxLayout.spacing = 20;
-            boxLayout.childAlignment = TextAnchor.MiddleCenter;
-            boxLayout.childForceExpandWidth = true;
-            boxLayout.childForceExpandHeight = false;
-            boxLayout.childControlWidth = true;
-            boxLayout.childControlHeight = true;
-
-            view._reviveDialogMessage = CreateDialogLabel(boxRect, "Message", "", 32, FontStyle.Bold);
-            SetFixedHeight(view._reviveDialogMessage.GetComponent<LayoutElement>(), 160);
-
-            var buttonRowGo = new GameObject("ButtonRow", typeof(RectTransform));
-            buttonRowGo.transform.SetParent(boxRect, false);
-            SetFixedHeight(buttonRowGo.AddComponent<LayoutElement>(), 100);
-            var buttonRowLayout = buttonRowGo.AddComponent<HorizontalLayoutGroup>();
-            buttonRowLayout.spacing = 16;
-            buttonRowLayout.childForceExpandWidth = false;
-            buttonRowLayout.childForceExpandHeight = false;
-            buttonRowLayout.childControlWidth = true;
-            buttonRowLayout.childControlHeight = true;
-
-            CreateDialogButton(buttonRowGo.transform, "NoButton", "No", 360, 100,
-                new Color(1f, 1f, 1f, 0.15f), () =>
-                {
-                    view._reviveDialogAnswerYes = false;
-                    view._reviveDialogAnswered = true;
-                });
-            CreateDialogButton(buttonRowGo.transform, "YesButton", "Yes, revive!", 360, 100,
-                new Color(0.2f, 0.6f, 0.35f, 0.85f), () =>
-                {
-                    view._reviveDialogAnswerYes = true;
-                    view._reviveDialogAnswered = true;
-                });
-
-            overlayGo.SetActive(false);
-            return overlayGo;
-        }
-
-        private static void SetFixedHeight(LayoutElement layoutElement, float height)
-        {
-            layoutElement.minHeight = height;
-            layoutElement.preferredHeight = height;
-            layoutElement.flexibleHeight = 0;
-        }
-
-        private static Text CreateDialogLabel(Transform parent, string name, string content, int fontSize, FontStyle style)
-        {
-            var go = new GameObject(name, typeof(RectTransform));
-            go.transform.SetParent(parent, false);
-
-            var text = go.AddComponent<Text>();
-            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            text.fontSize = fontSize;
-            text.fontStyle = style;
-            text.alignment = TextAnchor.MiddleCenter;
-            text.color = Color.white;
-            text.text = content;
-            text.horizontalOverflow = HorizontalWrapMode.Wrap;
-
-            go.AddComponent<LayoutElement>().preferredHeight = fontSize + 24;
-
-            return text;
-        }
-
-        private static void CreateDialogButton(Transform parent, string name, string label,
-            float width, float height, Color backgroundColor, System.Action onClick)
-        {
-            var go = new GameObject(name, typeof(RectTransform));
-            go.transform.SetParent(parent, false);
-
-            SetFixedHeight(go.AddComponent<LayoutElement>(), height);
-            var layoutElement = go.GetComponent<LayoutElement>();
-            layoutElement.minWidth = width;
-            layoutElement.preferredWidth = width;
-            layoutElement.flexibleWidth = 0;
-
-            var image = go.AddComponent<Image>();
-            image.color = backgroundColor;
-
-            var button = go.AddComponent<Button>();
-            button.onClick.AddListener(() => onClick());
-
-            var labelRect = new GameObject("Label", typeof(RectTransform)).GetComponent<RectTransform>();
-            labelRect.SetParent(go.transform, false);
-            labelRect.anchorMin = Vector2.zero;
-            labelRect.anchorMax = Vector2.one;
-            labelRect.offsetMin = Vector2.zero;
-            labelRect.offsetMax = Vector2.zero;
-
-            var labelText = labelRect.gameObject.AddComponent<Text>();
-            labelText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            labelText.fontSize = 30;
-            labelText.fontStyle = FontStyle.Bold;
-            labelText.alignment = TextAnchor.MiddleCenter;
-            labelText.color = Color.white;
-            labelText.text = label;
-            labelText.raycastTarget = false;
-        }
-
         private sealed class AbilityWidget
         {
             public readonly Image Icon;
             public readonly Image CooldownFill;
-            public readonly Button Button;
             public Coroutine CooldownLerp;
 
-            public AbilityWidget(Image icon, Image cooldownFill, Button button)
+            public AbilityWidget(Image icon, Image cooldownFill)
             {
                 Icon = icon;
                 CooldownFill = cooldownFill;
-                Button = button;
             }
         }
     }

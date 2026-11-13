@@ -1,4 +1,5 @@
 using DoomScroller.Combat;
+using DoomScroller.CombatCore;
 using DoomScroller.Feed;
 using NUnit.Framework;
 
