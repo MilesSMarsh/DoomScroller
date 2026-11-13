@@ -135,7 +135,7 @@ namespace DoomScroller.Encounters
             var isFight = !step.IsFinalTreasureRoom && !step.IsBonusTreasureRoom && !step.IsRestRoom;
             _playback.gameObject.SetActive(isFight);
 
-            var sim = CombatResolver.CreateSimulatorForStep(loadout, attributes, settings, step, playerStartHp);
+            var fight = CombatResolver.ResolveStep(loadout, attributes, settings, step, playerStartHp);
 
             _outcomeText.text = "";
             _rewardText.text = "";
@@ -146,15 +146,24 @@ namespace DoomScroller.Encounters
                 StopCoroutine(_revealCoroutine);
             }
 
-            _revealCoroutine = StartCoroutine(RevealSequence(sim, loadout, progression, health, settings, wallet,
+            _revealCoroutine = StartCoroutine(RevealSequence(fight, loadout, progression, health, settings, wallet,
                 accumulatedGold));
         }
 
-        private IEnumerator RevealSequence(CombatSimulator sim, PlayerLoadout loadout,
+        private IEnumerator RevealSequence(CombatResolver.ResolvedFight fight, PlayerLoadout loadout,
             PlayerProgression progression, PlayerHealth health, GameSettings settings, PlayerWallet wallet,
             int accumulatedGold)
         {
-            yield return StartCoroutine(_playback.Play(sim, loadout, _step.EnemySprite, _step.StepColor));
+            if (fight == null)
+            {
+                yield return StartCoroutine(_playback.Play(null, 0, 0, 0, loadout, _step.EnemySprite, _step.StepColor));
+            }
+            else
+            {
+                var startHp = fight.Input.player.startHp;
+                yield return StartCoroutine(_playback.Play(fight.Result, startHp, fight.Input.enemy.maxHp,
+                    FightReplay.ReviveHp(startHp, fight.Input.revivePercent), loadout, _step.EnemySprite, _step.StepColor));
+            }
 
             var isVictory = _playback.LastOutcomeWasVictory;
             _outcomeText.text = isVictory ? "VICTORY" : "DEFEAT";

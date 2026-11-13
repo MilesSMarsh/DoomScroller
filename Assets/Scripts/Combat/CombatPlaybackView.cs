@@ -9,14 +9,13 @@ using UnityEngine.UI;
 namespace DoomScroller.Combat
 {
     // Shared visual fight player, hosted by both CombatResolutionView and
-    // DungeonStepPageView. Runs a CombatSimulator (one RunUntilDeathOrVictory call
-    // resolves the whole fight, including an armed Revive firing automatically) and
-    // animates each beat: the attacker wiggles/lunges, a projectile flies for ranged
+    // DungeonStepPageView. Replays a finished FightResult (resolved on the device or by
+    // the server; an armed Revive firing is part of the result) and animates each beat: the attacker wiggles/lunges, a projectile flies for ranged
     // beats (every ability cast, or a ranged weapon's basic attack), the defender
     // flashes and a damage number (or "MISS") pops up. Active abilities get their own
     // icon-and-cooldown-bar widget near the player that visualizes the sim's own timer.
     // No player input mid-fight, no text-log narration, and PlayerHealth is never
-    // touched here — see CombatSimulator.
+    // touched here.
     public class CombatPlaybackView : MonoBehaviour
     {
         private const float PortraitSize = 280f;
@@ -44,10 +43,6 @@ namespace DoomScroller.Combat
         private const float HealthBarOutlineWidth = 3f;
         private const float HealthBarTweenDuration = 0.3f;
 
-        // A win that ended below this fraction of this fight's own starting HP reads as
-        // a "close call" — flavor only now, no persistent cost either way.
-        private const float CloseCallHealthFraction = 0.25f;
-
         private RectTransform _effectsLayer;
         private RectTransform _gearRow;
         private RectTransform _abilityRow;
@@ -65,12 +60,11 @@ namespace DoomScroller.Combat
         private Coroutine _enemyHealthTween;
 
         private readonly Dictionary<string, AbilityWidget> _abilityWidgets = new();
-        private CombatSimulator _sim;
 
         public bool LastOutcomeWasVictory { get; private set; }
         public bool WasCloseCall { get; private set; }
         // The player's HP when the fight ended — 0 by default, meaningless for a
-        // Treasure card's instant win (see the null-sim branch below). Read by
+        // Treasure card's instant win (see the null-result branch in Play). Read by
         // DungeonStepPageView to carry HP forward into the next step of a run.
         public int FinalPlayerHp { get; private set; }
 
@@ -198,7 +192,11 @@ namespace DoomScroller.Combat
             return view;
         }
 
-        public IEnumerator Play(CombatSimulator sim, PlayerLoadout loadout, Sprite enemySprite, Color enemyColor)
+        // Replays a finished FightResult beat by beat. result == null is a Treasure card's
+        // instant win. reviveHp is the HP a fired Revive restores (see FightReplay.ReviveHp);
+        // the carried Revive potion is spent here only if the result says it fired.
+        public IEnumerator Play(FightResult result, int playerStartHp, int enemyMaxHp, int reviveHp,
+            PlayerLoadout loadout, Sprite enemySprite, Color enemyColor)
         {
             _playerPortrait.sprite = loadout.PlayerSprite;
             _playerBaseColor = loadout.PlayerSprite != null ? Color.white : new Color(1f, 1f, 1f, 0.15f);
@@ -209,27 +207,23 @@ namespace DoomScroller.Combat
             _enemyPortrait.color = _enemyBaseColor;
 
             BuildGearRow(loadout);
-
-            _sim = sim;
             BuildAbilityRow(loadout);
 
-            if (sim == null)
+            if (result == null)
             {
                 // Treasure — no fight, guaranteed win, nothing to animate.
                 UpdateHealthBar(_playerHealthFill, _playerHealthLabel, 1, 1);
                 UpdateHealthBar(_enemyHealthFill, _enemyHealthLabel, 0, 0);
                 LastOutcomeWasVictory = true;
                 WasCloseCall = false;
-                _sim = null;
                 yield break;
             }
 
-            UpdateHealthBar(_playerHealthFill, _playerHealthLabel, sim.PlayerHp, sim.PlayerStartHp);
-            UpdateHealthBar(_enemyHealthFill, _enemyHealthLabel, sim.EnemyHp, sim.EnemyMaxHp);
+            UpdateHealthBar(_playerHealthFill, _playerHealthLabel, playerStartHp, playerStartHp);
+            UpdateHealthBar(_enemyHealthFill, _enemyHealthLabel, enemyMaxHp, enemyMaxHp);
 
-            var playerHpBefore = sim.PlayerHp;
-            var enemyHpBefore = sim.EnemyHp;
-            var beats = sim.RunUntilDeathOrVictory();
+            var beats = result.beats ?? new CombatBeat[0];
+            var timeline = FightReplay.BuildHpTimeline(result, playerStartHp, enemyMaxHp, reviveHp);
 
             // Seed each ability's cooldown bar toward its first cast (every active
             // ability starts on cooldown with nothing having cast yet).
@@ -242,23 +236,17 @@ namespace DoomScroller.Combat
                 }
             }
 
-            // The sim already decided whether the armed Revive fired; spend the potion
-            // here (once the fight is being shown) and show the revive at its beat.
-            var reviveBeat = -1;
-            if (sim.ReviveFired)
+            // Spend the potion only if the result says the Revive fired.
+            if (result.reviveFired)
             {
-                reviveBeat = sim.ReviveBeatIndex;
                 loadout.ConsumeRevivePotion(loadout.GetBestRevivePotion());
             }
 
-            yield return StartCoroutine(PlayBeats(beats, playerHpBefore, sim.PlayerStartHp, enemyHpBefore, sim.EnemyMaxHp,
-                reviveBeat, sim.ReviveHp));
+            yield return StartCoroutine(PlayBeats(beats, timeline, playerStartHp, enemyMaxHp));
 
-            LastOutcomeWasVictory = sim.IsEnemyDead;
-            WasCloseCall = LastOutcomeWasVictory && sim.PlayerStartHp > 0 &&
-                (float)sim.PlayerHp / sim.PlayerStartHp < CloseCallHealthFraction;
-            FinalPlayerHp = sim.PlayerHp;
-            _sim = null;
+            LastOutcomeWasVictory = result.outcome == FightOutcome.Win;
+            WasCloseCall = FightReplay.IsCloseCall(result, playerStartHp);
+            FinalPlayerHp = result.finalPlayerHp;
         }
 
         // The resource-node minigame's entry point — sibling to Play, but structurally
@@ -282,7 +270,6 @@ namespace DoomScroller.Combat
             _enemyPortrait.color = _enemyBaseColor;
 
             BuildGearRow(loadout);
-            _sim = sim;
             BuildAbilityRow(loadout);
 
             UpdateHealthBar(_playerHealthFill, _playerHealthLabel, 1, 1);
@@ -327,7 +314,6 @@ namespace DoomScroller.Combat
             yield return countdown;
 
             TotalDamageDealt = sim.DamageDealt;
-            _sim = null;
         }
 
         private IEnumerator CountdownRoutine(float seconds)
@@ -349,14 +335,12 @@ namespace DoomScroller.Combat
             _enemyHealthFill.fillAmount = 0f;
         }
 
-        // Animates the resolved beats, tracking its own running HP totals (seeded from
-        // the values before the fight) so the bars visibly deplete beat-by-beat —
-        // CombatSimulator itself only exposes the final state, not each intermediate
-        // step. Also drives each ability's cooldown-bar lerp forward whenever its own
-        // cast beat plays. After beat reviveBeat (-1 = none) the armed Revive fires:
-        // the player's HP jumps to reviveHp and the fight carries on.
-        private IEnumerator PlayBeats(IReadOnlyList<CombatBeat> beats, int playerHp, int playerMaxHp, int enemyHp, int enemyMaxHp,
-            int reviveBeat, int reviveHp)
+        // Animates the resolved beats; the HP bars follow the precomputed timeline
+        // (FightReplay.BuildHpTimeline) so they deplete beat-by-beat. Also drives each
+        // ability's cooldown-bar lerp forward whenever its own cast beat plays. At a beat
+        // where the timeline says the Revive fired, the player's HP jumps to the restored
+        // value and the fight carries on.
+        private IEnumerator PlayBeats(IReadOnlyList<CombatBeat> beats, BeatHp[] timeline, int playerMaxHp, int enemyMaxHp)
         {
             for (var i = 0; i < beats.Count; i++)
             {
@@ -383,7 +367,7 @@ namespace DoomScroller.Combat
                 {
                     if (isPlayer)
                     {
-                        enemyHp = Mathf.Max(0, enemyHp - beat.DisplayDamage);
+                        var enemyHp = timeline[i].EnemyHp;
                         if (_enemyHealthTween != null)
                         {
                             StopCoroutine(_enemyHealthTween);
@@ -392,7 +376,7 @@ namespace DoomScroller.Combat
                     }
                     else
                     {
-                        playerHp = Mathf.Max(0, playerHp - beat.DisplayDamage);
+                        var playerHp = timeline[i].PlayerHp;
                         if (_playerHealthTween != null)
                         {
                             StopCoroutine(_playerHealthTween);
@@ -414,10 +398,9 @@ namespace DoomScroller.Combat
 
                 yield return new WaitForSeconds(BeatPause);
 
-                if (i == reviveBeat)
+                if (timeline[i].Revived)
                 {
-                    playerHp = reviveHp;
-                    UpdateHealthBar(_playerHealthFill, _playerHealthLabel, playerHp, playerMaxHp);
+                    UpdateHealthBar(_playerHealthFill, _playerHealthLabel, timeline[i].PlayerHpAfterRevive, playerMaxHp);
                     SpawnPopup(_playerAnchor, "REVIVED!", new Color(0.4f, 0.9f, 1f), 44);
                     yield return new WaitForSeconds(BeatPause);
                 }

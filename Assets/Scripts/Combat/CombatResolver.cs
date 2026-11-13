@@ -46,6 +46,41 @@ namespace DoomScroller.Combat
             return new CombatSimulator(input, rng);
         }
 
+        // A fight resolved on the device: the input (start HP, enemy max HP, Revive percent)
+        // alongside its finished result, which is what CombatPlaybackView.Play replays.
+        // The seed comes from System.Random on the device; the server will supply its own.
+        public sealed class ResolvedFight
+        {
+            public FightInput Input;
+            public FightResult Result;
+        }
+
+        // Null for Treasure — no fight, the caller shows an instant win.
+        public static ResolvedFight ResolveEncounter(PlayerLoadout loadout, PlayerAttributes attributes, GameSettings settings,
+            EncounterData data, int playerStartHp, Random rng = null)
+        {
+            if (data.type == EncounterType.Treasure)
+            {
+                return null;
+            }
+
+            var input = FightInputBuilder.ForEncounter(loadout, attributes, settings, data, playerStartHp, (rng ?? new Random()).Next());
+            return new ResolvedFight { Input = input, Result = CombatSimulator.Resolve(input) };
+        }
+
+        // Null for treasure/rest rooms.
+        public static ResolvedFight ResolveStep(PlayerLoadout loadout, PlayerAttributes attributes, GameSettings settings,
+            DungeonStep step, int playerStartHp, Random rng = null)
+        {
+            if (step.IsFinalTreasureRoom || step.IsBonusTreasureRoom || step.IsRestRoom)
+            {
+                return null;
+            }
+
+            var input = FightInputBuilder.ForStep(loadout, attributes, settings, step, playerStartHp, (rng ?? new Random()).Next());
+            return new ResolvedFight { Input = input, Result = CombatSimulator.Resolve(input) };
+        }
+
         // A resource node's timed damage window — CombatSimulator.DamageDealt after
         // RunForDuration is the whole point, not a side effect.
         public static CombatSimulator CreateSimulatorForResource(PlayerLoadout loadout, PlayerAttributes attributes,
