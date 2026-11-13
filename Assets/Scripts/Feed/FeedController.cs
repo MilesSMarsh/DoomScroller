@@ -28,6 +28,7 @@ namespace DoomScroller.Feed
         private readonly List<FeedCardView> _liveCards = new();
         private readonly List<int> _shuffleBag = new();
         private readonly System.Random _rng = new();
+        private readonly MaxHealthChangeTracker _healthTracker = new();
 
         private EncounterData[] _pool;
         private EncounterData _landingCard;
@@ -61,6 +62,28 @@ namespace DoomScroller.Feed
             BuildFeed();
 
             profileController.Loadout.Changed += RefreshAllChances;
+            _healthTracker.ShouldRefresh(profileController.Health.CurrentMaxHealth);
+            profileController.Health.Changed += OnHealthChanged;
+        }
+
+        private void OnDestroy()
+        {
+            if (profileController == null)
+            {
+                return;
+            }
+
+            profileController.Loadout.Changed -= RefreshAllChances;
+            profileController.Health.Changed -= OnHealthChanged;
+        }
+
+        // Re-estimates only when the HP a fight would start with actually changed.
+        private void OnHealthChanged()
+        {
+            if (_healthTracker.ShouldRefresh(profileController.Health.CurrentMaxHealth))
+            {
+                RefreshAllChances();
+            }
         }
 
         // Auto-discovery, not a manually-maintained list: drop a new EncounterData asset

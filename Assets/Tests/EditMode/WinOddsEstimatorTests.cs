@@ -53,6 +53,16 @@ namespace DoomScroller.Tests.EditMode
         }
 
         [Test]
+        public void LowerStartHp_NeverRaisesWinFraction()
+        {
+            var loadout = TestFixtures.MakeLoadout(TestFixtures.MakeWeapon(power: 12, attackSpeed: 1f));
+            var data = MakeEncounter(EncounterType.Enemy, 120, 10, 1f);
+            var high = WinOddsEstimator.Estimate(loadout, new PlayerAttributes(), 100, data, 42);
+            var low = WinOddsEstimator.Estimate(loadout, new PlayerAttributes(), 25, data, 42);
+            Assert.LessOrEqual(low.WinFraction, high.WinFraction);
+        }
+
+        [Test]
         public void TierBoundaries_MapExactlyAtThresholds()
         {
             Assert.AreEqual(WinOddsTier.Likely, WinOddsEstimator.TierFor(WinOddsEstimator.LikelyThreshold));
