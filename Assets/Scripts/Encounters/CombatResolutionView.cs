@@ -344,9 +344,23 @@ namespace DoomScroller.Encounters
             if (_dragIsHorizontal == true)
             {
                 var pos = _content.anchoredPosition;
-                pos.x = -_currentPage * _pageWidth + delta.x;
+                pos.x = ClampDragX(-_currentPage * _pageWidth + delta.x, _minPage, MaxReachablePage(_minPage, _canReachRewardPage), _pageWidth);
                 _content.anchoredPosition = pos;
             }
+        }
+
+        // Highest page the player may be on. Mathf.Max, not a bare 0/1: for a Treasure
+        // card minPage is already 1, and a max below min would invert the clamp range.
+        public static int MaxReachablePage(int minPage, bool canReachRewardPage)
+        {
+            return Mathf.Max(minPage, canReachRewardPage ? 1 : 0);
+        }
+
+        // Clamps a live drag offset to the reachable pages: [-maxPage * w, -minPage * w].
+        public static float ClampDragX(float rawX, int minPage, int maxPage, float pageWidth)
+        {
+            maxPage = Mathf.Max(minPage, maxPage);
+            return Mathf.Clamp(rawX, -maxPage * pageWidth, -minPage * pageWidth);
         }
 
         public void OnEndDrag(PointerEventData eventData)
@@ -362,10 +376,7 @@ namespace DoomScroller.Encounters
                 ? _currentPage + (delta.x < 0 ? 1 : -1)
                 : _currentPage;
 
-            // Mathf.Max, not a bare 0/1: for a Treasure card _minPage is already 1, and
-            // Mathf.Clamp with min > max would silently return min instead of clamping
-            // sanely if this ever raced _canReachRewardPage still being false.
-            var maxPage = Mathf.Max(_minPage, _canReachRewardPage ? 1 : 0);
+            var maxPage = MaxReachablePage(_minPage, _canReachRewardPage);
             SnapTo(Mathf.Clamp(desired, _minPage, maxPage));
         }
 
