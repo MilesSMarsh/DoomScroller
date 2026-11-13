@@ -56,6 +56,16 @@ namespace DoomScroller.Progression
             _lastRegenUtc = new DateTime(lastRegenUtcTicks, DateTimeKind.Utc);
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        // Debug only: sets CurrentMaxHealth (clamped to [Floor, TrueMaxHealth]) and fires
+        // Changed. Doesn't touch the regen clock.
+        public void DebugSetCurrentMaxHealth(int value)
+        {
+            CurrentMaxHealth = Mathf.Clamp(value, Floor, TrueMaxHealth);
+            Changed?.Invoke();
+        }
+#endif
+
         // Called once when a fight ends in defeat (including leaving one early).
         public void ApplyDefeatPenalty()
         {

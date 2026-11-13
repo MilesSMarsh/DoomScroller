@@ -377,6 +377,25 @@ namespace DoomScroller.Feed
             }
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        public ProfileController DebugProfile => profileController;
+
+        // Unlocked fight cards in the live window, top to bottom.
+        public List<EncounterData> DebugVisibleFightCards()
+        {
+            var result = new List<EncounterData>();
+            foreach (var card in _liveCards)
+            {
+                if (!card.IsLocked && !WinOddsEstimator.IsNonFight(card.Data.type))
+                {
+                    result.Add(card.Data);
+                }
+            }
+
+            return result;
+        }
+#endif
+
         // Re-predicts every currently-visible card's odds so equip/unequip changes made in
         // Profile (between plays) don't leave stale percentages on cards already in the window.
         private void RefreshAllChances()
