@@ -39,5 +39,7 @@ Existing code to reuse, constraints, open questions for Miles.
 Keep specs small: one system or one screen, finishable in one agent session.
 
 A manual check that needs an item, potion or other setup (e.g. a carried Revive) must
-make the task grant it to the debug save, so Miles is guaranteed to be able to run it.
-Say so in the acceptance criteria next to the manual check.
+make the task add a button to the in-game Debug panel (`Assets/Scripts/UI/DebugPanelController.cs`,
+Editor + development builds only; see `memory/systems.md` → Debug tools) that grants it
+to the current save, so Miles is guaranteed to be able to run it. Say so in the
+acceptance criteria next to the manual check.

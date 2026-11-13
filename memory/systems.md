@@ -226,6 +226,19 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
 - Gap: no fight endpoints yet; sign-in failure only logs a warning (no offline screen
   until task 014).
 
+## Debug tools (Editor + development builds only)
+- In-game Debug panel: `UI/DebugPanelController.cs` self-installs on scene load (no scene
+  edit) as a "Debug" button on the root canvas; placeholder UI, all under
+  `#if UNITY_EDITOR || DEVELOPMENT_BUILD`. Buttons: "Borderline Odds HP" (sets current
+  max HP so a visible fight card drops a win-odds tier after one defeat penalty) and
+  "Apply Defeat Penalty"; a result line shows the outcome.
+- Logic: `Feed/BorderlineOddsFinder.cs` (plain C#, seeded estimator) and
+  `Feed/BorderlineOddsDebugActions.cs`; debug hooks in `FeedController` (visible fight
+  cards) and `PlayerHealth` (set current max HP, fires `Changed`). Same actions also
+  under Editor menu `DoomScroller/Debug/` (`Editor/BorderlineOddsDebugMenu.cs`).
+- Debug changes save like normal play (this is the "debug save"); no extra save fields.
+  Manual checks that need setup add a button here.
+
 ## Build and test
 - EditMode tests in `Assets/Tests/EditMode/` (asmdef `DoomScroller.Tests.EditMode`) and
   Unity-free sim tests in `Assets/Tests/CombatCore/` (`DoomScroller.CombatCore.Tests`),

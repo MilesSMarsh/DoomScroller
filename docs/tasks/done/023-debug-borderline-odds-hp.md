@@ -2,7 +2,7 @@
 
 **Owner:** ui-engineer
 **Size:** S
-**Status:** approved
+**Status:** done
 **GDD:** docs/gdd/GDD.md#combat (win odds badge); Semester scope item 4
 **Depends on:** 022 (done)
 
