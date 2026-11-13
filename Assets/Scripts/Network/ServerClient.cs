@@ -52,6 +52,26 @@ namespace DoomScroller.Network
             return await transport.SendAsync(method, baseUrl + path, jsonBody, store.Token, timeout);
         }
 
+        [Serializable]
+        class ProfileEnvelope { public bool isNew; public int revision; public string serverTimeUtc; public string profile; }
+
+        public async Task<ProfileResponse> LoadProfileAsync() =>
+            ParseProfile(await SendAsync("GET", "/profile"));
+
+        public async Task<ProfileResponse> SaveProfileAsync(string saveJson, int baseRevision) =>
+            ParseProfile(await SendAsync("PUT", "/profile?revision=" + baseRevision, saveJson));
+
+        static ProfileResponse ParseProfile(ServerResponse res)
+        {
+            if (res.Status == 0 || string.IsNullOrEmpty(res.Body)) return new ProfileResponse(res.Status, false, null, 0, null);
+            ProfileEnvelope env;
+            try { env = JsonUtility.FromJson<ProfileEnvelope>(res.Body); }
+            catch (ArgumentException) { return new ProfileResponse(res.Ok ? 0 : res.Status, false, null, 0, null); }
+            if (env == null) return new ProfileResponse(res.Ok ? 0 : res.Status, false, null, 0, null);
+            var json = string.IsNullOrEmpty(env.profile) ? null : env.profile;
+            return new ProfileResponse(res.Status, env.isNew, json, env.revision, env.serverTimeUtc);
+        }
+
         public static ServerClient CreateDefault()
         {
             var settings = ServerSettings.Load();

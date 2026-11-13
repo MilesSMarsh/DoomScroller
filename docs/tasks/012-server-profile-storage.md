@@ -2,7 +2,7 @@
 
 **Owner:** backend-engineer
 **Size:** M
-**Status:** todo (blocked on 011)
+**Status:** approved
 **GDD:** docs/gdd/GDD.md#technical-strategy, #persistence-and-save-rules,
 #scaling-and-cost-control (Managed database first)
 **Depends on:** 011
@@ -62,3 +62,4 @@ follows the account and survives a reinstall.
   "client-authoritative economy (cheatable)" gap, not something to fix here.
 - Storing `SaveData` as one JSON document avoids a migration every time the save shape
   changes (007 already breaks it).
+- Approved for merge (Miles, 2026-11-13).

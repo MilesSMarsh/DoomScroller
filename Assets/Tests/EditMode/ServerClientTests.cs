@@ -207,5 +207,60 @@ namespace DoomScroller.Tests.EditMode
                 return Task.FromResult(handler(url, token));
             }
         }
+
+        [Test]
+        public void LoadProfile_ParsesEnvelope_AndNewMarker()
+        {
+            var store = new FakeStore { Token = "t" };
+            var t = new FakeTransport { Handler = (u, k) => new ServerResponse(200,
+                "{\"isNew\":false,\"revision\":4,\"serverTimeUtc\":\"2026-11-13T12:00:00Z\",\"profile\":\"{\\\"gold\\\":5}\"}") };
+            var r = Make(t, store).LoadProfileAsync().Result;
+            Assert.IsTrue(r.Ok);
+            Assert.IsFalse(r.IsNew);
+            Assert.AreEqual(4, r.Revision);
+            Assert.AreEqual("{\"gold\":5}", r.Json);
+            Assert.AreEqual("2026-11-13T12:00:00Z", r.ServerTimeUtc);
+            Assert.AreEqual("http://x/profile", t.Calls[0].url);
+
+            t.Handler = (u, k) => new ServerResponse(200, "{\"isNew\":true,\"revision\":0,\"serverTimeUtc\":\"x\",\"profile\":null}");
+            var n = Make(t, store).LoadProfileAsync().Result;
+            Assert.IsTrue(n.IsNew);
+            Assert.IsNull(n.Json);
+        }
+
+        [Test]
+        public void SaveProfile_SendsRevisionAndBody_AndReportsConflict()
+        {
+            var store = new FakeStore { Token = "t" };
+            string sentMethod = null, sentBody = null;
+            var t = new CapturingTransport { Handler = (m, u, b) => { sentMethod = m; sentBody = b; return new ServerResponse(409, "{\"error\":\"Stale revision.\",\"revision\":7}"); } };
+            var r = Make(t, store).SaveProfileAsync("{\"gold\":1}", 3).Result;
+            Assert.AreEqual("PUT", sentMethod);
+            Assert.AreEqual("{\"gold\":1}", sentBody);
+            Assert.AreEqual("http://x/profile?revision=3", t.LastUrl);
+            Assert.IsTrue(r.Conflict);
+            Assert.AreEqual(7, r.Revision);
+        }
+
+        [Test]
+        public void LoadProfile_NetworkFailure_IsStatusZero()
+        {
+            var store = new FakeStore { Token = "t" };
+            var t = new FakeTransport { Handler = (u, k) => new ServerResponse(0, null) };
+            var r = Make(t, store).LoadProfileAsync().Result;
+            Assert.IsFalse(r.Ok);
+            Assert.AreEqual(0, r.Status);
+        }
+
+        class CapturingTransport : IServerTransport
+        {
+            public Func<string, string, string, ServerResponse> Handler;
+            public string LastUrl;
+            public Task<ServerResponse> SendAsync(string method, string url, string body, string token, TimeSpan timeout)
+            {
+                LastUrl = url;
+                return Task.FromResult(Handler(method, url, body));
+            }
+        }
     }
 }

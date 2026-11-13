@@ -69,7 +69,13 @@ public partial class Program
         // Signing key from env (JWT_SIGNING_KEY). Without it no token can be issued or accepted.
         var signingKey = builder.Configuration["JWT_SIGNING_KEY"];
         var tokens = string.IsNullOrEmpty(signingKey) ? null : new TokenService(signingKey, TimeSpan.FromDays(30));
-        if (db is not null) builder.Services.AddSingleton<IPlayerStore>(new NpgsqlPlayerStore(db));
+        if (db is not null)
+        {
+            builder.Services.AddSingleton<IPlayerStore>(new NpgsqlPlayerStore(db));
+            builder.Services.AddSingleton<IProfileStore>(new NpgsqlProfileStore(db));
+        }
+        builder.Services.AddSingleton(ProfileOptions.From(builder.Configuration));
+        builder.Services.AddSingleton(TimeProvider.System);
 
         var app = builder.Build();
         app.UseTokenAuth(tokens);
@@ -89,6 +95,32 @@ public partial class Program
         // Smallest authenticated endpoint; lets clients verify a token.
         app.MapGet("/auth/me", (HttpContext c) => Results.Ok(new { playerId = c.Items[AuthExtensions.PlayerIdItem] }));
 
+        // Profile: whole SaveData JSON per player. Responses wrap the document as a string so the
+        // client can hand it to JsonUtility untouched. PUT carries the base revision in ?revision=.
+        app.MapGet("/profile", async (HttpContext c, IServiceProvider sp, CancellationToken ct) =>
+        {
+            var svc = ProfileSvc(sp);
+            if (svc is null) return Results.Problem("Database not configured.", statusCode: 503);
+            return ToHttp(svc, await svc.GetAsync((Guid)c.Items[AuthExtensions.PlayerIdItem]!, ct));
+        });
+        app.MapPut("/profile", async (HttpContext c, IServiceProvider sp, CancellationToken ct) =>
+        {
+            var svc = ProfileSvc(sp);
+            if (svc is null) return Results.Problem("Database not configured.", statusCode: 503);
+            var max = sp.GetRequiredService<ProfileOptions>().MaxDocumentBytes;
+            if (c.Request.ContentLength > max) return Results.BadRequest(new { error = "Document too large." });
+            using var ms = new MemoryStream();
+            var buf = new byte[8192];
+            int n;
+            while ((n = await c.Request.Body.ReadAsync(buf, ct)) > 0)
+            {
+                ms.Write(buf, 0, n);
+                if (ms.Length > max) return Results.BadRequest(new { error = "Document too large." });
+            }
+            int? rev = int.TryParse(c.Request.Query["revision"], out var r) ? r : null;
+            return ToHttp(svc, await svc.PutAsync((Guid)c.Items[AuthExtensions.PlayerIdItem]!, System.Text.Encoding.UTF8.GetString(ms.ToArray()), rev, ct));
+        });
+
         app.MapGet("/health", async (IDatabaseProbe probe, CancellationToken ct) => Results.Ok(new
         {
             version = typeof(Program).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion?.Split('+')[0] ?? "unknown",
@@ -100,6 +132,18 @@ public partial class Program
             app.Lifetime.ApplicationStarted.Register(() => _ = MigrateWithRetry(db!, app.Logger));
         return app;
     }
+
+    static ProfileService? ProfileSvc(IServiceProvider sp) =>
+        sp.GetService<IProfileStore>() is { } store
+            ? new ProfileService(store, sp.GetRequiredService<ProfileOptions>(), sp.GetRequiredService<TimeProvider>())
+            : null;
+
+    static IResult ToHttp(ProfileService svc, ProfileResult r) => r.Status switch
+    {
+        ProfileStatus.Ok => Results.Ok(new { isNew = r.Document is null, revision = r.Revision, serverTimeUtc = svc.Now, profile = r.Document }),
+        ProfileStatus.Conflict => Results.Json(new { error = r.Error, revision = r.Revision, serverTimeUtc = svc.Now }, statusCode: 409),
+        _ => Results.BadRequest(new { error = r.Error }),
+    };
 
     static async Task MigrateWithRetry(NpgsqlDataSource db, ILogger log)
     {
