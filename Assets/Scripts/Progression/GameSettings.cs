@@ -10,9 +10,10 @@ namespace DoomScroller.Progression
     {
         public event Action Changed;
 
-        // Defaults to false. When on, a carried Revive potion is armed for each fight
-        // and fires automatically inside the simulation (see FightInputBuilder).
-        public bool AutoConsumeRevivePotions { get; private set; }
+        // Defaults to true (Miles, 2026-11-13) until the per-card Revive toggle exists.
+        // When on, a carried Revive potion is armed for each fight and fires
+        // automatically inside the simulation (see FightInputBuilder).
+        public bool AutoConsumeRevivePotions { get; private set; } = true;
 
         public void SetAutoConsumeRevivePotions(bool value)
         {

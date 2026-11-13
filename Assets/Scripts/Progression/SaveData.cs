@@ -234,6 +234,7 @@ namespace DoomScroller.Progression
 
         public int gold;
 
-        public bool autoConsumeRevivePotions;
+        // Defaults on; a save without the key loads with it on. A saved false stays off.
+        public bool autoConsumeRevivePotions = true;
     }
 }

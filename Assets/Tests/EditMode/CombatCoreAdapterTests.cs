@@ -64,7 +64,9 @@ namespace DoomScroller.Tests.EditMode
         {
             var loadout = TestFixtures.MakeLoadout(MakeRevivePotion(50));
 
-            var input = FightInputBuilder.Build(loadout, new PlayerAttributes(), new GameSettings(), 50, Seed, 10, 1,
+            var settings = new GameSettings();
+            settings.SetAutoConsumeRevivePotions(false);
+            var input = FightInputBuilder.Build(loadout, new PlayerAttributes(), settings, 50, Seed, 10, 1,
                 1f, null, true);
 
             Assert.IsFalse(input.reviveArmed);

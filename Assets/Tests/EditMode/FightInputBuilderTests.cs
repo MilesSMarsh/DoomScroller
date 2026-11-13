@@ -46,9 +46,18 @@ namespace DoomScroller.Tests.EditMode
         public void Revive_IsNotArmedWithoutAutoConsume()
         {
             var loadout = TestFixtures.MakeLoadout(TestFixtures.MakeWeapon(power: 5, attackSpeed: 1f));
-            var input = FightInputBuilder.Build(loadout, new PlayerAttributes(), new GameSettings(), 50, 1, 10, 1, 1f,
+            var settings = new GameSettings();
+            settings.SetAutoConsumeRevivePotions(false);
+            var input = FightInputBuilder.Build(loadout, new PlayerAttributes(), settings, 50, 1, 10, 1, 1f,
                 null, true);
             Assert.IsFalse(input.reviveArmed);
+        }
+
+        [Test]
+        public void AutoConsumeRevive_DefaultsOn()
+        {
+            Assert.IsTrue(new GameSettings().AutoConsumeRevivePotions);
+            Assert.IsTrue(new DoomScroller.Progression.SaveData().autoConsumeRevivePotions);
         }
     }
 }
