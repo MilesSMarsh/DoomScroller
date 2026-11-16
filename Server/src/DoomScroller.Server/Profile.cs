@@ -124,11 +124,18 @@ public sealed class ProfileService(IProfileStore store, ProfileOptions options, 
 
         if (revision != row.Revision) return new ProfileResult(ProfileStatus.Conflict, Revision: row.Revision, Error: "Stale revision.");
 
-        // Keep the server's max HP and regen clock; the upload's values are ignored.
+        // Keep the server's regen clock and never let an upload raise current max HP. Until
+        // the game resolves fights through POST /fights (task 017) it applies defeat
+        // penalties itself, so a LOWER uploaded value is accepted (floored at 20% of true
+        // max): a client can only report a loss, never heal itself.
         var stored = (JsonObject)JsonNode.Parse(row.Document)!;
         stored[TrueMax] = trueMax;
         ApplyRegen(stored);
-        incoming[CurrentMax] = stored[CurrentMax]!.DeepClone();
+        var serverCurrent = ReadInt(stored, CurrentMax);
+        var current = incoming.ContainsKey(CurrentMax)
+            ? Math.Max(Math.Min(ReadInt(incoming, CurrentMax), serverCurrent), Math.Min(FloorFor(trueMax), serverCurrent))
+            : serverCurrent;
+        incoming[CurrentMax] = current;
         incoming[LastRegen] = stored[LastRegen]!.DeepClone();
         var merged = incoming.ToJsonString();
         var newRev = await store.UpdateAsync(playerId, merged, row.Revision, ct);

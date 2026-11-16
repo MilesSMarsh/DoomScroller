@@ -45,6 +45,10 @@ namespace DoomScroller.Inventory
 
         public event Action Changed;
 
+        // Tells listeners (screens, the feed) that state was replaced by a server load.
+        // LoadState/RestoreFrom stay silent because they also run before anything subscribes.
+        public void NotifyLoaded() => Changed?.Invoke();
+
         // Fixed placeholder appearance for the vertical slice — not a piece of equipment,
         // so it lives here rather than in the inventory/slot system.
         public Sprite PlayerSprite { get; }

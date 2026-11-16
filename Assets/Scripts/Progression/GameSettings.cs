@@ -10,6 +10,10 @@ namespace DoomScroller.Progression
     {
         public event Action Changed;
 
+        // Tells listeners (screens, the feed) that state was replaced by a server load.
+        // LoadState/RestoreFrom stay silent because they also run before anything subscribes.
+        public void NotifyLoaded() => Changed?.Invoke();
+
         // Defaults to true (Miles, 2026-11-13) until the per-card Revive toggle exists.
         // When on, a carried Revive potion is armed for each fight and fires
         // automatically inside the simulation (see FightInputBuilder).

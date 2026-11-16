@@ -27,6 +27,10 @@ namespace DoomScroller.Progression
 
         public event Action Changed;
 
+        // Tells listeners (screens, the feed) that state was replaced by a server load.
+        // LoadState/RestoreFrom stay silent because they also run before anything subscribes.
+        public void NotifyLoaded() => Changed?.Invoke();
+
         public PlayerAttributes()
         {
             foreach (PlayerAttribute attribute in Enum.GetValues(typeof(PlayerAttribute)))

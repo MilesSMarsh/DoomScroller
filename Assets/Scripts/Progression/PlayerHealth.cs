@@ -29,8 +29,25 @@ namespace DoomScroller.Progression
         private readonly int _regenPerInterval;
         private readonly float _regenIntervalSeconds;
         private DateTime _lastRegenUtc;
+        private readonly Func<DateTime> _deviceUtcNow;
+        private readonly Func<double> _monotonicSeconds;
+        private bool _anchored;
+        private DateTime _anchorServerUtc;
+        private double _anchorMonotonic;
+
+        private static readonly System.Diagnostics.Stopwatch DefaultMonotonic = System.Diagnostics.Stopwatch.StartNew();
+
+        // Before the first server sync: device UTC. After: the server time at the anchor
+        // plus monotonic seconds since, so device clock changes can't move regen.
+        private DateTime Now => _anchored
+            ? _anchorServerUtc.AddSeconds(_monotonicSeconds() - _anchorMonotonic)
+            : _deviceUtcNow();
 
         public event Action Changed;
+
+        // Tells listeners (screens, the feed) that state was replaced by a server load.
+        // LoadState/RestoreFrom stay silent because they also run before anything subscribes.
+        public void NotifyLoaded() => Changed?.Invoke();
 
         // Never lower than this, however many defeats in a row — rounded, floored at 1
         // so a very low TrueMaxHealth can't compute a floor of 0.
@@ -38,13 +55,32 @@ namespace DoomScroller.Progression
 
         public bool IsAtFloor => CurrentMaxHealth <= Floor;
 
-        public PlayerHealth(int trueMaxHealth, int regenPerInterval, float regenIntervalSeconds)
+        public PlayerHealth(int trueMaxHealth, int regenPerInterval, float regenIntervalSeconds, Func<DateTime> deviceUtcNow = null, Func<double> monotonicSeconds = null)
         {
+            _monotonicSeconds = monotonicSeconds ?? (() => DefaultMonotonic.Elapsed.TotalSeconds);
+            _deviceUtcNow = deviceUtcNow ?? (() => DateTime.UtcNow);
             TrueMaxHealth = trueMaxHealth;
             CurrentMaxHealth = trueMaxHealth;
             _regenPerInterval = regenPerInterval;
             _regenIntervalSeconds = regenIntervalSeconds;
-            _lastRegenUtc = DateTime.UtcNow;
+            _lastRegenUtc = Now;
+        }
+
+        // Regen runs on server time: anchors server UTC to a monotonic clock here, so
+        // changing the device clock afterwards credits nothing. Re-anchored on each sync.
+        public void SetServerTime(DateTime serverUtc)
+        {
+            _anchorServerUtc = serverUtc;
+            _anchorMonotonic = _monotonicSeconds();
+            _anchored = true;
+        }
+
+        // Server-owned values after a load/save: current max and its regen clock. Fires Changed.
+        public void ApplyServerState(int currentMax, long lastRegenUtcTicks)
+        {
+            CurrentMaxHealth = Mathf.Clamp(currentMax, Floor, TrueMaxHealth);
+            _lastRegenUtc = new DateTime(lastRegenUtcTicks, DateTimeKind.Utc);
+            Changed?.Invoke();
         }
 
         // The save/load path — restores both HP fields and the regen clock directly.
@@ -125,11 +161,11 @@ namespace DoomScroller.Progression
         {
             if (CurrentMaxHealth >= TrueMaxHealth)
             {
-                _lastRegenUtc = DateTime.UtcNow;
+                _lastRegenUtc = Now;
                 return;
             }
 
-            var elapsedSeconds = (DateTime.UtcNow - _lastRegenUtc).TotalSeconds;
+            var elapsedSeconds = (Now - _lastRegenUtc).TotalSeconds;
             var ticks = (int)(elapsedSeconds / _regenIntervalSeconds);
             if (ticks <= 0)
             {
@@ -152,7 +188,7 @@ namespace DoomScroller.Progression
                 return 0f;
             }
 
-            var elapsedSeconds = (DateTime.UtcNow - _lastRegenUtc).TotalSeconds;
+            var elapsedSeconds = (Now - _lastRegenUtc).TotalSeconds;
             var remaining = _regenIntervalSeconds - elapsedSeconds % _regenIntervalSeconds;
             return (float)Math.Max(0.0, remaining);
         }

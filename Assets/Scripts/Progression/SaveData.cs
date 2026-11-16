@@ -236,5 +236,9 @@ namespace DoomScroller.Progression
 
         // Defaults on; a save without the key loads with it on. A saved false stays off.
         public bool autoConsumeRevivePotions = true;
+
+        // Today's Quest Board missions (DailyMissionBoard.CaptureState). A save from an
+        // earlier UTC day is ignored on load, so the board starts the new day fresh.
+        public DailyMissionState dailyMissions;
     }
 }

@@ -129,6 +129,19 @@ public class ProfileTests
     }
 
     [Fact]
+    public async Task Upload_can_lower_current_max_down_to_the_floor()
+    {
+        // The game applies defeat penalties itself until fights go through the server (017).
+        var env = new Env();
+        var c = await env.Player();
+        await Put(c, Sample, 0);                                  // current 60 of 100
+        var (_, doc, _) = await Read(await Put(c, With(Sample, current: 35), 1));
+        Assert.Equal(35, doc["healthCurrentMax"]!.GetValue<int>());
+        var (_, floored, _) = await Read(await Put(c, With(Sample, current: 5), 2));
+        Assert.Equal(20, floored["healthCurrentMax"]!.GetValue<int>());
+    }
+
+    [Fact]
     public async Task First_sign_in_takes_client_value_clamped_to_true_max()
     {
         var c = await new Env().Player();
@@ -143,7 +156,7 @@ public class ProfileTests
         var c = await env.Player();
         await Put(c, Sample, 0);                                  // 60/100, clock = now
         env.Time.Now += TimeSpan.FromSeconds(95);                 // 3 whole ticks of 30 s = +30
-        var (_, doc, _) = await Read(await Put(c, With(Sample, current: 1), 1));
+        var (_, doc, _) = await Read(await Put(c, With(Sample, current: 100), 1));
         Assert.Equal(90, doc["healthCurrentMax"]!.GetValue<int>());
         Assert.Equal(env.Time.Now.UtcDateTime.Ticks - TimeSpan.FromSeconds(5).Ticks, doc["healthLastRegenUtcTicks"]!.GetValue<long>());
         env.Time.Now += TimeSpan.FromHours(1);

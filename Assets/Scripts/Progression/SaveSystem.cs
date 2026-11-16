@@ -7,6 +7,8 @@ namespace DoomScroller.Progression
     // a SaveData; this just gets it to and from disk. One fixed file (single implicit
     // save slot, no save-selection UI) at Application.persistentDataPath, which is
     // writable on both the Editor (per-project) and real iOS/Android builds.
+    // UNUSED: the profile now lives on the server (ProfileSync). Kept only for reference;
+    // an existing local savegame.json is ignored, not uploaded.
     public static class SaveSystem
     {
         private const string FileName = "savegame.json";

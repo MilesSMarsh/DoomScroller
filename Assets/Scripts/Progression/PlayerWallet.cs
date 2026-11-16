@@ -13,6 +13,10 @@ namespace DoomScroller.Progression
 
         public event Action Changed;
 
+        // Tells listeners (screens, the feed) that state was replaced by a server load.
+        // LoadState/RestoreFrom stay silent because they also run before anything subscribes.
+        public void NotifyLoaded() => Changed?.Invoke();
+
         public PlayerWallet(int startingGold)
         {
             Gold = Mathf.Max(0, startingGold);
