@@ -2,7 +2,7 @@
 
 **Owner:** backend-engineer
 **Size:** L
-**Status:** approved
+**Status:** done
 **GDD:** docs/gdd/GDD.md#where-combat-runs, #persistence-and-save-rules (Fights,
 Dropped connections, Revive potions), #combat
 **Depends on:** 008, 012, 015

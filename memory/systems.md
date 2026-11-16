@@ -44,7 +44,12 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
   `Combat/FightInputBuilder.cs`, `Combat/CombatResolver.cs`,
   `Combat/WinOddsEstimator.cs`, `Combat/CombatPlaybackView.cs`, `Combat/FightReplay.cs`,
   `Encounters/CombatResolutionView.cs`, `Encounters/DungeonStepPageView.cs`.
-- Gap: fights resolve on the device, not the server (tasks 016/017); seed isn't
+- `CombatCore/LoadoutMapper` maps saved items to the player side of `FightInput`; the
+  server uses it.
+- Gap: the game still resolves fights on the device; the server can resolve them (see
+  Server move) but the client doesn't call it until task 017. `FightInputBuilder` still
+  has its own copy of the item mapping (Miles approved making it delegate to
+  `LoadoutMapper`; no spec yet). Seed isn't
   drawn/saved at tap-in, so quitting mid-replay doesn't replay the same fight. No 2x speed or skip. Revive is armed by a global setting, not a
   per-card toggle.
 
@@ -213,8 +218,7 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
   (`healthLastRegenUtcTicks` set from server time) and current max HP: uploads can't
   change `healthCurrentMax` (regen from server time applied, capped at
   `healthTrueMax`, 20% floor); only a new profile takes the client value, clamped.
-  Regen 10 HP / 30 s from `ProfileOptions` config. `fight_records` table exists, unused
-  until 016. Client: `IServerClient.LoadProfileAsync`/`SaveProfileAsync` (JSON +
+  Regen 10 HP / 30 s from `ProfileOptions` config. Client: `IServerClient.LoadProfileAsync`/`SaveProfileAsync` (JSON +
   revision + server time), not yet called by the game. Key files:
   `Server/src/DoomScroller.Server/Profile.cs`, `Migrations/003_profiles_and_fights.sql`,
   `Server/tests/fixtures/` (sample save).
@@ -222,9 +226,26 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
   (menu DoomScroller > Export Encounter Data, or batch `ExportBatch`) writes
   `Server/data/encounters.json` (id, type, enemy HP/damage/speed, damage-type
   multipliers) for every fight-type encounter; an EditMode test fails if the committed
-  file is stale. Not yet read by the server (016).
-- Gap: no fight endpoints yet; sign-in failure only logs a warning (no offline screen
-  until task 014).
+  file is stale. The server loads it at startup (`Encounters.cs`).
+- Built (server fights): `POST /fights` (client fight id GUID, encounter id, armed-Revive
+  flag) builds `FightInput` from the stored profile (via `LoadoutMapper`) and the cached
+  encounter data, draws the seed, runs CombatCore, and in one transaction writes the
+  `fight_records` row and updates the profile (25% max-HP loss on defeat, Revive
+  consumed only if it fired, revision bumped); returns the `FightResult` and new
+  revision. Same fight id returns the stored result (no reroll, no double penalty).
+  Revive armed only if the flag is set and the profile carries one. Only Enemy
+  encounters resolve; Ambush and other types, unknown ids, or no profile → 400, profile
+  untouched. `GET /fights/pending` returns the unacknowledged fight;
+  `POST /fights/{id}/ack` clears it. Client: `IServerClient.CommitFightAsync`/
+  `GetPendingFightAsync`/`AcknowledgeFightAsync`, not yet called by the game (017).
+  Verified end to end against real Postgres via `tools/run-server-dev.sh`. Key file:
+  `Server/src/DoomScroller.Server/Fights.cs`.
+- Docker: build context is the repo root (`Server/docker-compose.yml`); the repo-root
+  `.dockerignore` is an allowlist (server source, `Server/data/`, CombatCore) so Unity's
+  `Library/` isn't sent.
+- Gap: the game doesn't use the fight endpoints yet (017); Ambush, dungeon and
+  resource-node fights stay on the device. Sign-in failure only logs a warning (no
+  offline screen until task 014).
 
 ## Debug tools (Editor + development builds only)
 - In-game Debug panel: `UI/DebugPanelController.cs` self-installs on scene load (no scene
