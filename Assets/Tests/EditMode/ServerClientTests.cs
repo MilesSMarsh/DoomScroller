@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using DoomScroller.CombatCore;
 using DoomScroller.Network;
 using NUnit.Framework;
 
@@ -250,6 +251,80 @@ namespace DoomScroller.Tests.EditMode
             var r = Make(t, store).LoadProfileAsync().Result;
             Assert.IsFalse(r.Ok);
             Assert.AreEqual(0, r.Status);
+        }
+
+        const string FightBody = "{\"hasPending\":true,\"fightId\":\"f1\",\"encounterId\":\"Enemy_X\",\"seed\":42,\"reviveFired\":true,\"revision\":5," +
+            "\"serverTimeUtc\":\"t\",\"result\":{\"outcome\":1,\"beats\":[{\"Actor\":0,\"IsRanged\":false,\"WasMiss\":false,\"DisplayDamage\":9,\"AbilityName\":null,\"IsDotTick\":false}]," +
+            "\"reviveFired\":true,\"reviveBeatIndex\":0,\"finalPlayerHp\":0,\"finalEnemyHp\":3}}";
+
+        [Test]
+        public void CommitFight_PostsIdEncounterAndFlag_AndParsesResult()
+        {
+            var store = new FakeStore { Token = "t" };
+            string sentMethod = null, sentBody = null;
+            var t = new CapturingTransport { Handler = (m, u, b) => { sentMethod = m; sentBody = b; return new ServerResponse(200, FightBody); } };
+            var r = Make(t, store).CommitFightAsync("f1", "Enemy_X", true).Result;
+            Assert.AreEqual("POST", sentMethod);
+            Assert.AreEqual("http://x/fights", t.LastUrl);
+            StringAssert.Contains("\"fightId\":\"f1\"", sentBody);
+            StringAssert.Contains("\"encounterId\":\"Enemy_X\"", sentBody);
+            StringAssert.Contains("\"reviveArmed\":true", sentBody);
+            Assert.IsTrue(r.Ok);
+            Assert.AreEqual(5, r.Revision);
+            Assert.AreEqual(42, r.Seed);
+            Assert.IsTrue(r.ReviveFired);
+            Assert.AreEqual(FightOutcome.Loss, r.Result.outcome);
+            Assert.AreEqual(1, r.Result.beats.Length);
+            Assert.AreEqual(9, r.Result.beats[0].DisplayDamage);
+            Assert.AreEqual(3, r.Result.finalEnemyHp);
+        }
+
+        [Test]
+        public void CommitFight_BadRequest_CarriesReason_AndNoResult()
+        {
+            var store = new FakeStore { Token = "t" };
+            var t = new FakeTransport { Handler = (u, k) => new ServerResponse(400, "{\"error\":\"Unknown encounter id.\"}") };
+            var r = Make(t, store).CommitFightAsync("f1", "nope", false).Result;
+            Assert.IsFalse(r.Ok);
+            Assert.AreEqual(400, r.Status);
+            Assert.AreEqual("Unknown encounter id.", r.Error);
+            Assert.IsNull(r.Result);
+        }
+
+        [Test]
+        public void CommitFight_NetworkFailure_IsStatusZero()
+        {
+            var t = new FakeTransport { Handler = (u, k) => new ServerResponse(0, null) };
+            var r = Make(t, new FakeStore { Token = "t" }).CommitFightAsync("f1", "e", false).Result;
+            Assert.AreEqual(0, r.Status);
+            Assert.IsFalse(r.Ok);
+        }
+
+        [Test]
+        public void GetPendingFight_ParsesPending_AndEmpty()
+        {
+            var store = new FakeStore { Token = "t" };
+            var t = new CapturingTransport { Handler = (m, u, b) => new ServerResponse(200, FightBody) };
+            var r = Make(t, store).GetPendingFightAsync().Result;
+            Assert.AreEqual("http://x/fights/pending", t.LastUrl);
+            Assert.IsTrue(r.HasPending);
+            Assert.AreEqual("f1", r.FightId);
+            Assert.AreEqual("Enemy_X", r.EncounterId);
+            Assert.AreEqual(1, r.Result.beats.Length);
+
+            var empty = new FakeTransport { Handler = (u, k) => new ServerResponse(200, "{\"hasPending\":false}") };
+            var e = Make(empty, store).GetPendingFightAsync().Result;
+            Assert.IsTrue(e.Ok);
+            Assert.IsFalse(e.HasPending);
+            Assert.IsNull(e.Result);
+        }
+
+        [Test]
+        public void AcknowledgeFight_PostsToAckPath()
+        {
+            var t = new CapturingTransport { Handler = (m, u, b) => new ServerResponse(204, "") };
+            Assert.IsTrue(Make(t, new FakeStore { Token = "t" }).AcknowledgeFightAsync("f1").Result);
+            Assert.AreEqual("http://x/fights/f1/ack", t.LastUrl);
         }
 
         class CapturingTransport : IServerTransport

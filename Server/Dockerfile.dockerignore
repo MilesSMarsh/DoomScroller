@@ -1,0 +1,8 @@
+# Docker build context is the repo root (Server/docker-compose.yml). Allowlist only what
+# Server/Dockerfile copies, so the 5 GB Unity Library/ isn't sent to the builder.
+*
+!Server/src/DoomScroller.Server/
+!Server/data/
+!Assets/Scripts/CombatCore/
+**/bin/
+**/obj/

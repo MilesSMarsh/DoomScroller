@@ -10,10 +10,12 @@
     <PackageReference Include="Npgsql" Version="9.0.3" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="../../data/encounters.json" Link="data/encounters.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
     <EmbeddedResource Include="Migrations/*.sql" />
   </ItemGroup>
-  <!-- Shared combat library: linked, never copied. Unity owns the files; 016 wires usage.
-       Empty until task 008 creates the folder. -->
+  <!-- Shared combat library: linked, never copied. Unity owns the files. -->
   <PropertyGroup>
     <CombatCoreDir>$(MSBuildThisFileDirectory)../../../Assets/Scripts/CombatCore/</CombatCoreDir>
   </PropertyGroup>

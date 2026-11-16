@@ -2,7 +2,7 @@
 
 **Owner:** backend-engineer
 **Size:** L
-**Status:** todo
+**Status:** approved
 **GDD:** docs/gdd/GDD.md#where-combat-runs, #persistence-and-save-rules (Fights,
 Dropped connections, Revive potions), #combat
 **Depends on:** 008, 012, 015
@@ -58,3 +58,14 @@ reinstalling or a dropped connection never rerolls a fight.
   shops and crafting stay on the client (Q6). ASP.NET Core (.NET 10) compiles CombatCore
   from `Assets/Scripts/CombatCore/` via the 010 link (Q1). Fight records go in the
   `fight_records` table 012 created; the profile stays one JSONB document (Q2, Q7).
+- Question for Miles: `FightInputBuilder.BuildPlayer` still has its own copy of the item mapping; `CombatCore/LoadoutMapper.cs` is the shared one. OK to have the gameplay-engineer make the builder delegate to it (I couldn't write `Combat/`)? (answered below)
+  - Answered (Miles, 2026-11-15): yes
+- [x] (manual, Miles) `tools/run-server-dev.sh` against real Postgres, then POST /fights end to end (Postgres store is untested; tests use in-memory stores).
+- Manual check run by Claude at Miles' request (2026-11-15), dev server + real Postgres:
+  sign-in → POST /fights with no profile 400 → PUT profile rev 1 → POST /fights 200
+  (server seed, Loss, rev 2, current max HP 60 → 35 = 25% penalty) → same fightId retried
+  returns the same fight (one DB row, no double penalty) → /fights/pending → ack 204 →
+  pending empty; unknown encounter 400; no token 401. Fix made: added repo-root
+  `.dockerignore` allowlist (this machine's Docker has no buildx, so the legacy builder
+  ignored `Server/Dockerfile.dockerignore` and sent the 5 GB Unity Library/).
+- Approved for merge (Miles, 2026-11-15).

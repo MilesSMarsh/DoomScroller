@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using DoomScroller.CombatCore;
 
 namespace DoomScroller.Network
 {
@@ -40,6 +41,30 @@ namespace DoomScroller.Network
         public bool Conflict => Status == 409;
     }
 
+    // Result of CommitFight/GetPendingFight. Status 0 = no response; 400 = Error says why
+    // (profile untouched); 409 = profile changed mid-fight, safe to retry with the same id.
+    // HasPending is false when GET /fights/pending found nothing. Result is the server's
+    // event log to replay; Revision is the profile revision after the fight's changes.
+    public readonly struct FightResponse
+    {
+        public readonly long Status;
+        public readonly bool HasPending;
+        public readonly string FightId;
+        public readonly string EncounterId;
+        public readonly int Seed;
+        public readonly bool ReviveFired;
+        public readonly int Revision;
+        public readonly FightResult Result;
+        public readonly string Error;
+        public FightResponse(long status, bool hasPending, string fightId, string encounterId, int seed, bool reviveFired,
+            int revision, FightResult result, string error)
+        {
+            Status = status; HasPending = hasPending; FightId = fightId; EncounterId = encounterId; Seed = seed;
+            ReviveFired = reviveFired; Revision = revision; Result = result; Error = error;
+        }
+        public bool Ok => Status >= 200 && Status < 300;
+    }
+
     public interface IServerClient
     {
         bool IsSignedIn { get; }
@@ -51,5 +76,19 @@ namespace DoomScroller.Network
         Task<ProfileResponse> LoadProfileAsync();
         // PUT /profile with the whole save JSON and the revision it was based on (0 for none).
         Task<ProfileResponse> SaveProfileAsync(string saveJson, int baseRevision);
+
+        // POST /fights. The id is client-generated and reused on retry: the server returns
+        // the stored fight instead of rolling again. reviveArmed = the AutoConsumeRevivePotions
+        // setting; the server arms a Revive only if the stored profile carries one.
+        // Defaults keep older test doubles compiling; ServerClient overrides them.
+        Task<FightResponse> CommitFightAsync(string fightId, string encounterId, bool reviveArmed) =>
+            Task.FromResult(new FightResponse(0, false, null, null, 0, false, 0, null, null));
+
+        // GET /fights/pending: a committed fight not yet acknowledged, to replay after a reconnect.
+        Task<FightResponse> GetPendingFightAsync() =>
+            Task.FromResult(new FightResponse(0, false, null, null, 0, false, 0, null, null));
+
+        // POST /fights/{id}/ack once the replay has been shown. True when the server recorded it.
+        Task<bool> AcknowledgeFightAsync(string fightId) => Task.FromResult(false);
     }
 }

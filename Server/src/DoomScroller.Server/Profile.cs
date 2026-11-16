@@ -83,8 +83,11 @@ public sealed record ProfileResult(ProfileStatus Status, string? Document = null
 /// <summary>Profile rules: server-owned regen clock and current max HP. Stateless; state lives in the store.</summary>
 public sealed class ProfileService(IProfileStore store, ProfileOptions options, TimeProvider time)
 {
-    const string TrueMax = "healthTrueMax", CurrentMax = "healthCurrentMax", LastRegen = "healthLastRegenUtcTicks";
+    public const string TrueMax = "healthTrueMax", CurrentMax = "healthCurrentMax", LastRegen = "healthLastRegenUtcTicks";
     const double FloorFraction = 0.2;
+    public const double DefeatPenaltyFraction = 0.25;
+
+    public static int FloorFor(int trueMax) => Math.Max(1, (int)Math.Round(trueMax * FloorFraction, MidpointRounding.AwayFromZero));
 
     public DateTime Now => time.GetUtcNow().UtcDateTime;
 
@@ -135,10 +138,10 @@ public sealed class ProfileService(IProfileStore store, ProfileOptions options, 
     }
 
     /// <summary>Credits whole regen intervals elapsed on the server clock; capped at true max, floored at 20% of it.</summary>
-    void ApplyRegen(JsonObject doc)
+    public void ApplyRegen(JsonObject doc)
     {
         var trueMax = ReadInt(doc, TrueMax);
-        var floor = Math.Max(1, (int)Math.Round(trueMax * FloorFraction, MidpointRounding.AwayFromZero));
+        var floor = FloorFor(trueMax);
         var cur = Math.Clamp(ReadInt(doc, CurrentMax), Math.Min(floor, trueMax), trueMax);
         var now = Now;
         var last = new DateTime(Math.Clamp(ReadLong(doc, LastRegen), 0, now.Ticks), DateTimeKind.Utc);
@@ -156,8 +159,8 @@ public sealed class ProfileService(IProfileStore store, ProfileOptions options, 
         doc[LastRegen] = last.Ticks;
     }
 
-    static int ReadInt(JsonObject o, string k) => (int)Math.Clamp(ReadLong(o, k), int.MinValue, int.MaxValue);
-    static long ReadLong(JsonObject o, string k)
+    public static int ReadInt(JsonObject o, string k) => (int)Math.Clamp(ReadLong(o, k), int.MinValue, int.MaxValue);
+    public static long ReadLong(JsonObject o, string k)
     {
         try { return o[k] is JsonValue v ? (v.TryGetValue<long>(out var l) ? l : v.TryGetValue<int>(out var i) ? i : 0) : 0; }
         catch (InvalidOperationException) { return 0; }

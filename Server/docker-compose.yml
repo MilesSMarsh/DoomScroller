@@ -12,7 +12,9 @@ services:
       interval: 2s
       retries: 30
   server:
-    build: .
+    build:
+      context: ..
+      dockerfile: Server/Dockerfile
     depends_on:
       postgres:
         condition: service_healthy

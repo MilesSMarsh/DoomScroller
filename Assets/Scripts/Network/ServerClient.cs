@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using DoomScroller.CombatCore;
 using UnityEngine;
 
 namespace DoomScroller.Network
@@ -70,6 +71,38 @@ namespace DoomScroller.Network
             if (env == null) return new ProfileResponse(res.Ok ? 0 : res.Status, false, null, 0, null);
             var json = string.IsNullOrEmpty(env.profile) ? null : env.profile;
             return new ProfileResponse(res.Status, env.isNew, json, env.revision, env.serverTimeUtc);
+        }
+
+        [Serializable]
+        class FightRequest { public string fightId; public string encounterId; public bool reviveArmed; }
+
+        [Serializable]
+        class FightEnvelope
+        {
+            public bool hasPending; public string fightId; public string encounterId; public int seed;
+            public bool reviveFired; public int revision; public FightResult result; public string error;
+        }
+
+        public async Task<FightResponse> CommitFightAsync(string fightId, string encounterId, bool reviveArmed)
+        {
+            var body = JsonUtility.ToJson(new FightRequest { fightId = fightId, encounterId = encounterId, reviveArmed = reviveArmed });
+            return ParseFight(await SendAsync("POST", "/fights", body));
+        }
+
+        public async Task<FightResponse> GetPendingFightAsync() => ParseFight(await SendAsync("GET", "/fights/pending"));
+
+        public async Task<bool> AcknowledgeFightAsync(string fightId) =>
+            (await SendAsync("POST", "/fights/" + Uri.EscapeDataString(fightId) + "/ack")).Ok;
+
+        static FightResponse ParseFight(ServerResponse res)
+        {
+            if (res.Status == 0 || string.IsNullOrEmpty(res.Body)) return new FightResponse(res.Status, false, null, null, 0, false, 0, null, null);
+            FightEnvelope env;
+            try { env = JsonUtility.FromJson<FightEnvelope>(res.Body); }
+            catch (ArgumentException) { env = null; }
+            if (env == null) return new FightResponse(res.Ok ? 0 : res.Status, false, null, null, 0, false, 0, null, null);
+            return new FightResponse(res.Status, env.hasPending, env.fightId, env.encounterId, env.seed, env.reviveFired,
+                env.revision, env.hasPending ? env.result : null, env.error);
         }
 
         public static ServerClient CreateDefault()

@@ -47,6 +47,8 @@ public static class Migrator
     }
 }
 
+public sealed record FightRequest(string? FightId, string? EncounterId, bool ReviveArmed);
+
 public partial class Program
 {
     public static void Main(string[] args)
@@ -73,7 +75,12 @@ public partial class Program
         {
             builder.Services.AddSingleton<IPlayerStore>(new NpgsqlPlayerStore(db));
             builder.Services.AddSingleton<IProfileStore>(new NpgsqlProfileStore(db));
+            builder.Services.AddSingleton<IFightStore>(new NpgsqlFightStore(db));
         }
+        builder.Services.AddSingleton<ISeedSource, RandomSeedSource>();
+        // Static data, read once. ENCOUNTERS_PATH overrides the copy shipped next to the binary.
+        var encPath = builder.Configuration["ENCOUNTERS_PATH"] ?? Path.Combine(AppContext.BaseDirectory, "data", "encounters.json");
+        builder.Services.AddSingleton(sp => EncounterCatalog.LoadFile(encPath));
         builder.Services.AddSingleton(ProfileOptions.From(builder.Configuration));
         builder.Services.AddSingleton(TimeProvider.System);
 
@@ -121,6 +128,30 @@ public partial class Program
             return ToHttp(svc, await svc.PutAsync((Guid)c.Items[AuthExtensions.PlayerIdItem]!, System.Text.Encoding.UTF8.GetString(ms.ToArray()), rev, ct));
         });
 
+        // Fights: the server draws the seed, simulates, and commits before replying.
+        app.MapPost("/fights", async (FightRequest req, HttpContext c, IServiceProvider sp, CancellationToken ct) =>
+        {
+            var svc = FightSvc(sp);
+            if (svc is null) return Results.Problem("Database not configured.", statusCode: 503);
+            var res = await svc.ResolveAsync((Guid)c.Items[AuthExtensions.PlayerIdItem]!, req.FightId, req.EncounterId, req.ReviveArmed, ct);
+            return FightToHttp(sp, res);
+        });
+        app.MapGet("/fights/pending", async (HttpContext c, IServiceProvider sp, CancellationToken ct) =>
+        {
+            var svc = FightSvc(sp);
+            if (svc is null) return Results.Problem("Database not configured.", statusCode: 503);
+            var res = await svc.PendingAsync((Guid)c.Items[AuthExtensions.PlayerIdItem]!, ct);
+            return res.Status == FightStatus.NotFound
+                ? Results.Ok(new { hasPending = false, serverTimeUtc = DateTime.UtcNow })
+                : FightToHttp(sp, res);
+        });
+        app.MapPost("/fights/{id}/ack", async (string id, HttpContext c, IServiceProvider sp, CancellationToken ct) =>
+        {
+            var svc = FightSvc(sp);
+            if (svc is null) return Results.Problem("Database not configured.", statusCode: 503);
+            return await svc.AcknowledgeAsync((Guid)c.Items[AuthExtensions.PlayerIdItem]!, id, ct) ? Results.NoContent() : Results.NotFound();
+        });
+
         app.MapGet("/health", async (IDatabaseProbe probe, CancellationToken ct) => Results.Ok(new
         {
             version = typeof(Program).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion?.Split('+')[0] ?? "unknown",
@@ -137,6 +168,33 @@ public partial class Program
         sp.GetService<IProfileStore>() is { } store
             ? new ProfileService(store, sp.GetRequiredService<ProfileOptions>(), sp.GetRequiredService<TimeProvider>())
             : null;
+
+    static FightService? FightSvc(IServiceProvider sp) =>
+        sp.GetService<IFightStore>() is { } fights && ProfileSvc(sp) is { } profileSvc
+            ? new FightService(sp.GetRequiredService<IProfileStore>(), fights, sp.GetRequiredService<EncounterCatalog>(),
+                sp.GetRequiredService<ISeedSource>(), profileSvc)
+            : null;
+
+    static IResult FightToHttp(IServiceProvider sp, FightOutcomeDto r)
+    {
+        var now = sp.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime;
+        return r.Status switch
+        {
+            FightStatus.Ok => Results.Ok(new
+            {
+                hasPending = true,
+                fightId = r.Fight!.FightId,
+                encounterId = r.Fight.EncounterId,
+                seed = r.Fight.Seed,
+                reviveFired = r.Fight.ReviveFired,
+                revision = r.Revision,
+                serverTimeUtc = now,
+                result = System.Text.Json.Nodes.JsonNode.Parse(r.Fight.ResultJson),
+            }),
+            FightStatus.Conflict => Results.Json(new { error = r.Error, serverTimeUtc = now }, statusCode: 409),
+            _ => Results.BadRequest(new { error = r.Error }),
+        };
+    }
 
     static IResult ToHttp(ProfileService svc, ProfileResult r) => r.Status switch
     {
