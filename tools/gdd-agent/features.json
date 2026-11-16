@@ -1,0 +1,120 @@
+{
+  "_comment": "Requirements the agent checks the codebase against. Each feature cites the GDD heading it comes from; the agent pulls that section's text from docs/gdd/GDD.md (and refuses a feature whose section is missing). 'scope' is the item's place in the GDD's 'Semester scope' Must list (Should/Stretch have none). 'needs' are capabilities that must already exist in the code (checked by the same scan). Each step writes ONE file and is done when all of its 'done_when' checks pass.",
+  "capabilities": {
+    "save_system": {"type": "SaveData"},
+    "win_odds": {"type": "WinOddsEstimator"},
+    "server_profile": {"type": "ProfileService", "root": "Server/src"},
+    "server_fights": {"type": "FightService", "root": "Server/src"},
+    "regions": {"type": "RegionDefinition"},
+    "server_chat": {"type": "ChatService", "root": "Server/src"},
+    "live_boss_service": {"type": "BossShardService", "root": "Server/src"},
+    "village_view": {"type": "VillageView"}
+  },
+  "features": [
+    {
+      "id": "win_odds_badge",
+      "title": "Simulator-based win% badge",
+      "gdd_section": "Semester scope",
+      "gdd_keywords": ["win%", "badge"],
+      "tier": "must", "scope": 4, "size": "M", "player_facing": true,
+      "needs": ["save_system"],
+      "steps": [
+        {"path": "Assets/Scripts/Combat/WinOddsEstimator.cs", "done_when": [{"type": "WinOddsEstimator"}]}
+      ]
+    },
+    {
+      "id": "server_fight_resolution",
+      "title": "Backend resolves fights with server-drawn seeds",
+      "gdd_section": "Where combat runs",
+      "gdd_keywords": ["seed", "server"],
+      "tier": "must", "scope": 3, "size": "L", "player_facing": false,
+      "needs": ["server_profile"],
+      "steps": [
+        {"path": "Server/src/DoomScroller.Server/Fights.cs", "done_when": [{"type": "FightService", "root": "Server/src"}]}
+      ]
+    },
+    {
+      "id": "regions_swipe_pressure",
+      "title": "Feed generator with two regions and swipe pressure",
+      "gdd_section": "Feed generation",
+      "gdd_keywords": ["region", "swipe pressure", "streak"],
+      "tier": "must", "scope": 5, "size": "L", "player_facing": true,
+      "needs": ["regions"],
+      "steps": [
+        {"path": "Assets/Scripts/Feed/SwipePressure.cs", "done_when": [{"type": "SwipePressureTracker"}]}
+      ]
+    },
+    {
+      "id": "live_bosses",
+      "title": "Live boss system: sharded world bosses and the raid boss",
+      "gdd_section": "Boss types",
+      "gdd_keywords": ["world boss", "shard", "raid"],
+      "tier": "must", "scope": 6, "size": "L", "player_facing": true,
+      "needs": ["server_fights", "live_boss_service"],
+      "steps": [
+        {"path": "Assets/Scripts/Encounters/WorldBossView.cs", "done_when": [{"type": "WorldBossView"}]}
+      ]
+    },
+    {
+      "id": "tavern_chat",
+      "title": "Tavern player chat with filter, reporting, blocking",
+      "gdd_section": "Multiplayer",
+      "gdd_keywords": ["chat", "filter", "report"],
+      "tier": "must", "scope": 8, "size": "L", "player_facing": true,
+      "needs": ["server_chat"],
+      "steps": [
+        {"path": "Assets/Scripts/Social/TavernChatClient.cs", "done_when": [{"type": "TavernChatClient"}]}
+      ]
+    },
+    {
+      "id": "daily_missions",
+      "title": "Quest Board daily missions",
+      "gdd_section": "Day to day",
+      "gdd_keywords": ["daily mission", "quest board"],
+      "tier": "must", "scope": 9, "size": "S", "player_facing": true,
+      "needs": ["save_system", "village_view"],
+      "steps": [
+        {
+          "path": "Assets/Scripts/Progression/DailyMissions.cs",
+          "brief": "Plain C# (no MonoBehaviour), namespace DoomScroller.Progression. DailyMission (kind: DefeatEnemies / ClearDungeon / WinFightsWithoutLoss-free choice, description, target, progress, gold reward, claimed). DailyMissionBoard: built for a UTC calendar date; rolls exactly 3 missions with a System.Random seeded from the date (same date -> same missions on every device); RecordEnemyDefeated(), RecordDungeonCleared() advance matching missions; Claim(index) returns the gold reward once when complete; RefreshForDate(date) resets progress when the UTC day changes; CaptureState()/LoadState(...) to/from a [Serializable] DailyMissionState (date string, progress[], claimed[]) so it can live in SaveData later. Event Changed fired on any change.",
+          "context_files": ["Assets/Scripts/Progression/PlayerWallet.cs", "Assets/Scripts/Progression/PlayerProgression.cs"],
+          "done_when": [{"type": "DailyMissionBoard"}, {"type": "DailyMission"}, {"type": "DailyMissionState"}]
+        },
+        {
+          "path": "Assets/Tests/EditMode/DailyMissionBoardTests.cs",
+          "brief": "NUnit EditMode tests (namespace DoomScroller.Tests.EditMode) for DailyMissionBoard: same date gives identical missions, different dates can differ; exactly 3 missions; RecordEnemyDefeated/RecordDungeonCleared advance only matching missions and cap at target; Claim pays once and only when complete; RefreshForDate on a new day resets progress; CaptureState/LoadState round-trips.",
+          "context_files": ["Assets/Tests/EditMode/PlayerLoadoutTests.cs"],
+          "done_when": [{"type": "DailyMissionBoardTests"}]
+        },
+        {
+          "path": "Assets/Scripts/Encounters/VillageQuestBoardView.cs",
+          "brief": "Replace the 'Quests are coming soon' stub. Keep the public static Create(Transform parent) factory and the existing UGUI-built-in-code style (legacy Text, VerticalLayoutGroup). Add Bind(DailyMissionBoard board, PlayerWallet wallet): shows a 'Daily Missions' title, then one row per mission with its description, 'progress/target', and a Claim button that is interactable only when complete and unclaimed; Claim adds the gold to the wallet (PlayerWallet API as in context) and refreshes. Re-renders on board.Changed; unsubscribes in OnDestroy. If Bind is never called, show 'No missions today.'",
+          "context_files": ["Assets/Scripts/Encounters/VillageQuestBoardView.cs", "Assets/Scripts/Encounters/VillageMarketView.cs", "Assets/Scripts/Progression/PlayerWallet.cs"],
+          "done_when": [{"absent_text": "Quests are coming soon"}, {"text": "DailyMissionBoard"}]
+        }
+      ]
+    },
+    {
+      "id": "events_card",
+      "title": "Events card type",
+      "gdd_section": "Semester scope",
+      "gdd_keywords": ["Events card"],
+      "tier": "should", "scope": null, "size": "M", "player_facing": true,
+      "needs": ["regions"],
+      "steps": [
+        {"path": "Assets/Scripts/Feed/EventCardView.cs", "done_when": [{"type": "EventCardView"}]}
+      ]
+    },
+    {
+      "id": "pvp_arena",
+      "title": "PvP arena",
+      "gdd_section": "Semester scope",
+      "gdd_keywords": ["PvP"],
+      "tier": "stretch", "scope": null, "size": "L", "player_facing": true,
+      "needs": ["server_fights"],
+      "steps": [
+        {"path": "Assets/Scripts/Social/ArenaView.cs", "done_when": [{"type": "ArenaView"}]}
+      ]
+    }
+  ]
+}

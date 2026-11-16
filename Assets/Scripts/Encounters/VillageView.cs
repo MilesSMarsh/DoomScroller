@@ -56,6 +56,7 @@ namespace DoomScroller.Encounters
         private VillageMarketView _marketView;
         private VillageAlchemistView _alchemistView;
         private VillageBlacksmithView _blacksmithView;
+        private VillageQuestBoardView _questBoardView;
 
         // The persistent "you are here, swipe for these" strip above the pager — see
         // UpdateEstablishmentStrip.
@@ -229,6 +230,10 @@ namespace DoomScroller.Encounters
                 {
                     view._blacksmithView = blacksmith;
                 }
+                else if (establishment is VillageQuestBoardView questBoard)
+                {
+                    view._questBoardView = questBoard;
+                }
             }
 
             CreateButton(rect, "ReturnButton", "Leave", () => view.ReturnToFeedRequested?.Invoke());
@@ -247,6 +252,7 @@ namespace DoomScroller.Encounters
             _marketView.Show(loadout, wallet, attributes, data);
             _alchemistView.Show(loadout, wallet, attributes);
             _blacksmithView.Show(loadout, wallet, attributes);
+            _questBoardView.Bind(DailyMissionTracker.Board, wallet);
 
             // Create() ran at EncounterFlowController.Awake() time, when the canvas may
             // not have settled to its real screen size yet — same lesson learned on

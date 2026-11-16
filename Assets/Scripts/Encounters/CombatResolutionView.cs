@@ -281,6 +281,10 @@ namespace DoomScroller.Encounters
 
             if (isVictory)
             {
+                if (_data.type != EncounterType.Treasure)
+                {
+                    DailyMissionTracker.Board.RecordEnemyDefeated();
+                }
                 var previousLevel = progression.Level;
                 progression.AddXp(xpReward);
 

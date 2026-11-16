@@ -213,6 +213,7 @@ namespace DoomScroller.Encounters
             }
             else if (step.IsFinalTreasureRoom)
             {
+                DailyMissionTracker.Board.RecordDungeonCleared();
                 _runOver = true;
                 _pendingChestClaim = true;
                 EncounterWon?.Invoke(_data);
