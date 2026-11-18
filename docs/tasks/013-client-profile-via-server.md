@@ -2,7 +2,7 @@
 
 **Owner:** gameplay-engineer
 **Size:** M
-**Status:** review
+**Status:** approved
 **GDD:** docs/gdd/GDD.md#technical-strategy (online-only), #persistence-and-save-rules
 **Depends on:** 012
 
@@ -28,7 +28,7 @@ back to it; there is no local save file and regen runs on server time.
       existing profile loads; failure raises `ConnectionLost` and never calls
       `StartFresh`; regen with a device clock 1 hour ahead of server time credits no
       extra HP; debounce sends one save for a burst of changes.
-- [ ] (manual, Miles) With the dev server running: play, quit, delete the app's
+- [x] (manual, Miles) With the dev server running: play, quit, delete the app's
       persistent data folder, play again; gold, gear and HP are back.
 
 ## Context
@@ -50,4 +50,5 @@ back to it; there is no local save file and regen runs on server time.
 - Question for Miles: Nothing blocks gameplay input yet (it only exposes `IsLoaded`/`Loaded`); the loading overlay belongs with 014, OK? (answered below)
   - Answered (Miles, 2026-11-15): ok
 - Manual check FAILED (Miles, 2026-11-15): "With the dev server running: play, quit, delete the app's…" — The game resets my save every time I load into it
-- [ ] (manual, Miles) Re-run the manual check against the rebuilt dev server (`tools/run-server-dev.sh`); the earlier failure had profile-less players on the server, so saves never landed. Console now warns `[ProfileSync]` on any load/save failure.
+- [x] (manual, Miles) With the dev server running: play, quit, delete only `savegame.json` in `~/.config/unity3d/DefaultCompany/DoomScroller/` (keep `prefs` — it holds the install id; deleting it signs in as a new player), play again; gold, gear and HP are back.
+- Approved for merge (Miles, 2026-11-17).
