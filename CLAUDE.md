@@ -28,7 +28,8 @@ Git + Git LFS for binary assets (check `.gitattributes` before adding new types)
 - Content pipeline (generate → check → critic loop → install as assets):
   `tools/content-pipeline/` — see its README; needs `memory/narrative.md` written
 - Play Mode tests: none yet
-- Build (Android / iOS): not configured yet
+- Build (iOS, on the Mac): `tools/build-ios.sh [--release] [--server-url <url>]` exports Xcode project to `Builds/iOS/`;
+  then `tools/build-ios-xcode.sh dev|testflight [teamId]` (env `APPLE_TEAM_ID`) — see script headers
 
 ## Reporting rule
 
