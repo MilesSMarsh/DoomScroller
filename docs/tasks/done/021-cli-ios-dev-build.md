@@ -2,7 +2,7 @@
 
 **Owner:** release-engineer
 **Size:** S
-**Status:** approved
+**Status:** done
 **GDD:** docs/gdd/GDD.md#semester-scope (Must 1: command-line build and test pipeline), #constraints
 **Depends on:** none
 
