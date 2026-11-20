@@ -6,7 +6,7 @@ namespace DoomScroller.Progression
     // Pure file I/O — no game-state knowledge. ProfileController owns building/applying
     // a SaveData; this just gets it to and from disk. One fixed file (single implicit
     // save slot, no save-selection UI) at Application.persistentDataPath, which is
-    // writable on both the Editor (per-project) and real iOS/Android builds.
+    // writable on both the Editor (per-project) and real iOS builds.
     // UNUSED: the profile now lives on the server (ProfileSync). Kept only for reference;
     // an existing local savegame.json is ignored, not uploaded.
     public static class SaveSystem

@@ -1,6 +1,6 @@
 # Doom Scroller — Agent Crew
 
-**Game:** *Doom Scroller* is a mobile RPG for iOS and Android, built in Unity 6. It plays like a
+**Game:** *Doom Scroller* is a mobile RPG for iOS, built in Unity 6. It plays like a
 social feed: every post is an encounter. You scroll, pick a fight, and the game simulates the fight
 from your loadout and replays it. It is online-only with async multiplayer. The design is in
 [`docs/gdd/GDD.md`](docs/gdd/GDD.md).

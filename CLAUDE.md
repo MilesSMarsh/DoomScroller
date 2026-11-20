@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Doom Scroller — a mobile RPG (iOS + Android) in Unity that plays like a social feed:
+Doom Scroller — a mobile RPG (iOS only) in Unity that plays like a social feed:
 every post is an encounter; fights are simulated from the player's loadout and replayed.
 Online-only, async multiplayer, no AI calls at runtime. Miles is creative director.
 
@@ -16,7 +16,7 @@ Online-only, async multiplayer, no AI calls at runtime. Miles is creative direct
 
 ## Stack
 
-Unity 6000.5.10f1, C#, UGUI single Screen Space - Overlay canvas; iOS + Android.
+Unity 6000.5.10f1, C#, UGUI single Screen Space - Overlay canvas; iOS (App Store) only — no Android.
 Git + Git LFS for binary assets (check `.gitattributes` before adding new types).
 
 ## Build & Test Commands

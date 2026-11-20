@@ -8,7 +8,7 @@ Oct 20, 2026 · Miles
 
 ## Executive Summary
 
-**Doom Scroller** is a mobile RPG for iPhone and Android that plays like a social media
+**Doom Scroller** is a mobile RPG for iPhone that plays like a social media
 feed: every post is an encounter, and you scroll, tap in, and watch your character fight
 a simulated battle decided by the gear you equipped.
 
@@ -35,7 +35,7 @@ players, adults 18–35 who play in short mobile sessions and prefer loot and
 build-crafting to twitch combat. The feed isn't an object in the world; it is how the
 player travels through it, and each card is the next thing the hero meets.
 
-**Business model:** free to play, soft-launched on the App Store and Google Play in a
+**Business model:** free to play, soft-launched on the App Store in a
 few countries by the end of the semester. The store sells convenience only. Potions and
 gold are never sold for real money. Faster Inn rest is the one purchase that touches
 recovery, so it stays modest: it raises Inn recovery from 2× to 3×, saving at most 8
@@ -303,7 +303,7 @@ C# code or as encounter, enemy and loot data.
 | Combat Balance Analyst | Runs the combat simulator thousands of times across loadouts and encounters and recommends stat changes. | The win% badge can be trusted, the cards get harder at a steady pace, and a loss stings without stalling progress. |
 | Economy Balance Analyst | Owns the economy table: drop rates, prices, crafting costs, gear power curves and region-by-region resource efficiency, and recommends changes. | Upgrades that feel earned, shops worth visiting, and the newest region always being the best place to farm. |
 | QA Tester | Writes automated tests against each feature's acceptance criteria and reports what fails. | Fewer broken runs: dungeons lock correctly, rewards always land, HP regenerates as promised. |
-| Release Engineer | Writes build scripts, in-app purchase code and store listings; Miles handles store accounts, certificates and dashboards by hand. | The game installs from the App Store and Google Play, and convenience purchases work. |
+| Release Engineer | Writes build scripts, in-app purchase code and store listings; Miles handles store accounts, certificates and dashboards by hand. | The game installs from the App Store, and convenience purchases work. |
 | Backend Engineer | Builds and runs the server: player profiles and saves, fight resolution, sign-in, purchase receipt validation, chat storage and the live boss service. | Progress that is never lost or faked, fights that resolve fast, and live boss fights that hold up when many players join. |
 
 ### How the agents work together on this game
@@ -358,15 +358,14 @@ The agents run as Claude Code subagents inside the Unity project, one feature at
 with Miles approving every merge. Estimated cost: about 10.5M tokens for the semester,
 with each feature sized small, medium or large.
 
-**Stack:** Unity 6, C#, one Screen Space - Overlay canvas, targeting iOS and Android. The
+**Stack:** Unity 6, C#, one Screen Space - Overlay canvas, targeting iOS. The
 game is online-only. The server resolves every fight, and the device shows it (see
 [Where combat runs](#where-combat-runs)). A backend server (chosen by week 2) owns the
 player profile: the save, gold and gear, max HP and its regen clock, dungeon run state,
 and the daily reset. It draws each fight's seed, runs the fight simulation and records
 the result before the replay starts, and it also stores Tavern chat, Boss HP pools,
-participant lists and payouts. Players sign in with Game Center (iOS) or Google Play
-Games (Android), which supports chat blocking. Sign-in alone doesn't stop alt accounts,
-so boss rewards add a level gate and a per-device limit. The prototype has no network
+participant lists and payouts. Players sign in with Game Center, which supports chat
+blocking. Sign-in alone doesn't stop alt accounts, so boss rewards add a level gate and a per-device limit. The prototype has no network
 code yet.
 
 ### Where combat runs
@@ -582,7 +581,7 @@ context small and cached.
 4. Simulator-based win% badge
 5. Feed generator with two regions, swipe pressure, first-session rules and solo bosses
 6. Live boss system: sharded world bosses and the final raid boss
-7. Soft launch on the App Store and Google Play in a few countries, with in-app
+7. Soft launch on the App Store in a few countries, with in-app
    purchases for convenience items and store compliance (account deletion, privacy
    disclosures, age rating)
 8. Tavern player chat with filter, reporting, blocking and a moderation queue
@@ -590,7 +589,7 @@ context small and cached.
 
 **Cut line:** Items 1–7 are the core game and stay. 8 and 9 can be reworked if out of
 scope. If store review, signing or purchase testing delays item 7, the semester ships
-TestFlight and Google Play internal-test builds instead, and the store soft launch
+TestFlight builds instead, and the store soft launch
 follows right after the semester.
 
 **Should:** additional regions · enemy abilities · new encounter cards and loot · Events

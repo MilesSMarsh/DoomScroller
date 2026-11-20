@@ -10,8 +10,8 @@ the player profile and resolves every fight.
 Load: the task spec, the server code and data model it names, `memory/systems.md`
 (including the persistence and save rules), and the shared combat library.
 
-Writes: server code, data model and migrations, sign-in (Game Center / Google Play
-Games), receipt validation, hosting config, and the client-side networking layer it
+Writes: server code, data model and migrations, sign-in (Game Center),
+receipt validation, hosting config, and the client-side networking layer it
 needs. The Gameplay Engineer handles the app side of game rules.
 
 Non-negotiables from the GDD:

@@ -56,8 +56,10 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
 ## Health, loss and regen
 - Persistent max HP with a 20% floor (`FloorFraction = 0.2`); `IsAtFloor` is true when
   current max <= floor (the feed uses it to block Ambushes). Loss drops max HP by 25%
-  of true max (`DefeatPenaltyFraction = 0.25`). Regen 10 HP / 30 s by default
-  (serialized on `ProfileController`), credited while backgrounded using device time.
+  of true max (`DefeatPenaltyFraction = 0.25`). Regen 10 HP / 30 s (server
+  `ProfileOptions`; client mirror serialized on `ProfileController`) on server time:
+  `PlayerHealth.SetServerTime` applies an offset from the server UTC, so the device
+  clock changes nothing. Current max HP is taken from the server after load and every save.
 - Key files: `Progression/PlayerHealth.cs`, `Inventory/ProfileController.cs`.
 - Potions: two `ItemData` types in `Resources/Items/` — Revive Draught
   (`potion_revive`, `potionAmount` 30) and Restoration Potion (`potion_restoration`,
@@ -133,6 +135,8 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
 ## Profile and progression
 - Profile screen over the feed (keeps scroll position): equip slots, abilities,
   attribute points, potions, materials. XP levels grant attribute points.
+- Loads/saves through the server (see Save and persistence); `ProfileController.IsLoaded`
+  / `Loaded` report when the profile is in. Nothing blocks input before then (014).
 - Key files: `Inventory/PlayerLoadout.cs`, `Inventory/ProfileView.cs`,
   `Inventory/AttributesPanelView.cs`, `Progression/PlayerProgression.cs`,
   `Progression/PlayerAttributes.cs`, `Progression/StarterWeapon.cs`,
@@ -173,12 +177,25 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
   block and moderation queue; separate authored keeper dialogue.
 
 ## Save and persistence
-- Single local JSON save at `Application.persistentDataPath/savegame.json`
-  (`JsonUtility`). Items re-link to their definitions by id via `Resources.LoadAll`.
-- Key files: `Progression/SaveSystem.cs`, `Progression/SaveData.cs`.
-- Gap: GDD is online-only — server owns profile, seeds, fight results, regen clock,
-  dungeon state, daily reset. The server can store the profile (see Server move) but
-  the game still saves locally only (task 013).
+- Profile lives on the server as `SaveData` JSON (`JsonUtility`). At startup
+  `ProfileController` signs in, then `ProfileSync.LoadAsync`: existing → `LoadFromSave`,
+  new player → `StartFresh`. Items re-link to their definitions by id via `Resources.LoadAll`.
+- Saves: each `Changed` requests a debounced `PUT /profile` (1 s, at most one in flight,
+  a change mid-save queues one more); `OnApplicationPause`/`Quit` flush. A 409 reloads
+  the server profile, never overwrites. Server `healthCurrentMax` and time are applied
+  after load and every save.
+- Sign-in/load/save failure logs a `[ProfileSync]` console warning and raises
+  `ProfileController.ConnectionLost` (screen is 014); never starts fresh over the server
+  profile.
+- No local save: `SaveSystem` disk read/write is unused and an old `savegame.json` is
+  ignored. Identity is the PlayerPrefs install id; on the Linux Editor PlayerPrefs
+  (`prefs`) sit in the persistentDataPath folder
+  (`~/.config/unity3d/DefaultCompany/DoomScroller/`), so deleting that folder signs in as
+  a new player.
+- Key files: `Inventory/ProfileSync.cs`, `Inventory/ProfileController.cs`,
+  `Progression/SaveData.cs`, `Progression/SaveSystem.cs`.
+- Gap: server doesn't yet own seeds/fight results in play (017), dungeon state, daily
+  reset. No loading overlay or connection-lost screen (014).
 - Gap: client-authoritative economy (cheatable). After the server move the client still
   rolls rewards and runs shops and crafting, and uploads the whole save; only fights,
   seeds, HP loss, Revive use and current max HP (incl. regen) are server-owned.
@@ -189,8 +206,7 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
 - Data: managed Postgres; profile = today's `SaveData` as one JSONB document per player
   (with revision) plus a `fight_records` table. Docker Postgres for local dev. Proper
   tables come after the economy table.
-- Identity: anonymous sign-in by install id. Game Center / Google Play Games linking is a
-  later task before soft launch.
+- Identity: anonymous sign-in by install id. Game Center linking is specced (024–026).
 - Hosting: chosen after the local slice works (leaning Azure Container Apps); the slice
   deploys nothing.
 - Combat: no manual ability casting, no mid-fight Revive prompt. Abilities auto-cast; a
@@ -218,8 +234,8 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
   (`healthLastRegenUtcTicks` set from server time) and current max HP: uploads can't
   change `healthCurrentMax` (regen from server time applied, capped at
   `healthTrueMax`, 20% floor); only a new profile takes the client value, clamped.
-  Regen 10 HP / 30 s from `ProfileOptions` config. Client: `IServerClient.LoadProfileAsync`/`SaveProfileAsync` (JSON +
-  revision + server time), not yet called by the game. Key files:
+  Regen 10 HP / 30 s from `ProfileOptions` config. The game uses it via `ProfileSync`
+  (see Save and persistence). Key files:
   `Server/src/DoomScroller.Server/Profile.cs`, `Migrations/003_profiles_and_fights.sql`,
   `Server/tests/fixtures/` (sample save).
 - Built (encounter data): `EncounterData.Id` = asset name. `Editor/EncounterDataExporter`
@@ -244,8 +260,8 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
   `.dockerignore` is an allowlist (server source, `Server/data/`, CombatCore) so Unity's
   `Library/` isn't sent.
 - Gap: the game doesn't use the fight endpoints yet (017); Ambush, dungeon and
-  resource-node fights stay on the device. Sign-in failure only logs a warning (no
-  offline screen until task 014).
+  resource-node fights stay on the device. Connection failures raise `ConnectionLost`
+  but there is no offline screen until task 014.
 
 ## Debug tools (Editor + development builds only)
 - In-game Debug panel: `UI/DebugPanelController.cs` self-installs on scene load (no scene
@@ -263,8 +279,16 @@ All paths are under `Assets/Scripts/` unless noted. Single scene: `Assets/Scenes
 ## Build and test
 - EditMode tests in `Assets/Tests/EditMode/` (asmdef `DoomScroller.Tests.EditMode`) and
   Unity-free sim tests in `Assets/Tests/CombatCore/` (`DoomScroller.CombatCore.Tests`),
-  run headless with `tools/run-editmode-tests.sh`. No PlayMode tests, no build scripts,
-  no batch-mode simulation runner for the Balance Analysts yet.
+  run headless with `tools/run-editmode-tests.sh`. No PlayMode tests, no batch-mode
+  simulation runner for the Balance Analysts yet.
+- iOS-only command-line build, run on the Mac. `tools/build-ios.sh [--release]
+  [--server-url <url>]` runs `Editor/BuildScript.cs` in batch mode and exports the Xcode
+  project to `Builds/iOS/` (IL2CPP, ARM64; `--server-url` bakes a temporary
+  `Resources/ServerSettings.asset`, default `http://localhost:8088`). Dev builds allow
+  plain http (LAN dev server); `--release` doesn't. `tools/build-ios-xcode.sh
+  dev|testflight [teamId]` (env `APPLE_TEAM_ID`) builds a dev-signed app or archives an
+  .ipa into `Builds/iOS-out/`. Dev build verified on an iPhone.
+- Gap: TestFlight upload not yet verified (waits for Miles's Apple Developer account).
 - `ResourcesNamingTests` guards asset names, GUIDs, identity fields and dangling GUID
   references in authored content (`Resources/**/*.asset`, scenes, prefabs).
 - Gap: `Assets/Settings/Renderer2D.asset` holds 7 dangling URP probe-volume debug GUIDs
